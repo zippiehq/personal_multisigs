@@ -83,6 +83,8 @@ contract ZipperMultisigWallet{
 		// get the new hash to verify
 		hashVerify = keccak256(amount, recipient, nonce);
 
+		// --------------------- stack too deep here ----------------------- //
+
 		// make a memory mapping of (addresses => used this address?) to check for duplicates
 		address[] memory usedAddresses = new address[](m);
 
@@ -112,8 +114,8 @@ contract ZipperMultisigWallet{
 		// now all there is left to do is transfer these tokens!
 		ERC20(wethAddressLocal).transferFrom(multiSigWallet, recipient, amount);
         
-        // increment the nonce
-        addressNonceMapping[multiSigWallet] = nonce;
+		// increment the nonce
+		addressNonceMapping[multiSigWallet] = nonce;
 
 		// and log an event that everything has successfully completed!
 		TransferSuccess(multiSigWallet, recipient, amount, m, n);
