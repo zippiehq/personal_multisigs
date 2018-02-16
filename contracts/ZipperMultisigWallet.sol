@@ -14,9 +14,6 @@ contract ERC20 {
 
 contract ZipperMultisigWallet{
 
-	// declare events
-	event TransferSuccess(address indexed multiSigAddress, address indexed to, uint256 amt, uint8 m, uint256 n);
-
 	// declare global variable and mappings
 
 	// this is needed to prevent someone from reusing signatures to create unwanted transactions and drain a multsig
@@ -25,7 +22,7 @@ contract ZipperMultisigWallet{
 	address WETHAddress = 0x123dead;
 
 	// empty contructor
-	function ZipperMultisigWallet(){
+	function ZipperMultisigWallet() public {
 
 	}
 
@@ -42,30 +39,27 @@ contract ZipperMultisigWallet{
 	// address amount -- amount of the ERC20 tokens to send upon successful verification of the signatures
 	
 	function checkAndTransferFrom(address multiSigWallet, address[] allSignersPossible, uint8 m, uint8[] v, bytes32[] r, bytes32[] s, uint256 nonce, address recipient, uint256 amount) public {
-		
-		// store this in local for cheaper access
-		address wethAddressLocal = WETHAddress;
-
-		// save the n value
-		uint256 n = allSignersPossible.length;
 
 		// sanity check the inputs
 
 		// require that m, n are well formed (m <= n, m not zero, and m not MAX_UINT8)
 		// require that v/r/s.length are equal to (m + the original temp private key sig)
 		// require that the nonce is incremented by 1
+		
+		// removed these checks for efficiency:
 		// require that the balance of the multisig wallet is gt or equal to the amount requesting to be sent
 		// require that the allowance of this contract is gt or equal to the amount requesting to be sent
+		//	&& ERC20(wethAddressLocal).balanceOf(multiSigWallet) >= amount
+		//	&& ERC20(wethAddressLocal).allowance(multiSigWallet, address(this)) >= amount
 
-		require( m <= n 
+		require( m <= allSignersPossible.length 
 			&& m > 0
 			&& m != 0xFF
 			&& r.length == m + 1
 			&& s.length == m + 1
 			&& v.length == m + 1
 			&& nonce == addressNonceMapping[multiSigWallet] + 1
-			&& ERC20(wethAddressLocal).balanceOf(multiSigWallet) >= amount
-			&& ERC20(wethAddressLocal).allowance(multiSigWallet, address(this)) >= amount);
+		);
 
 		// verify that the tempPrivKey signed the initial signature of hash keccak256(allSignersPossible, m)
 		bytes32 hashVerify = keccak256(allSignersPossible, m);
@@ -82,8 +76,6 @@ contract ZipperMultisigWallet{
 
 		// get the new hash to verify
 		hashVerify = keccak256(amount, recipient, nonce);
-
-		// --------------------- stack too deep here ----------------------- //
 
 		// make a memory mapping of (addresses => used this address?) to check for duplicates
 		address[] memory usedAddresses = new address[](m);
@@ -112,13 +104,12 @@ contract ZipperMultisigWallet{
 		// and that they all want to transfer "amount" tokens to "receiver"
 
 		// now all there is left to do is transfer these tokens!
-		ERC20(wethAddressLocal).transferFrom(multiSigWallet, recipient, amount);
+		ERC20(WETHAddress).transferFrom(multiSigWallet, recipient, amount);
         
 		// increment the nonce
 		addressNonceMapping[multiSigWallet] = nonce;
 
-		// and log an event that everything has successfully completed!
-		TransferSuccess(multiSigWallet, recipient, amount, m, n);
+		// done!
 	}
 
 	// a simple helper function to check if an address is in an array...
