@@ -68,7 +68,7 @@ contract ZipperMultisigWallet{
 		address addressVerify = ecrecover(hashVerify, v[0], r[0], s[0]);
 
 		// assert that the address from the ec_recover is equal to the multisig wallet (aka the temp private key)
-		assert(addressVerify == multiSigWallet);
+		require(addressVerify == multiSigWallet);
 
 		// verify that all the other signatures were addresses in allSignersPossible, 
 		// that they all signed keccak256(amount, receiver, nonce), 
@@ -87,10 +87,10 @@ contract ZipperMultisigWallet{
 			addressVerify = ecrecover(hashVerify, v[i], r[i], s[i]);
 
 			// check that address is a valid address 
-			assert(checkIfAddressInArray(allSignersPossible, addressVerify));
+			require(checkIfAddressInArray(allSignersPossible, addressVerify));
 
 			// check that this address has not been used before
-			assert(!checkIfAddressInArray(usedAddresses, addressVerify));
+			require(!checkIfAddressInArray(usedAddresses, addressVerify));
 
 			// if we've made it here, we have verified that the first signature is a valid signature of a legal account,
 			// it isn't a duplicate signature,
