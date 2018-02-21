@@ -19,11 +19,11 @@ contract ZipperMultisigWallet{
 	// this is needed to prevent someone from reusing signatures to create unwanted transactions and drain a multsig
 	mapping (address => uint256) addressNonceMapping;
 
-	address WETHAddress = 0x123dead;
+	address WETHAddress;
 
 	// empty contructor
-	function ZipperMultisigWallet() public {
-
+	function ZipperMultisigWallet(address wethAddress) public {
+		WETHAddress = wethAddress;
 	}
 
 	// PARAMS:
@@ -122,6 +122,17 @@ contract ZipperMultisigWallet{
 			}
 		}
 		return false;
+	}
+
+	// these functions are simply for testing
+	// since truffle/web3 hashes things in a different way, we can call these pure functions
+	// and hash things inside the evm so we can be sure that things will hash the same
+	function soliditySha3_addresses_m(address[] validAddresses, uint8 m) public pure returns(bytes32){
+		return keccak256(validAddresses, m);
+	}
+
+	function soliditySha3_amount_recipient_nonce(uint256 amount, address recipient, uint256 nonce) public pure returns(bytes32){
+		return keccak256(amount, recipient, nonce);
 	}
 	
 }
