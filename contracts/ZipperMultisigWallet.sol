@@ -94,7 +94,7 @@ contract ZipperMultisigWallet{
 
 			// if we've made it here, we have verified that the first signature is a valid signature of a legal account,
 			// it isn't a duplicate signature,
-			// and that the signature signed that he/she wants to transfer "amount" ERC20 token to "recevier"
+			// and that the signature signed that he/she wants to transfer "amount" ERC20 token to "receiver"
 
 			// push this address to the usedAddresses array
 			usedAddresses[i] = addressVerify;
