@@ -327,7 +327,6 @@ contract("Test Zipper Multisig", (accounts) => {
 		sArray.push('0x' + signedByPrivateKey.slice(64,128).valueOf());
 		vArray.push(web3.toDecimal(signedByPrivateKey.slice(128,130)) + 27);
 
-
 		// nonce is at 6
 		var signByKeys = await zipperMS.soliditySha3_amount_recipient_nonce(web3.toWei(10, "ether"), accounts[100], 6);
 		var signedByKey;
@@ -343,7 +342,4 @@ contract("Test Zipper Multisig", (accounts) => {
 		await zipperMS.checkAndTransferFrom(accounts[9], multisigAccounts, 100, vArray, rArray, sArray, 6, accounts[100], web3.toWei(10, "ether"), {from: accounts[0]});
 		assert((await basicToken.balanceOf(accounts[100])).toString() === web3.toWei(10, "ether"), "failed 100/100 multisig transfer");
 	});
-
-
-
 })
