@@ -51,7 +51,7 @@ contract("Test Zipper Multisig", (accounts) => {
 			assert(false, "duplicate transfer went through, but should have failed!")
 
 		} catch(error){
-			assert(error.message == 'VM Exception while processing transaction: invalid opcode', "incorrect error type...")
+			assert(error.message == 'VM Exception while processing transaction: revert', "incorrect error type...")
 		}
 
 		try {
@@ -59,7 +59,7 @@ contract("Test Zipper Multisig", (accounts) => {
 			assert(false, "tranfer with a fake nonce increment went through, but should have failed!");
 		}
 		catch (error){
-			assert(error.message == 'VM Exception while processing transaction: invalid opcode', "incorrect error type...")
+			assert(error.message == 'VM Exception while processing transaction: revert', "incorrect error type...")
 		}
 	});
 
@@ -131,7 +131,7 @@ contract("Test Zipper Multisig", (accounts) => {
 			assert(false, "transfer should have failed! amount was not agreed by #1");
 		}
 		catch(error){
-			assert(error.message == 'VM Exception while processing transaction: invalid opcode', "incorrect error type...")		
+			assert(error.message == 'VM Exception while processing transaction: revert', "incorrect error type...")		
 		}
 
 		try {
@@ -140,7 +140,7 @@ contract("Test Zipper Multisig", (accounts) => {
 			assert(false, "transfer should have failed! amount was not agreed by #2");
 		}
 		catch(error){
-			assert(error.message == 'VM Exception while processing transaction: invalid opcode', "incorrect error type...")		
+			assert(error.message == 'VM Exception while processing transaction: revert', "incorrect error type...")		
 		}
 
 		try {
@@ -149,7 +149,7 @@ contract("Test Zipper Multisig", (accounts) => {
 			assert(false, "transfer should have failed! amount was not agreed by any person!");
 		}
 		catch(error){
-			assert(error.message == 'VM Exception while processing transaction: invalid opcode', "incorrect error type...")		
+			assert(error.message == 'VM Exception while processing transaction: revert', "incorrect error type...")		
 		}
 
 
@@ -167,7 +167,7 @@ contract("Test Zipper Multisig", (accounts) => {
 			assert(false, "transfer should have failed! amount was not agreed by transaction sender, but was agreed by #1 & #2");
 		}
 		catch(error){
-			assert(error.message == 'VM Exception while processing transaction: invalid opcode', "incorrect error type...")		
+			assert(error.message == 'VM Exception while processing transaction: revert', "incorrect error type...")		
 		}
 	});
 
@@ -239,4 +239,38 @@ contract("Test Zipper Multisig", (accounts) => {
 		await zipperMS.checkAndTransferFrom(accounts[9], [accounts[1], accounts[2], accounts[3]], 2, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], 5, accounts[2], web3.toWei(0.75, "ether"), {from: accounts[0]});
 		assert((await basicToken.balanceOf(accounts[2])).toString() === web3.toWei(2.25, "ether"), "failed 2 of 3 (rd. 3/3) multisig transfer!");
 	});
+
+	// it('should allow a 100/100 multsig transfer', async () => {
+
+	// 	assert(accounts.length > 100, "WARNING: this test is gonna fail because you don't have enough accounts, init truffle with -a 101 for 101 accounts");
+	// });
+
+	// var rArray;
+	// var sArray;
+	// var vArray;
+	// var multisigAccounts;
+
+	// for (var i = 0; i < accounts.length; i++){
+	// 	if (i != 9){
+	// 		// remember accounts[9] is the temp private key, so don't use that one
+	// 		multisigAccounts.push(accounts[i]);
+	// 	}
+	// }
+
+	// var signByPrivateKey = await zipperMS.soliditySha3_addresses_m(multisigAccounts, 100);
+	// var signedByPrivateKey = web3.eth.sign(accounts[9], signByPrivateKey).slice(2);
+
+	// rArray.push('0x' + signedByPrivateKey.slice(0,64));
+	// sArray.push('0x' + signedByPrivateKey.slice(64,128));
+	// vArray.push(web3.toDecimal(signedByPrivateKey.slice(128,130)) + 27);
+
+	// var signByKeys = await zipperMS.soliditySha3_amount_recipient_nonce(web3.toWei(10, "ether"), accounts[100], 6);
+	// var signedByKey;
+
+	// for (i = 0; i < multisigAccounts.length; i++){
+	// 	signedByKey = web3.eth.sign(accounts[i], )
+
+	// }
+
+
 })
