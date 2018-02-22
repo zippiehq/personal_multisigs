@@ -1,0 +1,39 @@
+{
+  "name": "zippermultisig",
+  "version": "1.0.0",
+  "description": "Lightweight multisig wallet for Zipper Global",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "truffle test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://alexwagg@github.com/alexwagg/ZipperMultiSig.git"
+  },
+  "keywords": [
+    "ethereum",
+    "solidity",
+    "web3",
+    "zipper",
+    "global",
+    "zipperglobal",
+    "multisig",
+    "ether",
+    "eth",
+    "erc20",
+    "weth"
+  ],
+  "author": "Zipper Global",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/alexwagg/ZipperMultiSig/issues"
+  },
+  "homepage": "https://github.com/alexwagg/ZipperMultiSig#readme",
+  "devDependencies": {
+    "ethereumjs-testrpc": "^6.0.3",
+    "truffle": "^4.0.6"
+  }
+}
