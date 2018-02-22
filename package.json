@@ -35,6 +35,7 @@
   "homepage": "https://github.com/alexwagg/ZipperMultiSig#readme",
   "devDependencies": {
     "ethereumjs-testrpc": "^6.0.3",
+    "solidity-coverage": "^0.4.9",
     "truffle": "^4.0.6"
   }
 }

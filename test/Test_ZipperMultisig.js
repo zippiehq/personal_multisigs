@@ -167,7 +167,7 @@ contract("Test Zipper Multisig", (accounts) => {
 			assert(false, "transfer should have failed! amount was not agreed by transaction sender, but was agreed by #1 & #2");
 		}
 		catch(error){
-			assert(error.message == 'VM Exception while processing transaction: revert', "incorrect error type...")		
+			assert(error.message == 'VM Exception while processing transaction: revert', "incorrect error type...")
 		}
 	});
 
@@ -240,6 +240,67 @@ contract("Test Zipper Multisig", (accounts) => {
 		assert((await basicToken.balanceOf(accounts[2])).toString() === web3.toWei(2.25, "ether"), "failed 2 of 3 (rd. 3/3) multisig transfer!");
 	});
 
+	it("should fail a 2/2 transfer when the same sig is used twice", async () => {
+		var zipperMS = await ZipperMultisigWallet.at(ZipperMultisigWallet.address);
+		var basicToken = await BasicERC20.at(BasicERC20.address);
+
+		var signByPrivateKey = await zipperMS.soliditySha3_addresses_m([accounts[1], accounts[2]], 2);
+		var signedByPrivateKey = web3.eth.sign(accounts[9], signByPrivateKey).slice(2);
+
+		var r0 = '0x' + signedByPrivateKey.slice(0,64);
+		var s0 = '0x' + signedByPrivateKey.slice(64,128);
+		var v0 = web3.toDecimal(signedByPrivateKey.slice(128,130)) + 27;
+
+		// sign this hash with the first multisig key, but then submit this twice
+		// nonce = 6
+		var signByKey1 = await zipperMS.soliditySha3_amount_recipient_nonce(web3.toWei(0.5, "ether"), accounts[2], 6);
+		var signedByKey1 = web3.eth.sign(accounts[1], signByKey1).slice(2);
+		
+		var r1 = '0x' + signedByKey1.slice(0,64);
+		var s1 = '0x' + signedByKey1.slice(64,128);
+		var v1 = web3.toDecimal(signedByKey1.slice(128,130)) + 27;
+
+		try {
+			await zipperMS.checkAndTransferFrom(accounts[9], [accounts[1], accounts[2]], 2, [v0, v1, v1], [r0.valueOf(), r1.valueOf(), r1.valueOf()], [s0.valueOf(), s1.valueOf(), s1.valueOf()], 6, accounts[2], web3.toWei(0.5, "ether"), {from: accounts[0]});
+			assert(false, "a 2/2 multisig was bypassed by submitting the same (valid) signature twice!");
+		}
+		catch(error){
+			assert(error.message == 'VM Exception while processing transaction: revert', "incorrect error type...");
+		}
+
+	});
+
+	it("should fail a 1/1 transfer when the multsig address cannot be ecrecovered", async () => {
+		var zipperMS = await ZipperMultisigWallet.at(ZipperMultisigWallet.address);
+		var basicToken = await BasicERC20.at(BasicERC20.address);
+
+		// note that the private key "signed" an error here, where m = 2 but only a 1/1 multisig by definition
+		// so the private key will not be recovered properly
+		var signByPrivateKey = await zipperMS.soliditySha3_addresses_m([accounts[1]], 2);
+		var signedByPrivateKey = web3.eth.sign(accounts[9], signByPrivateKey).slice(2);
+
+		var r0 = '0x' + signedByPrivateKey.slice(0,64);
+		var s0 = '0x' + signedByPrivateKey.slice(64,128);
+		var v0 = web3.toDecimal(signedByPrivateKey.slice(128,130)) + 27;
+
+		// sign this hash with the first multisig key
+		// nonce = 6
+		var signByKey1 = await zipperMS.soliditySha3_amount_recipient_nonce(web3.toWei(1.5, "ether"), accounts[2], 6);
+		var signedByKey1 = web3.eth.sign(accounts[1], signByKey1).slice(2);
+		
+		var r1 = '0x' + signedByKey1.slice(0,64);
+		var s1 = '0x' + signedByKey1.slice(64,128);
+		var v1 = web3.toDecimal(signedByKey1.slice(128,130)) + 27;
+
+		try {
+			await zipperMS.checkAndTransferFrom(accounts[9], [accounts[1]], 1, [v0, v1], [r0.valueOf(), r1.valueOf()], [s0.valueOf(), s1.valueOf()], 6, accounts[2], web3.toWei(1.5, "ether"), {from: accounts[0]});
+			assert(false, "multisig address should have ec recovered incorrectly, and failed!");
+		}
+		catch(error){
+			assert(error.message == 'VM Exception while processing transaction: revert', "incorrect error type...");
+		}
+	});
+
 	it('should allow a 100/100 multsig transfer', async () => {
 
 		var zipperMS = await ZipperMultisigWallet.at(ZipperMultisigWallet.address);
@@ -266,6 +327,8 @@ contract("Test Zipper Multisig", (accounts) => {
 		sArray.push('0x' + signedByPrivateKey.slice(64,128).valueOf());
 		vArray.push(web3.toDecimal(signedByPrivateKey.slice(128,130)) + 27);
 
+
+		// nonce is at 6
 		var signByKeys = await zipperMS.soliditySha3_amount_recipient_nonce(web3.toWei(10, "ether"), accounts[100], 6);
 		var signedByKey;
 
@@ -280,5 +343,7 @@ contract("Test Zipper Multisig", (accounts) => {
 		await zipperMS.checkAndTransferFrom(accounts[9], multisigAccounts, 100, vArray, rArray, sArray, 6, accounts[100], web3.toWei(10, "ether"), {from: accounts[0]});
 		assert((await basicToken.balanceOf(accounts[100])).toString() === web3.toWei(10, "ether"), "failed 100/100 multisig transfer");
 	});
+
+
 
 })
