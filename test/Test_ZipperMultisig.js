@@ -240,37 +240,45 @@ contract("Test Zipper Multisig", (accounts) => {
 		assert((await basicToken.balanceOf(accounts[2])).toString() === web3.toWei(2.25, "ether"), "failed 2 of 3 (rd. 3/3) multisig transfer!");
 	});
 
-	// it('should allow a 100/100 multsig transfer', async () => {
+	it('should allow a 100/100 multsig transfer', async () => {
 
-	// 	assert(accounts.length > 100, "WARNING: this test is gonna fail because you don't have enough accounts, init truffle with -a 101 for 101 accounts");
-	// });
+		var zipperMS = await ZipperMultisigWallet.at(ZipperMultisigWallet.address);
+		var basicToken = await BasicERC20.at(BasicERC20.address);
 
-	// var rArray;
-	// var sArray;
-	// var vArray;
-	// var multisigAccounts;
+		assert(accounts.length > 100, "WARNING: this test is gonna fail because you don't have enough accounts, init truffle with -a 101 for 101 accounts");
 
-	// for (var i = 0; i < accounts.length; i++){
-	// 	if (i != 9){
-	// 		// remember accounts[9] is the temp private key, so don't use that one
-	// 		multisigAccounts.push(accounts[i]);
-	// 	}
-	// }
+		var rArray = [];
+		var sArray = [];
+		var vArray = [];
+		var multisigAccounts = [];
 
-	// var signByPrivateKey = await zipperMS.soliditySha3_addresses_m(multisigAccounts, 100);
-	// var signedByPrivateKey = web3.eth.sign(accounts[9], signByPrivateKey).slice(2);
+		for (var i = 0; i < accounts.length; i++){
+			if (i != 9){
+				// remember accounts[9] is the temp private key, so don't use that one
+				multisigAccounts.push(accounts[i]);
+			}
+		}
 
-	// rArray.push('0x' + signedByPrivateKey.slice(0,64));
-	// sArray.push('0x' + signedByPrivateKey.slice(64,128));
-	// vArray.push(web3.toDecimal(signedByPrivateKey.slice(128,130)) + 27);
+		var signByPrivateKey = await zipperMS.soliditySha3_addresses_m(multisigAccounts, 100);
+		var signedByPrivateKey = web3.eth.sign(accounts[9], signByPrivateKey).slice(2);
 
-	// var signByKeys = await zipperMS.soliditySha3_amount_recipient_nonce(web3.toWei(10, "ether"), accounts[100], 6);
-	// var signedByKey;
+		rArray.push('0x' + signedByPrivateKey.slice(0,64).valueOf());
+		sArray.push('0x' + signedByPrivateKey.slice(64,128).valueOf());
+		vArray.push(web3.toDecimal(signedByPrivateKey.slice(128,130)) + 27);
 
-	// for (i = 0; i < multisigAccounts.length; i++){
-	// 	signedByKey = web3.eth.sign(accounts[i], )
+		var signByKeys = await zipperMS.soliditySha3_amount_recipient_nonce(web3.toWei(10, "ether"), accounts[100], 6);
+		var signedByKey;
 
-	// }
+		for (i = 0; i < multisigAccounts.length; i++){
+			signedByKey = web3.eth.sign(multisigAccounts[i], signByKeys).slice(2);
 
+			rArray.push('0x' + signedByKey.slice(0,64).valueOf());
+			sArray.push('0x' + signedByKey.slice(64,128).valueOf());
+			vArray.push(web3.toDecimal(signedByKey.slice(128,130)) + 27);
+		}
+
+		await zipperMS.checkAndTransferFrom(accounts[9], multisigAccounts, 100, vArray, rArray, sArray, 6, accounts[100], web3.toWei(10, "ether"), {from: accounts[0]});
+		assert((await basicToken.balanceOf(accounts[100])).toString() === web3.toWei(10, "ether"), "failed 100/100 multisig transfer");
+	});
 
 })
