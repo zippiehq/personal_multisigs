@@ -14,6 +14,8 @@ contract ERC20 {
 
 contract ZipperMultisigWallet{
 
+	event ADDR(address[] addrs);
+
 	// declare global variable and mappings
 
 	// this is needed to prevent someone from reusing signatures to create unwanted transactions and drain a multsig
@@ -62,7 +64,7 @@ contract ZipperMultisigWallet{
 		);
 
 		// verify that the tempPrivKey signed the initial signature of hash keccak256(allSignersPossible, m)
-		bytes32 hashVerify = keccak256(allSignersPossible, m);
+		bytes32 hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(allSignersPossible, m));
 
 		// perform the ec_recover on this hash with the first v, r, s values
 		address addressVerify = ecrecover(hashVerify, v[0], r[0], s[0]);
@@ -75,7 +77,7 @@ contract ZipperMultisigWallet{
 		// and that there are no duplicate signatures/addresses
 
 		// get the new hash to verify
-		hashVerify = keccak256(amount, recipient, nonce);
+		hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(amount, recipient, nonce));
 
 		// make a memory mapping of (addresses => used this address?) to check for duplicates
 		address[] memory usedAddresses = new address[](m);
@@ -85,7 +87,7 @@ contract ZipperMultisigWallet{
 
 			// get address from ec_recover
 			addressVerify = ecrecover(hashVerify, v[i], r[i], s[i]);
-
+			
 			// check that address is a valid address 
 			require(checkIfAddressInArray(allSignersPossible, addressVerify));
 
@@ -97,7 +99,9 @@ contract ZipperMultisigWallet{
 			// and that the signature signed that he/she wants to transfer "amount" ERC20 token to "receiver"
 
 			// push this address to the usedAddresses array
-			usedAddresses[i] = addressVerify;
+			
+			usedAddresses[i - 1] = addressVerify;
+
 		}
 
 		// if we've made it here, past the guantlet of asserts(), then we have verified that these are all signatures of legal addresses

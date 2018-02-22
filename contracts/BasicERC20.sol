@@ -33,9 +33,9 @@ contract BasicERC20 is ERC20 {
 	function BasicERC20(address luckyAddress) public {
 		// assign a bunch of tokens to an address
 
-		balances[luckyAddress] = 100000 ether;
+		balances[luckyAddress] = 100 ether;
 
-		totalSupply = 100000 ether;
+		totalSupply = 100 ether;
 
 	}
 

@@ -8,7 +8,7 @@ module.exports = function(deployer, network, accounts){
 			return deployer.deploy(ZipperMultisigWallet, BasicERC20.address);
 		}).then( () => {
 			// approve the ZipperWallet contract to withdraw tokens (from the temp private key address)
-			return BasicERC20.at(BasicERC20.address).approve(ZipperMultisigWallet.address, web3.toWei(100000, "ether"), {from: accounts[9]});
+			return BasicERC20.at(BasicERC20.address).approve(ZipperMultisigWallet.address, web3.toWei(100, "ether"), {from: accounts[9]});
 		});
 	}
 }
