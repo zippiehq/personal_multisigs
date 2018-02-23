@@ -14,8 +14,6 @@ contract ERC20 {
 
 contract ZipperMultisigWallet{
 
-	event ADDR(address[] addrs);
-
 	// declare global variable and mappings
 
 	// this is needed to prevent someone from reusing signatures to create unwanted transactions and drain a multsig

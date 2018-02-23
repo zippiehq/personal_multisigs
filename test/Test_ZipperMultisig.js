@@ -56,7 +56,7 @@ contract("Test Zipper Multisig", (accounts) => {
 
 		try {
 			await zipperMS.checkAndTransferFrom(accounts[9], [accounts[0]], 1, [v0, v1], [r0.valueOf(), r1.valueOf()], [s0.valueOf(), s1.valueOf()], 2, accounts[0], web3.toWei(1, "ether"), {from: accounts[0]});
-			assert(false, "tranfer with a fake nonce increment went through, but should have failed!");
+			assert(false, "transfer with a fake nonce increment went through, but should have failed!");
 		}
 		catch (error){
 			assert(error.message == 'VM Exception while processing transaction: revert', "incorrect error type...")
@@ -151,7 +151,6 @@ contract("Test Zipper Multisig", (accounts) => {
 		catch(error){
 			assert(error.message == 'VM Exception while processing transaction: revert', "incorrect error type...")		
 		}
-
 
 		// now do a test where the amounts are agreed by 1 and 2, but the amount submitted to be sent is different
 		// overwrite all these variables...
