@@ -116,6 +116,109 @@ contract ZipperMultisigWallet{
 		// done!
 	}
 
+	// removed m from generic checkAndTransferFrom, because m always = 1
+	function checkAndTransferFrom1of1(address multiSigWallet, address[] allSignersPossible, uint8[] v, bytes32[] r, bytes32[] s, uint256 nonce, address recipient, uint256 amount) public {
+
+		// can remove sanity checks for m
+		require( r.length == 2
+			&& s.length == 2
+			&& v.length == 2
+			&& nonce == addressNonceMapping[multiSigWallet] + 1
+			// new check to see if there is only one address in the signers array
+			&& allSignersPossible.length == 1
+		);
+
+		// for consistency, keccak256(allSignersPossible, uint8(1)) is done, where 1 is the placeholder for m
+		bytes32 hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(allSignersPossible, uint8(1)));
+
+		// perform the ec_recover on this hash with the first v, r, s values
+		address addressVerify = ecrecover(hashVerify, v[0], r[0], s[0]);
+
+		// assert that the address from the ec_recover is equal to the multisig wallet (aka the temp private key)
+		require(addressVerify == multiSigWallet);
+
+		// get the new hash to verify
+		hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(amount, recipient, nonce));
+
+		// get address from ec_recover
+		addressVerify = ecrecover(hashVerify, v[1], r[1], s[1]);
+		
+		// check that address is a valid address (the one and only address in all signers array)
+		require(allSignersPossible[0] == addressVerify);
+
+		// if we've made it here, we have verified that the first signature is a valid signature of the 1of1 multisig account
+		// and that the signature signed that he/she wants to transfer "amount" ERC20 token to "receiver"
+
+		// if we've made it here, past the guantlet of asserts(), then we have verified that these are all signatures of legal addresses
+		// and that they all want to transfer "amount" tokens to "receiver"
+
+		// now all there is left to do is transfer these tokens!
+		ERC20(WETHAddress).transferFrom(multiSigWallet, recipient, amount);
+        
+		// increment the nonce
+		addressNonceMapping[multiSigWallet] = nonce;
+
+		// done!
+	}
+
+	// removed m from generic checkAndTransferFrom, because m always = 1
+	function checkAndTransferFrom2of2(address multiSigWallet, address[] allSignersPossible, uint8[] v, bytes32[] r, bytes32[] s, uint256 nonce, address recipient, uint256 amount) public {
+
+		// can remove sanity checks for m
+		require( r.length == 3
+			&& s.length == 3
+			&& v.length == 3
+			&& nonce == addressNonceMapping[multiSigWallet] + 1
+			// add new check for the signers array to verify there are 2 addresses
+			&& allSignersPossible.length == 2
+		);
+
+		// same as generic situation, use 2 as place holder for m
+		bytes32 hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(allSignersPossible, uint8(2)));
+
+		// perform the ec_recover on this hash with the first v, r, s values
+		address addressVerify = ecrecover(hashVerify, v[0], r[0], s[0]);
+
+		// assert that the address from the ec_recover is equal to the multisig wallet (aka the temp private key)
+		require(addressVerify == multiSigWallet);
+
+		// verify that all the other signatures were addresses in allSignersPossible, 
+		// that they all signed keccak256(amount, receiver, nonce), 
+		// and that there are no duplicate signatures/addresses
+
+		// get the new hash to verify
+		hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(amount, recipient, nonce));
+
+		// get the first address from ec_recover
+		addressVerify = ecrecover(hashVerify, v[1], r[1], s[1]);
+		
+		// check that address is a valid address 
+		require(allSignersPossible[0] == addressVerify || allSignersPossible[1] == addressVerify);
+
+		address usedAddress = addressVerify;
+
+		// if we've made it here, the first signature is valud
+		// now lets check the second and make sure it's not a duplicate 
+
+		// get the second address from ecrecover
+		addressVerify = ecrecover(hashVerify, v[2], r[2], s[2]);
+
+		// check that this address is valid, and that it's not a duplicate
+		require((allSignersPossible[0] == addressVerify || allSignersPossible[1] == addressVerify) && addressVerify != usedAddress);
+
+		// if we've made it here, we have verified that the first signature is a valid signature of a legal account,
+		// and that the second signature is also a legal signature, and it isn't a duplicate signature,
+		// and that the signatures both agress he/she wants to transfer "amount" ERC20 token to "receiver"
+
+		// now all there is left to do is transfer these tokens!
+		ERC20(WETHAddress).transferFrom(multiSigWallet, recipient, amount);
+        
+		// increment the nonce
+		addressNonceMapping[multiSigWallet] = nonce;
+
+		// done!
+	}
+
 	// a simple helper function to check if an address is in an array...
 	function checkIfAddressInArray(address[] validAddresses, address checkAddress) internal pure returns(bool){
 
