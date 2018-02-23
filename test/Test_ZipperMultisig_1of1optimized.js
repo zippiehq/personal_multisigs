@@ -9,7 +9,7 @@ contract("Test Zipper Multisig 1 of 1 optimized", (accounts) => {
 	beforeEach( () => {
     	return BasicERC20.new(accounts[9]).then( (instance) => {
     		basicToken = instance;
-    		return ZipperMultisigWallet.new(instance.address);
+    		return ZipperMultisigWallet.new();
      	}).then( (instance) => {
      		zipperMS = instance;
      		return basicToken.approve(instance.address, web3.toWei(100, "ether"), {from: accounts[9]});
@@ -34,13 +34,13 @@ contract("Test Zipper Multisig 1 of 1 optimized", (accounts) => {
 		var s1 = '0x' + signedByKey1.slice(64,128);
 		var v1 = web3.toDecimal(signedByKey1.slice(128,130)) + 27;
 
-		await zipperMS.checkAndTransferFrom1of1(accounts[9], [accounts[0]], [v0, v1], [r0.valueOf(), r1.valueOf()], [s0.valueOf(), s1.valueOf()], 1, accounts[0], web3.toWei(1, "ether"), {from: accounts[0]});
+		await zipperMS.checkAndTransferFrom1of1([accounts[9], basicToken.address], [accounts[0]], [v0, v1], [r0.valueOf(), r1.valueOf()], [s0.valueOf(), s1.valueOf()], 1, accounts[0], web3.toWei(1, "ether"), {from: accounts[0]});
 
 		assert((await basicToken.balanceOf(accounts[0])).toString() === web3.toWei(1, "ether"), "failed 1 of 1 multisig transfer!");
 
 		try {
 			// try the same exact transfer 
-			await zipperMS.checkAndTransferFrom1of1(accounts[9], [accounts[0]], [v0, v1], [r0.valueOf(), r1.valueOf()], [s0.valueOf(), s1.valueOf()], 1, accounts[0], web3.toWei(1, "ether"), {from: accounts[0]});
+			await zipperMS.checkAndTransferFrom1of1([accounts[9], basicToken.address], [accounts[0]], [v0, v1], [r0.valueOf(), r1.valueOf()], [s0.valueOf(), s1.valueOf()], 1, accounts[0], web3.toWei(1, "ether"), {from: accounts[0]});
 			assert(false, "duplicate transfer went through, but should have failed!")
 
 		} catch(error){
@@ -48,7 +48,7 @@ contract("Test Zipper Multisig 1 of 1 optimized", (accounts) => {
 		}
 
 		try {
-			await zipperMS.checkAndTransferFrom1of1(accounts[9], [accounts[0]], [v0, v1], [r0.valueOf(), r1.valueOf()], [s0.valueOf(), s1.valueOf()], 2, accounts[0], web3.toWei(1, "ether"), {from: accounts[0]});
+			await zipperMS.checkAndTransferFrom1of1([accounts[9], basicToken.address], [accounts[0]], [v0, v1], [r0.valueOf(), r1.valueOf()], [s0.valueOf(), s1.valueOf()], 2, accounts[0], web3.toWei(1, "ether"), {from: accounts[0]});
 			assert(false, "transfer with a fake nonce increment went through, but should have failed!");
 		}
 		catch (error){
@@ -75,7 +75,7 @@ contract("Test Zipper Multisig 1 of 1 optimized", (accounts) => {
 
 		try {
 			// try the same exact transfer 
-			await zipperMS.checkAndTransferFrom1of1(accounts[9], [accounts[0]], [v0, v1], [r0.valueOf(), r1.valueOf()], [s0.valueOf(), s1.valueOf()], 1, accounts[0], web3.toWei(1, "ether"), {from: accounts[0]});
+			await zipperMS.checkAndTransferFrom1of1([accounts[9], basicToken.address], [accounts[0]], [v0, v1], [r0.valueOf(), r1.valueOf()], [s0.valueOf(), s1.valueOf()], 1, accounts[0], web3.toWei(1, "ether"), {from: accounts[0]});
 			assert(false, "transfer went through, but should have failed because the multisig wallet is incorrect!")
 
 		} catch(error){

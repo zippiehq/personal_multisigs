@@ -19,15 +19,13 @@ contract ZipperMultisigWallet{
 	// this is needed to prevent someone from reusing signatures to create unwanted transactions and drain a multsig
 	mapping (address => uint256) addressNonceMapping;
 
-	address WETHAddress;
-
 	// empty contructor
-	function ZipperMultisigWallet(address wethAddress) public {
-		WETHAddress = wethAddress;
+	function ZipperMultisigWallet() public {
 	}
 
 	// PARAMS:
 
+	// address[2] multisigAndERC20Contract -- a len 2 array of [multisig address to withdraw from, ERC20 token contract to use]
 	// address[] allSignersPossible -- the temporary private key will keccak256 this array and m, to allow m of allSignersPossible.length = n signatures in that array to transfer from the wallet 
 	// uint8 m -- the amount of signatures required to transfer from the multisig wallet
 
@@ -38,7 +36,7 @@ contract ZipperMultisigWallet{
 	// address recipient -- recipient of the ERC20 tokens upon successful verification of the signatures, note that we must verify that the signers signed keccak256 recipient, amount, nonce
 	// address amount -- amount of the ERC20 tokens to send upon successful verification of the signatures
 	
-	function checkAndTransferFrom(address multiSigWallet, address[] allSignersPossible, uint8 m, uint8[] v, bytes32[] r, bytes32[] s, uint256 nonce, address recipient, uint256 amount) public {
+	function checkAndTransferFrom(address[] multisigAndERC20Contract, address[] allSignersPossible, uint8 m, uint8[] v, bytes32[] r, bytes32[] s, uint256 nonce, address recipient, uint256 amount) public {
 
 		// sanity check the inputs
 
@@ -52,13 +50,15 @@ contract ZipperMultisigWallet{
 		//	&& ERC20(wethAddressLocal).balanceOf(multiSigWallet) >= amount
 		//	&& ERC20(wethAddressLocal).allowance(multiSigWallet, address(this)) >= amount
 
-		require( m <= allSignersPossible.length 
+		require( 
+			multisigAndERC20Contract.length == 2
+			&& m <= allSignersPossible.length 
 			&& m > 0
 			&& m != 0xFF
 			&& r.length == m + 1
 			&& s.length == m + 1
 			&& v.length == m + 1
-			&& nonce == addressNonceMapping[multiSigWallet] + 1
+			&& nonce == addressNonceMapping[multisigAndERC20Contract[0]] + 1
 		);
 
 		// verify that the tempPrivKey signed the initial signature of hash keccak256(allSignersPossible, m)
@@ -68,7 +68,7 @@ contract ZipperMultisigWallet{
 		address addressVerify = ecrecover(hashVerify, v[0], r[0], s[0]);
 
 		// assert that the address from the ec_recover is equal to the multisig wallet (aka the temp private key)
-		require(addressVerify == multiSigWallet);
+		require(addressVerify == multisigAndERC20Contract[0]);
 
 		// verify that all the other signatures were addresses in allSignersPossible, 
 		// that they all signed keccak256(amount, receiver, nonce), 
@@ -106,22 +106,24 @@ contract ZipperMultisigWallet{
 		// and that they all want to transfer "amount" tokens to "receiver"
 
 		// now all there is left to do is transfer these tokens!
-		ERC20(WETHAddress).transferFrom(multiSigWallet, recipient, amount);
+		ERC20(multisigAndERC20Contract[1]).transferFrom(multisigAndERC20Contract[0], recipient, amount);
         
 		// increment the nonce
-		addressNonceMapping[multiSigWallet] = nonce;
+		addressNonceMapping[multisigAndERC20Contract[0]] = nonce;
 
 		// done!
 	}
 
 	// removed m from generic checkAndTransferFrom, because m always = 1
-	function checkAndTransferFrom1of1(address multiSigWallet, address[] allSignersPossible, uint8[] v, bytes32[] r, bytes32[] s, uint256 nonce, address recipient, uint256 amount) public {
+	function checkAndTransferFrom1of1(address[] multisigAndERC20Contract, address[] allSignersPossible, uint8[] v, bytes32[] r, bytes32[] s, uint256 nonce, address recipient, uint256 amount) public {
 
 		// can remove sanity checks for m
-		require( r.length == 2
+		require(
+			multisigAndERC20Contract.length == 2 
+			&& r.length == 2
 			&& s.length == 2
 			&& v.length == 2
-			&& nonce == addressNonceMapping[multiSigWallet] + 1
+			&& nonce == addressNonceMapping[multisigAndERC20Contract[0]] + 1
 			// new check to see if there is only one address in the signers array
 			&& allSignersPossible.length == 1
 		);
@@ -133,7 +135,7 @@ contract ZipperMultisigWallet{
 		address addressVerify = ecrecover(hashVerify, v[0], r[0], s[0]);
 
 		// assert that the address from the ec_recover is equal to the multisig wallet (aka the temp private key)
-		require(addressVerify == multiSigWallet);
+		require(addressVerify == multisigAndERC20Contract[0]);
 
 		// get the new hash to verify
 		hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(amount, recipient, nonce));
@@ -151,22 +153,24 @@ contract ZipperMultisigWallet{
 		// and that they all want to transfer "amount" tokens to "receiver"
 
 		// now all there is left to do is transfer these tokens!
-		ERC20(WETHAddress).transferFrom(multiSigWallet, recipient, amount);
+		ERC20(multisigAndERC20Contract[1]).transferFrom(multisigAndERC20Contract[0], recipient, amount);
         
 		// increment the nonce
-		addressNonceMapping[multiSigWallet] = nonce;
+		addressNonceMapping[multisigAndERC20Contract[0]] = nonce;
 
 		// done!
 	}
 
 	// removed m from generic checkAndTransferFrom, because m always = 1
-	function checkAndTransferFrom2of2(address multiSigWallet, address[] allSignersPossible, uint8[] v, bytes32[] r, bytes32[] s, uint256 nonce, address recipient, uint256 amount) public {
+	function checkAndTransferFrom2of2(address[] multisigAndERC20Contract, address[] allSignersPossible, uint8[] v, bytes32[] r, bytes32[] s, uint256 nonce, address recipient, uint256 amount) public {
 
 		// can remove sanity checks for m
-		require( r.length == 3
+		require( 
+			multisigAndERC20Contract.length == 2
+			&& r.length == 3
 			&& s.length == 3
 			&& v.length == 3
-			&& nonce == addressNonceMapping[multiSigWallet] + 1
+			&& nonce == addressNonceMapping[multisigAndERC20Contract[0]] + 1
 			// add new check for the signers array to verify there are 2 addresses
 			&& allSignersPossible.length == 2
 		);
@@ -178,7 +182,7 @@ contract ZipperMultisigWallet{
 		address addressVerify = ecrecover(hashVerify, v[0], r[0], s[0]);
 
 		// assert that the address from the ec_recover is equal to the multisig wallet (aka the temp private key)
-		require(addressVerify == multiSigWallet);
+		require(addressVerify == multisigAndERC20Contract[0]);
 
 		// verify that all the other signatures were addresses in allSignersPossible, 
 		// that they all signed keccak256(amount, receiver, nonce), 
@@ -209,10 +213,10 @@ contract ZipperMultisigWallet{
 		// and that the signatures both agress he/she wants to transfer "amount" ERC20 token to "receiver"
 
 		// now all there is left to do is transfer these tokens!
-		ERC20(WETHAddress).transferFrom(multiSigWallet, recipient, amount);
+		ERC20(multisigAndERC20Contract[1]).transferFrom(multisigAndERC20Contract[0], recipient, amount);
         
 		// increment the nonce
-		addressNonceMapping[multiSigWallet] = nonce;
+		addressNonceMapping[multisigAndERC20Contract[0]] = nonce;
 
 		// done!
 	}

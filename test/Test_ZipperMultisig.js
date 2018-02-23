@@ -41,13 +41,13 @@ contract("Test Zipper Multisig", (accounts) => {
 
 		//checkAndTransferFrom(address multiSigWallet, address[] allSignersPossible, uint8 m, uint8[] v, bytes32[] r, bytes32[] s, uint256 nonce, address recipient, uint256 amount) public {
 
-		await zipperMS.checkAndTransferFrom(accounts[9], [accounts[0]], 1, [v0, v1], [r0.valueOf(), r1.valueOf()], [s0.valueOf(), s1.valueOf()], 1, accounts[0], web3.toWei(1, "ether"), {from: accounts[0]});
+		await zipperMS.checkAndTransferFrom([accounts[9], basicToken.address], [accounts[0]], 1, [v0, v1], [r0.valueOf(), r1.valueOf()], [s0.valueOf(), s1.valueOf()], 1, accounts[0], web3.toWei(1, "ether"), {from: accounts[0]});
 
 		assert((await basicToken.balanceOf(accounts[0])).toString() === web3.toWei(1, "ether"), "failed 1 of 1 multisig transfer!");
 
 		try {
 			// try the same exact transfer 
-			await zipperMS.checkAndTransferFrom(accounts[9], [accounts[0]], 1, [v0, v1], [r0.valueOf(), r1.valueOf()], [s0.valueOf(), s1.valueOf()], 1, accounts[0], web3.toWei(1, "ether"), {from: accounts[0]});
+			await zipperMS.checkAndTransferFrom([accounts[9], basicToken.address], [accounts[0]], 1, [v0, v1], [r0.valueOf(), r1.valueOf()], [s0.valueOf(), s1.valueOf()], 1, accounts[0], web3.toWei(1, "ether"), {from: accounts[0]});
 			assert(false, "duplicate transfer went through, but should have failed!")
 
 		} catch(error){
@@ -55,7 +55,7 @@ contract("Test Zipper Multisig", (accounts) => {
 		}
 
 		try {
-			await zipperMS.checkAndTransferFrom(accounts[9], [accounts[0]], 1, [v0, v1], [r0.valueOf(), r1.valueOf()], [s0.valueOf(), s1.valueOf()], 2, accounts[0], web3.toWei(1, "ether"), {from: accounts[0]});
+			await zipperMS.checkAndTransferFrom([accounts[9], basicToken.address], [accounts[0]], 1, [v0, v1], [r0.valueOf(), r1.valueOf()], [s0.valueOf(), s1.valueOf()], 2, accounts[0], web3.toWei(1, "ether"), {from: accounts[0]});
 			assert(false, "transfer with a fake nonce increment went through, but should have failed!");
 		}
 		catch (error){
@@ -91,7 +91,7 @@ contract("Test Zipper Multisig", (accounts) => {
 		var v2 = web3.toDecimal(signedByKey2.slice(128,130)) + 27;
 
 		// check and transfer with a 2 of 2 with nonce == 2
-		await zipperMS.checkAndTransferFrom(accounts[9], [accounts[1], accounts[2]], 2, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], 2, accounts[1], web3.toWei(0.5, "ether"), {from: accounts[0]});
+		await zipperMS.checkAndTransferFrom([accounts[9], basicToken.address], [accounts[1], accounts[2]], 2, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], 2, accounts[1], web3.toWei(0.5, "ether"), {from: accounts[0]});
 
 		assert((await basicToken.balanceOf(accounts[1])).toString() === web3.toWei(0.5, "ether"), "failed 2 of 2 multisig transfer!");
 	});
@@ -127,7 +127,7 @@ contract("Test Zipper Multisig", (accounts) => {
 
 		try {
 			// check and transfer with a 2 of 2 with nonce == 2, where the value being transfered is agreed by #1, but not #2
-			await zipperMS.checkAndTransferFrom(accounts[9], [accounts[1], accounts[2]], 2, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], 3, accounts[2], web3.toWei(0.5, "ether"), {from: accounts[0]});
+			await zipperMS.checkAndTransferFrom([accounts[9], basicToken.address], [accounts[1], accounts[2]], 2, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], 3, accounts[2], web3.toWei(0.5, "ether"), {from: accounts[0]});
 			assert(false, "transfer should have failed! amount was not agreed by #1");
 		}
 		catch(error){
@@ -136,7 +136,7 @@ contract("Test Zipper Multisig", (accounts) => {
 
 		try {
 			// check and transfer with a 2 of 2 with nonce == 2, where the value being transfered is agreed by #2 this time, but not #1
-			await zipperMS.checkAndTransferFrom(accounts[9], [accounts[1], accounts[2]], 2, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], 3, accounts[2], web3.toWei(0.51, "ether"), {from: accounts[0]});
+			await zipperMS.checkAndTransferFrom([accounts[9], basicToken.address], [accounts[1], accounts[2]], 2, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], 3, accounts[2], web3.toWei(0.51, "ether"), {from: accounts[0]});
 			assert(false, "transfer should have failed! amount was not agreed by #2");
 		}
 		catch(error){
@@ -145,7 +145,7 @@ contract("Test Zipper Multisig", (accounts) => {
 
 		try {
 			// check and transfer with a 2 of 2 with nonce == 2, where the value being transfered is not agreed by #1, #2, or msg.sender
-			await zipperMS.checkAndTransferFrom(accounts[9], [accounts[1], accounts[2]], 2, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], 3, accounts[2], web3.toWei(0.52, "ether"), {from: accounts[0]});
+			await zipperMS.checkAndTransferFrom([accounts[9], basicToken.address], [accounts[1], accounts[2]], 2, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], 3, accounts[2], web3.toWei(0.52, "ether"), {from: accounts[0]});
 			assert(false, "transfer should have failed! amount was not agreed by any person!");
 		}
 		catch(error){
@@ -162,7 +162,7 @@ contract("Test Zipper Multisig", (accounts) => {
 
 		try {
 			// check and transfer with a 2 of 2 with nonce == 2, where the value being transfered is agreed by #1 and #2, but not msg.sender
-			await zipperMS.checkAndTransferFrom(accounts[9], [accounts[1], accounts[2]], 2, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], 3, accounts[2], web3.toWei(0.51, "ether"), {from: accounts[0]});
+			await zipperMS.checkAndTransferFrom([accounts[9], basicToken.address], [accounts[1], accounts[2]], 2, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], 3, accounts[2], web3.toWei(0.51, "ether"), {from: accounts[0]});
 			assert(false, "transfer should have failed! amount was not agreed by transaction sender, but was agreed by #1 & #2");
 		}
 		catch(error){
@@ -197,7 +197,7 @@ contract("Test Zipper Multisig", (accounts) => {
 		var s2 = '0x' + signedByKey2.slice(64,128);
 		var v2 = web3.toDecimal(signedByKey2.slice(128,130)) + 27;
 
-		await zipperMS.checkAndTransferFrom(accounts[9], [accounts[1], accounts[2], accounts[3]], 2, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], 3, accounts[2], web3.toWei(0.75, "ether"), {from: accounts[0]});
+		await zipperMS.checkAndTransferFrom([accounts[9], basicToken.address], [accounts[1], accounts[2], accounts[3]], 2, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], 3, accounts[2], web3.toWei(0.75, "ether"), {from: accounts[0]});
 		assert((await basicToken.balanceOf(accounts[2])).toString() === web3.toWei(0.75, "ether"), "failed 2 of 3 (rd. 1/3) multisig transfer!");
 
 		// ROUND 2: KEYS 1 & 3
@@ -216,7 +216,7 @@ contract("Test Zipper Multisig", (accounts) => {
 		var s2 = '0x' + signedByKey3.slice(64,128);
 		var v2 = web3.toDecimal(signedByKey3.slice(128,130)) + 27;
 
-		await zipperMS.checkAndTransferFrom(accounts[9], [accounts[1], accounts[2], accounts[3]], 2, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], 4, accounts[2], web3.toWei(0.75, "ether"), {from: accounts[0]});
+		await zipperMS.checkAndTransferFrom([accounts[9], basicToken.address], [accounts[1], accounts[2], accounts[3]], 2, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], 4, accounts[2], web3.toWei(0.75, "ether"), {from: accounts[0]});
 		assert((await basicToken.balanceOf(accounts[2])).toString() === web3.toWei(1.5, "ether"), "failed 2 of 3 (rd. 2/3) multisig transfer!");
 
 		// ROUND 3: KEYS 2 & 3
@@ -235,7 +235,7 @@ contract("Test Zipper Multisig", (accounts) => {
 		var s2 = '0x' + signedByKey3.slice(64,128);
 		var v2 = web3.toDecimal(signedByKey3.slice(128,130)) + 27;
 
-		await zipperMS.checkAndTransferFrom(accounts[9], [accounts[1], accounts[2], accounts[3]], 2, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], 5, accounts[2], web3.toWei(0.75, "ether"), {from: accounts[0]});
+		await zipperMS.checkAndTransferFrom([accounts[9], basicToken.address], [accounts[1], accounts[2], accounts[3]], 2, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], 5, accounts[2], web3.toWei(0.75, "ether"), {from: accounts[0]});
 		assert((await basicToken.balanceOf(accounts[2])).toString() === web3.toWei(2.25, "ether"), "failed 2 of 3 (rd. 3/3) multisig transfer!");
 	});
 
@@ -260,7 +260,7 @@ contract("Test Zipper Multisig", (accounts) => {
 		var v1 = web3.toDecimal(signedByKey1.slice(128,130)) + 27;
 
 		try {
-			await zipperMS.checkAndTransferFrom(accounts[9], [accounts[1], accounts[2]], 2, [v0, v1, v1], [r0.valueOf(), r1.valueOf(), r1.valueOf()], [s0.valueOf(), s1.valueOf(), s1.valueOf()], 6, accounts[2], web3.toWei(0.5, "ether"), {from: accounts[0]});
+			await zipperMS.checkAndTransferFrom([accounts[9], basicToken.address], [accounts[1], accounts[2]], 2, [v0, v1, v1], [r0.valueOf(), r1.valueOf(), r1.valueOf()], [s0.valueOf(), s1.valueOf(), s1.valueOf()], 6, accounts[2], web3.toWei(0.5, "ether"), {from: accounts[0]});
 			assert(false, "a 2/2 multisig was bypassed by submitting the same (valid) signature twice!");
 		}
 		catch(error){
@@ -292,7 +292,7 @@ contract("Test Zipper Multisig", (accounts) => {
 		var v1 = web3.toDecimal(signedByKey1.slice(128,130)) + 27;
 
 		try {
-			await zipperMS.checkAndTransferFrom(accounts[9], [accounts[1]], 1, [v0, v1], [r0.valueOf(), r1.valueOf()], [s0.valueOf(), s1.valueOf()], 6, accounts[2], web3.toWei(1.5, "ether"), {from: accounts[0]});
+			await zipperMS.checkAndTransferFrom([accounts[9], basicToken.address], [accounts[1]], 1, [v0, v1], [r0.valueOf(), r1.valueOf()], [s0.valueOf(), s1.valueOf()], 6, accounts[2], web3.toWei(1.5, "ether"), {from: accounts[0]});
 			assert(false, "multisig address should have ec recovered incorrectly, and failed!");
 		}
 		catch(error){
@@ -338,7 +338,7 @@ contract("Test Zipper Multisig", (accounts) => {
 			vArray.push(web3.toDecimal(signedByKey.slice(128,130)) + 27);
 		}
 
-		await zipperMS.checkAndTransferFrom(accounts[9], multisigAccounts, 100, vArray, rArray, sArray, 6, accounts[100], web3.toWei(10, "ether"), {from: accounts[0]});
+		await zipperMS.checkAndTransferFrom([accounts[9], basicToken.address], multisigAccounts, 100, vArray, rArray, sArray, 6, accounts[100], web3.toWei(10, "ether"), {from: accounts[0]});
 		assert((await basicToken.balanceOf(accounts[100])).toString() === web3.toWei(10, "ether"), "failed 100/100 multisig transfer");
 	});
 })
