@@ -25,7 +25,7 @@ contract("Test Zipper Multisig 1 of 1 optimized", (accounts) => {
 		
 		var r0 = '0x' + signedByPrivateKey.slice(0,64);
 		var s0 = '0x' + signedByPrivateKey.slice(64,128);
-		var v0 = web3.toDecimal(signedByPrivateKey.slice(128,130)) + 27;;
+		var v0 = web3.toDecimal(signedByPrivateKey.slice(128,130)) + 27;
 		
 		var signByKey1 = await zipperMS.soliditySha3_amount_recipient_nonce(web3.toWei(1, "ether"), accounts[0], 1);
 		var signedByKey1 = web3.eth.sign(accounts[0], signByKey1).slice(2);
