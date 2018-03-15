@@ -176,6 +176,71 @@ contract ZipperMultisigWallet{
 		// done!
 	}
 
+
+	// changes here, removed the 'recipient' field
+	function checkAndTransferFrom_BlankCheck(address[] multisigAndERC20Contract, address[] allSignersPossible, uint8 m, uint8[] v, bytes32[] r, bytes32[] s, uint256 nonce, uint256 amount) public {
+
+		require( 
+			multisigAndERC20Contract.length == 2
+			&& m <= allSignersPossible.length 
+			&& m > 0
+			&& m != 0xFF
+			&& r.length == m + 1
+			&& s.length == m + 1
+			&& v.length == m + 1
+			&& nonce == addressNonceMapping[multisigAndERC20Contract[0]] + 1
+		);
+
+		// verify that the multisig wallet previously signed that these keys can access the funds
+		require(verifyMultisigKeyAllowsAddresses(allSignersPossible, m, multisigAndERC20Contract[0], v[0], r[0], s[0]));
+
+		// verify that all the other signatures were addresses in allSignersPossible, 
+		// that they all signed keccak256(amount, receiver, nonce), 
+		// and that there are no duplicate signatures/addresses
+
+		// changes here, verify that the 'recipient' was just the 0x0 address, this will signify a blank check
+		bytes32 hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(amount, address(0x0), nonce));
+
+		// make a memory mapping of (addresses => used this address?) to check for duplicates
+		address[] memory usedAddresses = new address[](m);
+
+		// loop through and ec_recover each v[] r[] s[] and verify that a correct address came out, and it wasn't a duplicate
+		address addressVerify;
+
+		for (uint8 i = 1; i < m + 1; i++){
+
+			// get address from ec_recover
+			addressVerify = ecrecover(hashVerify, v[i], r[i], s[i]);
+			
+			// check that address is a valid address 
+			require(checkIfAddressInArray(allSignersPossible, addressVerify));
+
+			// check that this address has not been used before
+			require(!checkIfAddressInArray(usedAddresses, addressVerify));
+
+			// if we've made it here, we have verified that the first signature is a valid signature of a legal account,
+			// it isn't a duplicate signature,
+			// and that the signature signed that he/she wants to transfer "amount" ERC20 token to "receiver"
+
+			// push this address to the usedAddresses array
+			
+			usedAddresses[i - 1] = addressVerify;
+
+		}
+
+		// if we've made it here, past the guantlet of asserts(), then we have verified that these are all signatures of legal addresses
+		// and that they all want to transfer "amount" tokens to "receiver"
+
+		// changes here, where we are sending the tokens to msg.sender (the person cashing the 'blank check')
+		ERC20(multisigAndERC20Contract[1]).transferFrom(multisigAndERC20Contract[0], msg.sender, amount);
+        
+		// increment the nonce
+		addressNonceMapping[multisigAndERC20Contract[0]] = nonce;
+
+		// done!
+
+	}
+
 	// removed m from generic checkAndTransferFrom, because m always = 1
 	function checkAndTransferFrom_1of1(address[] multisigAndERC20Contract, address[] allSignersPossible, uint8[] v, bytes32[] r, bytes32[] s, uint256 nonce, address recipient, uint256 amount) public {
 
