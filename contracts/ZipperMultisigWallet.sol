@@ -127,9 +127,53 @@ contract ZipperMultisigWallet{
 		// verify that the multisig wallet previously signed that these keys can access the funds
 		require(verifyMultisigKeyAllowsAddresses(allSignersPossible, m, multisigAndERC20Contract[0], v[0], r[0], s[0]));
 
+		// verify that the msg.sender account is also in the array of allowed addresses.
+		// if it is, then we accept the msg.sender as one of the signers 
+		require(checkIfAddressInArray(allSignersPossible, msg.sender));
 
+		// now check that all the other signatures are acceptable, and send tokens
+		
+		// get the new hash to verify
+		bytes32 hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(amount, recipient, nonce));
 
+		// make a memory mapping of (addresses => used this address?) to check for duplicates
+		address[] memory usedAddresses = new address[](m);
 
+		// loop through and ec_recover each v[] r[] s[] and verify that a correct address came out, and it wasn't a duplicate
+		address addressVerify;
+
+		// changs here, where it's i < m not i < m - 1
+		for (uint8 i = 1; i < m; i++){
+
+			// get address from ec_recover
+			addressVerify = ecrecover(hashVerify, v[i], r[i], s[i]);
+			
+			// check that address is a valid address 
+			require(checkIfAddressInArray(allSignersPossible, addressVerify));
+
+			// check that this address has not been used before
+			require(!checkIfAddressInArray(usedAddresses, addressVerify));
+
+			// if we've made it here, we have verified that the first signature is a valid signature of a legal account,
+			// it isn't a duplicate signature,
+			// and that the signature signed that he/she wants to transfer "amount" ERC20 token to "receiver"
+
+			// push this address to the usedAddresses array
+			
+			usedAddresses[i - 1] = addressVerify;
+
+		}
+
+		// if we've made it here, past the guantlet of asserts(), then we have verified that these are all signatures of legal addresses
+		// and that they all want to transfer "amount" tokens to "receiver"
+
+		// now all there is left to do is transfer these tokens!
+		ERC20(multisigAndERC20Contract[1]).transferFrom(multisigAndERC20Contract[0], recipient, amount);
+        
+		// increment the nonce
+		addressNonceMapping[multisigAndERC20Contract[0]] = nonce;
+
+		// done!
 	}
 
 	// removed m from generic checkAndTransferFrom, because m always = 1
