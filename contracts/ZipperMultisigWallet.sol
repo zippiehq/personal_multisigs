@@ -127,10 +127,6 @@ contract ZipperMultisigWallet{
 		// verify that the multisig wallet previously signed that these keys can access the funds
 		require(verifyMultisigKeyAllowsAddresses(allSignersPossible, m, multisigAndERC20Contract[0], v[0], r[0], s[0]));
 
-		// verify that the msg.sender account is also in the array of allowed addresses.
-		// if it is, then we accept the msg.sender as one of the signers 
-		require(checkIfAddressInArray(allSignersPossible, msg.sender));
-
 		// now check that all the other signatures are acceptable, and send tokens
 		
 		// get the new hash to verify
@@ -138,6 +134,13 @@ contract ZipperMultisigWallet{
 
 		// make a memory mapping of (addresses => used this address?) to check for duplicates
 		address[] memory usedAddresses = new address[](m);
+
+		// verify that the msg.sender account is also in the array of allowed addresses.
+		// if it is, then we accept the msg.sender as one of the signers
+		// also, add msg.sender to the userAddresses array 
+		require(checkIfAddressInArray(allSignersPossible, msg.sender));
+
+		usedAddresses[m - 1] = msg.sender;
 
 		// loop through and ec_recover each v[] r[] s[] and verify that a correct address came out, and it wasn't a duplicate
 		address addressVerify;
