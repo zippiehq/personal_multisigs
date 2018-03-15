@@ -61,26 +61,22 @@ contract ZipperMultisigWallet{
 			&& nonce == addressNonceMapping[multisigAndERC20Contract[0]] + 1
 		);
 
-		// verify that the tempPrivKey signed the initial signature of hash keccak256(allSignersPossible, m)
-		bytes32 hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(allSignersPossible, m));
-
-		// perform the ec_recover on this hash with the first v, r, s values
-		address addressVerify = ecrecover(hashVerify, v[0], r[0], s[0]);
-
-		// assert that the address from the ec_recover is equal to the multisig wallet (aka the temp private key)
-		require(addressVerify == multisigAndERC20Contract[0]);
+		// verify that the multisig wallet previously signed that these keys can access the funds
+		require(verifyMultisigKeyAllowsAddresses(allSignersPossible, m, multisigAndERC20Contract[0], v[0], r[0], s[0]));
 
 		// verify that all the other signatures were addresses in allSignersPossible, 
 		// that they all signed keccak256(amount, receiver, nonce), 
 		// and that there are no duplicate signatures/addresses
 
 		// get the new hash to verify
-		hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(amount, recipient, nonce));
+		bytes32 hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(amount, recipient, nonce));
 
 		// make a memory mapping of (addresses => used this address?) to check for duplicates
 		address[] memory usedAddresses = new address[](m);
 
 		// loop through and ec_recover each v[] r[] s[] and verify that a correct address came out, and it wasn't a duplicate
+		address addressVerify;
+
 		for (uint8 i = 1; i < m + 1; i++){
 
 			// get address from ec_recover
@@ -114,91 +110,30 @@ contract ZipperMultisigWallet{
 		// done!
 	}
 
-	// identical to the generic checkAndTransferFrom, but requires addresses to be sorted for optimization
-
-	function checkAndTransferFrom_Sorted(address[] multisigAndERC20Contract, address[] allSignersPossible, uint8 m, uint8[] v, bytes32[] r, bytes32[] s, uint256 nonce, address recipient, uint256 amount) public {
-
-		// sanity check the inputs
-
-		// require that m, n are well formed (m <= n, m not zero, and m not MAX_UINT8)
-		// require that v/r/s.length are equal to (m + the original temp private key sig)
-		// require that the nonce is incremented by 1
-		
-		// removed these checks for efficiency:
-		// require that the balance of the multisig wallet is gt or equal to the amount requesting to be sent
-		// require that the allowance of this contract is gt or equal to the amount requesting to be sent
-		//	&& ERC20(wethAddressLocal).balanceOf(multiSigWallet) >= amount
-		//	&& ERC20(wethAddressLocal).allowance(multiSigWallet, address(this)) >= amount
-
+	function checkAndTransferFrom_SenderSigner(address[] multisigAndERC20Contract, address[] allSignersPossible, uint8 m, uint8[] v, bytes32[] r, bytes32[] s, uint256 nonce, address recipient, uint256 amount) public {
 		require( 
 			multisigAndERC20Contract.length == 2
 			&& m <= allSignersPossible.length 
 			&& m > 0
 			&& m != 0xFF
-			&& r.length == m + 1
-			&& s.length == m + 1
-			&& v.length == m + 1
+			// changes here, where r/s/v.length must be == m because the msg.sender is the signer
+			&& r.length == m
+			&& s.length == m
+			&& v.length == m
+			// end changes
 			&& nonce == addressNonceMapping[multisigAndERC20Contract[0]] + 1
 		);
 
-		// verify that the tempPrivKey signed the initial signature of hash keccak256(allSignersPossible, m)
-		bytes32 hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(allSignersPossible, m));
+		// verify that the multisig wallet previously signed that these keys can access the funds
+		require(verifyMultisigKeyAllowsAddresses(allSignersPossible, m, multisigAndERC20Contract[0], v[0], r[0], s[0]));
 
-		// perform the ec_recover on this hash with the first v, r, s values
-		address addressVerify = ecrecover(hashVerify, v[0], r[0], s[0]);
 
-		// assert that the address from the ec_recover is equal to the multisig wallet (aka the temp private key)
-		require(addressVerify == multisigAndERC20Contract[0]);
 
-		// verify that all the other signatures were addresses in allSignersPossible, 
-		// that they all signed keccak256(amount, receiver, nonce), 
-		// and that there are no duplicate signatures/addresses
 
-		// get the new hash to verify
-		hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(amount, recipient, nonce));
-
-		// make a memory mapping of (addresses => used this address?) to check for duplicates
-		address lastAddress;
-
-		// loop through and ec_recover each v[] r[] s[] and verify that a correct address came out, and it wasn't a duplicate
-		for (uint8 i = 1; i < m + 1; i++){
-
-			// get address from ec_recover
-			addressVerify = ecrecover(hashVerify, v[i], r[i], s[i]);
-			
-			// check that address is a valid address 
-			require(checkIfAddressInArray(allSignersPossible, addressVerify));
-
-			// check that this address has not been used before
-			// since the addresses are sorted, we just need to check...
-			require(addressVerify > lastAddress);
-			
-			// if we've made it here, we have verified that the first signature is a valid signature of a legal account,
-			// it isn't a duplicate signature,
-			// and that the signature signed that he/she wants to transfer "amount" ERC20 token to "receiver"
-
-			// push this address to the usedAddresses array
-			
-			usedAddresses[i - 1] = addressVerify;
-
-		}
-
-		// if we've made it here, past the guantlet of asserts(), then we have verified that these are all signatures of legal addresses
-		// and that they all want to transfer "amount" tokens to "receiver"
-
-		// now all there is left to do is transfer these tokens!
-		ERC20(multisigAndERC20Contract[1]).transferFrom(multisigAndERC20Contract[0], recipient, amount);
-        
-		// increment the nonce
-		addressNonceMapping[multisigAndERC20Contract[0]] = nonce;
-
-		// done!
 	}
 
-
-
 	// removed m from generic checkAndTransferFrom, because m always = 1
-	function checkAndTransferFrom1of1(address[] multisigAndERC20Contract, address[] allSignersPossible, uint8[] v, bytes32[] r, bytes32[] s, uint256 nonce, address recipient, uint256 amount) public {
+	function checkAndTransferFrom_1of1(address[] multisigAndERC20Contract, address[] allSignersPossible, uint8[] v, bytes32[] r, bytes32[] s, uint256 nonce, address recipient, uint256 amount) public {
 
 		// can remove sanity checks for m
 		require(
@@ -211,20 +146,14 @@ contract ZipperMultisigWallet{
 			&& allSignersPossible.length == 1
 		);
 
-		// for consistency, keccak256(allSignersPossible, uint8(1)) is done, where 1 is the placeholder for m
-		bytes32 hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(allSignersPossible, uint8(1)));
-
-		// perform the ec_recover on this hash with the first v, r, s values
-		address addressVerify = ecrecover(hashVerify, v[0], r[0], s[0]);
-
-		// assert that the address from the ec_recover is equal to the multisig wallet (aka the temp private key)
-		require(addressVerify == multisigAndERC20Contract[0]);
+		// verify that the multisig wallet previously signed that these keys can access the funds, m = 1 for this function
+		require(verifyMultisigKeyAllowsAddresses(allSignersPossible, uint8(1), multisigAndERC20Contract[0], v[0], r[0], s[0]));
 
 		// get the new hash to verify
-		hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(amount, recipient, nonce));
+		bytes32 hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(amount, recipient, nonce));
 
 		// get address from ec_recover
-		addressVerify = ecrecover(hashVerify, v[1], r[1], s[1]);
+		address addressVerify = ecrecover(hashVerify, v[1], r[1], s[1]);
 		
 		// check that address is a valid address (the one and only address in all signers array)
 		require(allSignersPossible[0] == addressVerify);
@@ -245,7 +174,7 @@ contract ZipperMultisigWallet{
 	}
 
 	// removed m from generic checkAndTransferFrom, because m always = 1
-	function checkAndTransferFrom2of2(address[] multisigAndERC20Contract, address[] allSignersPossible, uint8[] v, bytes32[] r, bytes32[] s, uint256 nonce, address recipient, uint256 amount) public {
+	function checkAndTransferFrom_2of2(address[] multisigAndERC20Contract, address[] allSignersPossible, uint8[] v, bytes32[] r, bytes32[] s, uint256 nonce, address recipient, uint256 amount) public {
 
 		// can remove sanity checks for m
 		require( 
@@ -258,24 +187,18 @@ contract ZipperMultisigWallet{
 			&& allSignersPossible.length == 2
 		);
 
-		// same as generic situation, use 2 as place holder for m
-		bytes32 hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(allSignersPossible, uint8(2)));
-
-		// perform the ec_recover on this hash with the first v, r, s values
-		address addressVerify = ecrecover(hashVerify, v[0], r[0], s[0]);
-
-		// assert that the address from the ec_recover is equal to the multisig wallet (aka the temp private key)
-		require(addressVerify == multisigAndERC20Contract[0]);
+		// verify that the personal multisig key signed for this series of addresses, use m = 2 in this situation
+		require(verifyMultisigKeyAllowsAddresses(allSignersPossible, uint8(2), multisigAndERC20Contract[0], v[0], r[0], s[0]));
 
 		// verify that all the other signatures were addresses in allSignersPossible, 
 		// that they all signed keccak256(amount, receiver, nonce), 
 		// and that there are no duplicate signatures/addresses
 
 		// get the new hash to verify
-		hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(amount, recipient, nonce));
+		bytes32 hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(amount, recipient, nonce));
 
 		// get the first address from ec_recover
-		addressVerify = ecrecover(hashVerify, v[1], r[1], s[1]);
+		address addressVerify = ecrecover(hashVerify, v[1], r[1], s[1]);
 		
 		// check that address is a valid address 
 		require(allSignersPossible[0] == addressVerify || allSignersPossible[1] == addressVerify);
@@ -314,6 +237,22 @@ contract ZipperMultisigWallet{
 			}
 		}
 		return false;
+	}
+
+	// helper function to verify that the multisig wallet (temp priv key) signed to allow this array of 
+	// addresses to access the wallet funds.
+	function verifyMultisigKeyAllowsAddresses(address[] signers, uint8 m, address multisigAddress, uint8 v, bytes32 r, bytes32 s) internal pure returns(bool successfulVerification){
+		// NOTE: YOUR SIGNING APPLICATION MAY NOT PREPEND "\x19Ethereum Signed Message:\n32" TO THE OBJECT TO BE SIGNED. 
+		// FEEL FREE TO REMOVE IF NECESSARY
+
+		// verify that the tempPrivKey signed the initial signature of hash keccak256(allSignersPossible, m)
+		bytes32 hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(signers, m));
+
+		// perform the ec_recover on this hash with the first v, r, s values
+		address addressVerify = ecrecover(hashVerify, v, r, s);
+
+		// return true if the multisig address signed this hash, else return false
+		return multisigAddress == addressVerify;
 	}
 
 	// these functions are simply for testing
