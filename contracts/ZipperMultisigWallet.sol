@@ -18,7 +18,7 @@ contract ZipperMultisigWallet{
 
 	// this is needed to prevent someone from reusing signatures to create unwanted transactions and drain a multsig
 	mapping (address => uint256) addressNonceMapping;
-	mapping (address => bool) checkCashed;
+	mapping (address => mapping(address => bool)) checkCashed;
 
 	// empty contructor
 	function ZipperMultisigWallet() public {
@@ -191,7 +191,7 @@ contract ZipperMultisigWallet{
 			&& r.length == m + 2
 			&& s.length == m + 2
 			&& v.length == m + 2
-			&& !checkCashed[verificationKey]
+			&& !checkCashed[multisigAndERC20Contract[0]][verificationKey]
 		);
 
 		// verify that the multisig wallet previously signed that these keys can access the funds
@@ -247,7 +247,7 @@ contract ZipperMultisigWallet{
 		ERC20(multisigAndERC20Contract[1]).transferFrom(multisigAndERC20Contract[0], msg.sender, amount);
         
         // add to the checkCashed array to so that this check can't be cashed again.
-		checkCashed[verificationKey] = true;
+		checkCashed[multisigAndERC20Contract[0]][verificationKey] = true;
 
 		// done!
 
