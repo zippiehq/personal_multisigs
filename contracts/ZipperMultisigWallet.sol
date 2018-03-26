@@ -18,6 +18,7 @@ contract ZipperMultisigWallet{
 
 	// this is needed to prevent someone from reusing signatures to create unwanted transactions and drain a multsig
 	mapping (address => uint256) addressNonceMapping;
+	mapping (address => bool) checkCashed;
 
 	// empty contructor
 	function ZipperMultisigWallet() public {
@@ -180,18 +181,17 @@ contract ZipperMultisigWallet{
 	}
 
 
-	// changes here, removed the 'recipient' field
-	function checkAndTransferFrom_BlankCheck(address[] multisigAndERC20Contract, address[] allSignersPossible, uint8 m, uint8[] v, bytes32[] r, bytes32[] s, uint256 nonce, uint256 amount) public {
+	function checkAndTransferFrom_BlankCheck(address[] multisigAndERC20Contract, address[] allSignersPossible, uint8 m, uint8[] v, bytes32[] r, bytes32[] s, uint256 amount, address verificationKey) public {
 
 		require( 
 			multisigAndERC20Contract.length == 2
 			&& m <= allSignersPossible.length 
 			&& m > 0
 			&& m != 0xFF
-			&& r.length == m + 1
-			&& s.length == m + 1
-			&& v.length == m + 1
-			&& nonce == addressNonceMapping[multisigAndERC20Contract[0]] + 1
+			&& r.length == m + 2
+			&& s.length == m + 2
+			&& v.length == m + 2
+			&& !checkCashed[verificationKey]
 		);
 
 		// verify that the multisig wallet previously signed that these keys can access the funds
@@ -202,7 +202,7 @@ contract ZipperMultisigWallet{
 		// and that there are no duplicate signatures/addresses
 
 		// changes here, verify that the 'recipient' was just the 0x0 address, this will signify a blank check
-		bytes32 hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(amount, address(0x0), nonce));
+		bytes32 hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(amount, verificationKey));
 
 		// make a memory mapping of (addresses => used this address?) to check for duplicates
 		address[] memory usedAddresses = new address[](m);
@@ -228,17 +228,26 @@ contract ZipperMultisigWallet{
 			// push this address to the usedAddresses array
 			
 			usedAddresses[i - 1] = addressVerify;
-
 		}
 
-		// if we've made it here, past the guantlet of asserts(), then we have verified that these are all signatures of legal addresses
-		// and that they all want to transfer "amount" tokens to "receiver"
+		// now verify the last element in the arrays is the verification key signing eth.sign(msg.sender)
+
+		hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(msg.sender));
+
+		// note that i == m + 1, or the last element in r,s,v
+
+		addressVerify = ecrecover(hashVerify, v[i], r[i], s[i]);
+
+		require(addressVerify == verificationKey);
+
+		// now we have verified that the zipper wallet has signed a check, and the user has knowledge of 
+		// the private verification key to cash the check
 
 		// changes here, where we are sending the tokens to msg.sender (the person cashing the 'blank check')
 		ERC20(multisigAndERC20Contract[1]).transferFrom(multisigAndERC20Contract[0], msg.sender, amount);
         
-		// increment the nonce
-		addressNonceMapping[multisigAndERC20Contract[0]] = nonce;
+        // add to the checkCashed array to so that this check can't be cashed again.
+		checkCashed[verificationKey] = true;
 
 		// done!
 
