@@ -7,22 +7,51 @@ contract("Test Zipper Multisig Check Cashing Functionality", (accounts) => {
 	var zipperMS;
 
 	beforeEach( () => {
-    	return BasicERC20.new(accounts[9]).then( (instance) => {
+    	return BasicERC20.new(accounts[100]).then( (instance) => {
     		basicToken = instance;
     		return ZipperMultisigWallet.new();
      	}).then( (instance) => {
      		zipperMS = instance;
-     		return basicToken.approve(instance.address, web3.toWei(100, "ether"), {from: accounts[9]});
+     		return basicToken.approve(instance.address, web3.toWei(100, "ether"), {from: accounts[100]});
      	});
 	});
 
-	it("should allow a blank check to be cashed once from a 1 of 1 multisig, and fail the second time", async (){
+	it("should allow a blank check to be cashed once from a 1 of 1 multisig, and fail the second time", async () => {
+		// multisig wallet is accounts[100]
+		var signByPrivateKey = await zipperMS.soliditySha3_addresses_m([accounts[0]], 1);
+		var signedByPrivateKey = web3.eth.sign(accounts[100], signByPrivateKey).slice(2);
+
+		var r0 = '0x' + signedByPrivateKey.slice(0,64);
+		var s0 = '0x' + signedByPrivateKey.slice(64,128);
+		var v0 = web3.toDecimal(signedByPrivateKey.slice(128,130)) + 27;
+
+		// verification key is accounts[99]
+		var signByKey1 = await zipperMS.soliditySha3_amount_address(web3.toWei(1, "ether"), accounts[99]);
+		var signedByKey1 = web3.eth.sign(accounts[0], signByKey1).slice(2);
+
+		var r1 = '0x' + signedByKey1.slice(0,64);
+		var s1 = '0x' + signedByKey1.slice(64,128);
+		var v1 = web3.toDecimal(signedByKey1.slice(128,130)) + 27;
+
+		var signByVerification = await zipperMS.soliditySha3_address(accounts[1]);
+		var signedByVerification = web3.eth.sign(accounts[99], signByVerification).slice(2);
+
+		var r2 = '0x' + signedByVerification.slice(0,64);
+		var s2 = '0x' + signedByVerification.slice(64,128);
+		var v2 = web3.toDecimal(signedByVerification.slice(128,130)) + 27;
+
+		//checkAndTransferFrom_BlankCheck(address[] multisigAndERC20Contract, address[] allSignersPossible, uint8 m, uint8[] v, bytes32[] r, bytes32[] s, uint256 amount, address verificationKey) public {
+		await zipperMS.checkAndTransferFrom_BlankCheck([accounts[100], basicToken.address], [accounts[0]], 1, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], web3.toWei(1, "ether"), accounts[99], {from: accounts[1]});
+		console.log(await basicToken.balanceOf(accounts[1]));
+		assert((await basicToken.balanceOf(accounts[1])).toString() === web3.toWei(1, "ether"), "balance did not transfer");
 
 	});
 
-	it("should fail a blank check transfer when the verificationKey is false", async (){
+	it("should fail a blank check transfer when the verificationKey is false", async () => {
 
 	});
 
+	it("should allow a blank check to be cashed from a 2 of 2 multisig", async () => {
 
+	});
 });

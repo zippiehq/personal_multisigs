@@ -386,5 +386,13 @@ contract ZipperMultisigWallet{
 	function soliditySha3_amount_recipient_nonce(uint256 amount, address recipient, uint256 nonce) public pure returns(bytes32){
 		return keccak256(amount, recipient, nonce);
 	}
+
+	function soliditySha3_amount_address(uint256 amount, address key) public pure returns(bytes32){
+		return keccak256(amount, key);
+	}
+
+	function soliditySha3_address(address addr) public pure returns(bytes32){
+		return keccak256(addr);
+	}
 	
 }
