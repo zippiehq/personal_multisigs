@@ -58,6 +58,7 @@ contract BasicERC20 is ERC20 {
 
 			// log event 
 			Transfer(msg.sender, _to, _value);
+			return true;
 		}
 		else {
 			return false;
