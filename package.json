@@ -1,5 +1,5 @@
 {
-  "name": "zippermultisig",
+  "name": "zippiemultisig",
   "version": "1.0.0",
   "description": "Lightweight multisig wallet for Zipper Global",
   "main": "truffle-config.js",
@@ -27,7 +27,7 @@
     "erc20",
     "weth"
   ],
-  "author": "Zipper Global",
+  "author": "Zippie",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/alexwagg/ZipperMultiSig/issues"

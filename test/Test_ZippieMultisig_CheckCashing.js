@@ -1,7 +1,7 @@
 var BasicERC20 = artifacts.require("./BasicERC20.sol");
-var ZipperMultisigWallet = artifacts.require("./ZipperMultisigWallet.sol");
+var ZippieMultisigWallet = artifacts.require("./ZippieMultisigWallet.sol");
 
-contract("Test Zipper Multisig Check Cashing Functionality", (accounts) => {
+contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 
 	var basicToken;
 	var zipperMS;
@@ -9,7 +9,7 @@ contract("Test Zipper Multisig Check Cashing Functionality", (accounts) => {
 	beforeEach( () => {
     	return BasicERC20.new(accounts[100]).then( (instance) => {
     		basicToken = instance;
-    		return ZipperMultisigWallet.new();
+    		return ZippieMultisigWallet.new();
      	}).then( (instance) => {
      		zipperMS = instance;
      		return basicToken.approve(instance.address, web3.toWei(100, "ether"), {from: accounts[100]});

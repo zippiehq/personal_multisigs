@@ -12,7 +12,7 @@ contract ERC20 {
 	event Approval(address indexed _owner, address indexed _spender, uint _value);
 }
 
-contract ZipperMultisigWallet{
+contract ZippieMultisigWallet{
 
 	// declare global variable and mappings
 
@@ -21,7 +21,7 @@ contract ZipperMultisigWallet{
 	mapping (address => mapping(address => bool)) checkCashed;
 
 	// empty contructor
-	function ZipperMultisigWallet() public {
+	function ZippieMultisigWallet() public {
 	}
 
 	// PARAMS:

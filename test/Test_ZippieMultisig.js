@@ -1,22 +1,22 @@
 var BasicERC20 = artifacts.require("./BasicERC20.sol");
-var ZipperMultisigWallet = artifacts.require("./ZipperMultisigWallet.sol");
+var ZippieMultisigWallet = artifacts.require("./ZippieMultisigWallet.sol");
 
-contract("Test Zipper Multisig", (accounts) => {
+contract("Test Zippie Multisig", (accounts) => {
 	// accounts[9] is the "temporary private key"
 
 	it("should deploy zipper multisig, and basic ERC20 test contract, and fund accounts[9] and approve the zipper multisig for full balance", async () => {
 		
-		var zipperMS = await ZipperMultisigWallet.at(ZipperMultisigWallet.address);
+		var zipperMS = await ZippieMultisigWallet.at(ZippieMultisigWallet.address);
 		var basicToken = await BasicERC20.at(BasicERC20.address);
 
 		// make sure that initial balances are set, and the zipper contract is approved 
 		assert((await basicToken.balanceOf(accounts[9])).toString() === web3.toWei(100, "ether"), "balance of temp priv key != initial balance");
-		assert((await basicToken.allowance(accounts[9], ZipperMultisigWallet.address)).toString() === web3.toWei(100, "ether"), "temp priv key has not approved Zipper Multisig for withdrawals");
+		assert((await basicToken.allowance(accounts[9], ZippieMultisigWallet.address)).toString() === web3.toWei(100, "ether"), "temp priv key has not approved Zippie Multisig for withdrawals");
 	});
 
 	it("should allow 1 of 1 multisig transfer, and fail any duplicate transfer", async () => {
 
-		var zipperMS = await ZipperMultisigWallet.at(ZipperMultisigWallet.address);
+		var zipperMS = await ZippieMultisigWallet.at(ZippieMultisigWallet.address);
 		var basicToken = await BasicERC20.at(BasicERC20.address);
 
 		// hash ([address], 1) in the EVM and then sign it with the temporary private key
@@ -64,7 +64,7 @@ contract("Test Zipper Multisig", (accounts) => {
 	});
 
 	it("should allow 2 of 2 multisig transfer", async () => {
-		var zipperMS = await ZipperMultisigWallet.at(ZipperMultisigWallet.address);
+		var zipperMS = await ZippieMultisigWallet.at(ZippieMultisigWallet.address);
 		var basicToken = await BasicERC20.at(BasicERC20.address);
 
 		var signByPrivateKey = await zipperMS.soliditySha3_addresses_m([accounts[1], accounts[2]], 2);
@@ -97,7 +97,7 @@ contract("Test Zipper Multisig", (accounts) => {
 	});
 
 	it("should fail 2 of 2 multisig transfer, when amount is not agreed upon", async () => {
-		var zipperMS = await ZipperMultisigWallet.at(ZipperMultisigWallet.address);
+		var zipperMS = await ZippieMultisigWallet.at(ZippieMultisigWallet.address);
 		var basicToken = await BasicERC20.at(BasicERC20.address);
 
 		var signByPrivateKey = await zipperMS.soliditySha3_addresses_m([accounts[1], accounts[2]], 2);
@@ -171,7 +171,7 @@ contract("Test Zipper Multisig", (accounts) => {
 	});
 
 	it("should pass all three (correct) variants of 2 of 3 multisig transfer", async () => {
-		var zipperMS = await ZipperMultisigWallet.at(ZipperMultisigWallet.address);
+		var zipperMS = await ZippieMultisigWallet.at(ZippieMultisigWallet.address);
 		var basicToken = await BasicERC20.at(BasicERC20.address);
 
 		var signByPrivateKey = await zipperMS.soliditySha3_addresses_m([accounts[1], accounts[2], accounts[3]], 2);
@@ -240,7 +240,7 @@ contract("Test Zipper Multisig", (accounts) => {
 	});
 
 	it("should fail a 2/2 transfer when the same sig is used twice", async () => {
-		var zipperMS = await ZipperMultisigWallet.at(ZipperMultisigWallet.address);
+		var zipperMS = await ZippieMultisigWallet.at(ZippieMultisigWallet.address);
 		var basicToken = await BasicERC20.at(BasicERC20.address);
 
 		var signByPrivateKey = await zipperMS.soliditySha3_addresses_m([accounts[1], accounts[2]], 2);
@@ -270,7 +270,7 @@ contract("Test Zipper Multisig", (accounts) => {
 	});
 
 	it("should fail a 1/1 transfer when the multsig address cannot be ecrecovered", async () => {
-		var zipperMS = await ZipperMultisigWallet.at(ZipperMultisigWallet.address);
+		var zipperMS = await ZippieMultisigWallet.at(ZippieMultisigWallet.address);
 		var basicToken = await BasicERC20.at(BasicERC20.address);
 
 		// note that the private key "signed" an error here, where m = 2 but only a 1/1 multisig by definition
@@ -302,7 +302,7 @@ contract("Test Zipper Multisig", (accounts) => {
 
 	it('should allow a 100/100 multsig transfer', async () => {
 
-		var zipperMS = await ZipperMultisigWallet.at(ZipperMultisigWallet.address);
+		var zipperMS = await ZippieMultisigWallet.at(ZippieMultisigWallet.address);
 		var basicToken = await BasicERC20.at(BasicERC20.address);
 
 		assert(accounts.length > 100, "WARNING: this test is gonna fail because you don't have enough accounts, init truffle with -a 101 for 101 accounts");
