@@ -8,7 +8,8 @@
   },
   "scripts": {
     "node": "testrpc -m 'zipper' -l 8000000 -a 101",
-    "test": "truffle test"
+    "test": "truffle test",
+    "flatten": "truffle-flattener contracts/ZippieMultisigWallet.sol > ZippieMultisigWallet-flat.sol"
   },
   "repository": {
     "type": "git",
@@ -37,5 +38,8 @@
     "ethereumjs-testrpc": "^6.0.3",
     "solidity-coverage": "^0.4.9",
     "truffle": "^4.0.6"
+  },
+  "dependencies": {
+    "truffle-flattener": "^1.2.5"
   }
 }
