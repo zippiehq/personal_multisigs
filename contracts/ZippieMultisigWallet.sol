@@ -394,5 +394,9 @@ contract ZippieMultisigWallet{
 	function soliditySha3_address(address addr) public pure returns(bytes32){
 		return keccak256(addr);
 	}
+
+	function soliditySha3_sign(bytes32 hash) public pure returns(bytes32){
+		return keccak256("\x19Ethereum Signed Message:\n32", hash);
+	}
 	
 }
