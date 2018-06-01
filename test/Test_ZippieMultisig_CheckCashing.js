@@ -33,7 +33,7 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		var s1 = '0x' + signedByKey1.slice(64,128);
 		var v1 = web3.toDecimal(signedByKey1.slice(128,130)) + 27;
 
-		var signByVerification = await zipperMS.soliditySha3_address(accounts[1]);
+		var signByVerification = await zipperMS.soliditySha3_address(accounts[2]);
 		var signedByVerification = web3.eth.sign(accounts[99], signByVerification).slice(2);
 
 		var r2 = '0x' + signedByVerification.slice(0,64);
@@ -41,8 +41,8 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		var v2 = web3.toDecimal(signedByVerification.slice(128,130)) + 27;
 
 		//checkAndTransferFrom_BlankCheck(address[] multisigAndERC20Contract, address[] allSignersPossible, uint8 m, uint8[] v, bytes32[] r, bytes32[] s, uint256 amount, address verificationKey) public {
-		await zipperMS.checkAndTransferFrom_BlankCheck([accounts[100], basicToken.address], [accounts[0]], 1, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], web3.toWei(1, "ether"), accounts[99], {from: accounts[1]});
-		assert((await basicToken.balanceOf(accounts[1])).toString() === web3.toWei(1, "ether"), "balance did not transfer");
+		await zipperMS.checkAndTransferFrom_BlankCheck([accounts[100], basicToken.address], [accounts[0]], 1, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], accounts[2], web3.toWei(1, "ether"), accounts[99], {from: accounts[1]});
+		assert((await basicToken.balanceOf(accounts[2])).toString() === web3.toWei(1, "ether"), "balance did not transfer");
 
 	});
 
@@ -63,7 +63,7 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		var v1 = web3.toDecimal(signedByKey1.slice(128,130)) + 27;
 
 		// sign by a wrong verification key, say accounts[98]
-		var signByVerification = await zipperMS.soliditySha3_address(accounts[1]);
+		var signByVerification = await zipperMS.soliditySha3_address(accounts[2]);
 		var signedByVerification = web3.eth.sign(accounts[98], signByVerification).slice(2);
 
 		var r2 = '0x' + signedByVerification.slice(0,64);
@@ -71,7 +71,7 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		var v2 = web3.toDecimal(signedByVerification.slice(128,130)) + 27;
 
 		try{
-			await zipperMS.checkAndTransferFrom_BlankCheck([accounts[100], basicToken.address], [accounts[0]], 1, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], web3.toWei(1, "ether"), accounts[98], {from: accounts[1]});
+			await zipperMS.checkAndTransferFrom_BlankCheck([accounts[100], basicToken.address], [accounts[0]], 1, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], accounts[2], web3.toWei(1, "ether"), accounts[98], {from: accounts[1]});
 			assert(false, "Verification Key was incorrect, but transfer went through!")
 		}
 		catch(error){
@@ -79,7 +79,7 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		}
 
 		try{
-			await zipperMS.checkAndTransferFrom_BlankCheck([accounts[100], basicToken.address], [accounts[0]], 1, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], web3.toWei(1, "ether"), accounts[99], {from: accounts[1]});
+			await zipperMS.checkAndTransferFrom_BlankCheck([accounts[100], basicToken.address], [accounts[0]], 1, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()],accounts[2], web3.toWei(1, "ether"), accounts[99], {from: accounts[1]});
 			assert(false, "Verification Key was incorrect, but transfer went through!")
 		}
 		catch(error){
@@ -112,14 +112,14 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		var v2 = web3.toDecimal(signedByKey2.slice(128,130)) + 27;
 
 		// accounts[2] is going to "cash" this check
-		var signByVerification = await zipperMS.soliditySha3_address(accounts[2]);
+		var signByVerification = await zipperMS.soliditySha3_address(accounts[3]);
 		var signedByVerification = web3.eth.sign(accounts[99], signByVerification).slice(2);
 
 		var r3 = '0x' + signedByVerification.slice(0,64);
 		var s3 = '0x' + signedByVerification.slice(64,128);
 		var v3 = web3.toDecimal(signedByVerification.slice(128,130)) + 27;
 
-		await zipperMS.checkAndTransferFrom_BlankCheck([accounts[100], basicToken.address], [accounts[0], accounts[1]], 2, [v0, v1, v2, v3], [r0.valueOf(), r1.valueOf(), r2.valueOf(), r3.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf(), s3.valueOf()], web3.toWei(1, "ether"), accounts[99], {from: accounts[2]});
-		assert((await basicToken.balanceOf(accounts[2])).toString() === web3.toWei(1, "ether"), "balance did not transfer");
+		await zipperMS.checkAndTransferFrom_BlankCheck([accounts[100], basicToken.address], [accounts[0], accounts[1]], 2, [v0, v1, v2, v3], [r0.valueOf(), r1.valueOf(), r2.valueOf(), r3.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf(), s3.valueOf()], accounts[3], web3.toWei(1, "ether"), accounts[99], {from: accounts[2]});
+		assert((await basicToken.balanceOf(accounts[3])).toString() === web3.toWei(1, "ether"), "balance did not transfer");
 	});
 });

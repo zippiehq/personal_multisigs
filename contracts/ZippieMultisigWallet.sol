@@ -181,7 +181,7 @@ contract ZippieMultisigWallet{
 	}
 
 
-	function checkAndTransferFrom_BlankCheck(address[] multisigAndERC20Contract, address[] allSignersPossible, uint8 m, uint8[] v, bytes32[] r, bytes32[] s, uint256 amount, address verificationKey) public {
+	function checkAndTransferFrom_BlankCheck(address[] multisigAndERC20Contract, address[] allSignersPossible, uint8 m, uint8[] v, bytes32[] r, bytes32[] s, address recipient, uint256 amount, address verificationKey) public {
 
 		require( 
 			multisigAndERC20Contract.length == 2
@@ -232,7 +232,7 @@ contract ZippieMultisigWallet{
 
 		// now verify the last element in the arrays is the verification key signing eth.sign(msg.sender)
 
-		hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(msg.sender));
+		hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(recipient));
 
 		// note that i == m + 1, or the last element in r,s,v
 
@@ -244,7 +244,7 @@ contract ZippieMultisigWallet{
 		// the private verification key to cash the check
 
 		// changes here, where we are sending the tokens to msg.sender (the person cashing the 'blank check')
-		ERC20(multisigAndERC20Contract[1]).transferFrom(multisigAndERC20Contract[0], msg.sender, amount);
+		ERC20(multisigAndERC20Contract[1]).transferFrom(multisigAndERC20Contract[0], recipient, amount);
         
         // add to the checkCashed array to so that this check can't be cashed again.
 		checkCashed[multisigAndERC20Contract[0]][verificationKey] = true;
