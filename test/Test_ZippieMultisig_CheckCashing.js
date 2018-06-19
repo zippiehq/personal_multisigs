@@ -41,8 +41,10 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		var v2 = web3.toDecimal(signedByVerification.slice(128,130)) + 27;
 
 		//checkAndTransferFrom_BlankCheck(address[] multisigAndERC20Contract, address[] allSignersPossible, uint8 m, uint8[] v, bytes32[] r, bytes32[] s, uint256 amount, address verificationKey) public {
+		assert(await zipperMS.checkCashed(accounts[100], accounts[99]) === false, "check already marked as cashed before transfer");
 		await zipperMS.checkAndTransferFrom_BlankCheck([accounts[100], basicToken.address], [accounts[0]], 1, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], accounts[2], web3.toWei(1, "ether"), accounts[99], {from: accounts[1]});
 		assert((await basicToken.balanceOf(accounts[2])).toString() === web3.toWei(1, "ether"), "balance did not transfer");
+		assert(await zipperMS.checkCashed(accounts[100], accounts[99]) === true, "check has not been marked as cashed after transfer");
 
 	});
 
@@ -70,6 +72,7 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		var s2 = '0x' + signedByVerification.slice(64,128);
 		var v2 = web3.toDecimal(signedByVerification.slice(128,130)) + 27;
 
+		assert(await zipperMS.checkCashed(accounts[100], accounts[99]) === false, "check already marked as cashed before transfer");
 		try{
 			await zipperMS.checkAndTransferFrom_BlankCheck([accounts[100], basicToken.address], [accounts[0]], 1, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], accounts[2], web3.toWei(1, "ether"), accounts[98], {from: accounts[1]});
 			assert(false, "Verification Key was incorrect, but transfer went through!")
@@ -85,6 +88,7 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		catch(error){
 			assert(error.message == 'VM Exception while processing transaction: revert', "incorrect error type...")
 		}
+		assert(await zipperMS.checkCashed(accounts[100], accounts[99]) === false, "check has been marked as cashed even if transaction didn't went through");
 		
 	});
 
@@ -119,7 +123,9 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		var s3 = '0x' + signedByVerification.slice(64,128);
 		var v3 = web3.toDecimal(signedByVerification.slice(128,130)) + 27;
 
+		assert(await zipperMS.checkCashed(accounts[100], accounts[99]) === false, "check already marked as cashed before transfer");
 		await zipperMS.checkAndTransferFrom_BlankCheck([accounts[100], basicToken.address], [accounts[0], accounts[1]], 2, [v0, v1, v2, v3], [r0.valueOf(), r1.valueOf(), r2.valueOf(), r3.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf(), s3.valueOf()], accounts[3], web3.toWei(1, "ether"), accounts[99], {from: accounts[2]});
 		assert((await basicToken.balanceOf(accounts[3])).toString() === web3.toWei(1, "ether"), "balance did not transfer");
+		assert(await zipperMS.checkCashed(accounts[100], accounts[99]) === true, "check has not been marked as cashed after transfer");
 	});
 });
