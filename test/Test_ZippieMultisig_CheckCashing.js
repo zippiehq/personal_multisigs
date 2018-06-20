@@ -46,6 +46,14 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		assert((await basicToken.balanceOf(accounts[2])).toString() === web3.toWei(1, "ether"), "balance did not transfer");
 		assert(await zipperMS.checkCashed(accounts[100], accounts[99]) === true, "check has not been marked as cashed after transfer");
 
+		try{
+			// try the same exact transfer 			
+			await zipperMS.checkAndTransferFrom_BlankCheck([accounts[100], basicToken.address], [accounts[0]], 1, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], accounts[2], web3.toWei(1, "ether"), accounts[99], {from: accounts[1]});
+			assert(false, "duplicate transfer went through, but should have failed!")
+		}
+		catch(error){
+			assert(error.message == 'VM Exception while processing transaction: revert', error.message)
+		}
 	});
 
 	it("should fail a blank check transfer when the verificationKey is false", async () => {
