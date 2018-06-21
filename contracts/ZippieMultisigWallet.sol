@@ -18,7 +18,7 @@ contract ZippieMultisigWallet{
 
 	// this is needed to prevent someone from reusing signatures to create unwanted transactions and drain a multsig
 	mapping (address => uint256) addressNonceMapping;
-	mapping (address => mapping(address => bool)) checkCashed;
+	mapping (address => mapping(address => bool)) public checkCashed;
 
 	// empty contructor
 	function ZippieMultisigWallet() public {
