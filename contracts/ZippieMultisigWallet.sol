@@ -198,10 +198,10 @@ contract ZippieMultisigWallet{
 		require(verifyMultisigKeyAllowsAddresses(allSignersPossible, m, multisigAndERC20Contract[0], v[0], r[0], s[0]));
 
 		// verify that all the other signatures were addresses in allSignersPossible, 
-		// that they all signed keccak256(amount, receiver, nonce), 
+		// that they all signed keccak256(amount, verificationKey),
 		// and that there are no duplicate signatures/addresses
 
-		// changes here, verify that the 'recipient' was just the 0x0 address, this will signify a blank check
+		// get the new hash to verify
 		bytes32 hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(amount, verificationKey));
 
 		// make a memory mapping of (addresses => used this address?) to check for duplicates
@@ -223,14 +223,15 @@ contract ZippieMultisigWallet{
 
 			// if we've made it here, we have verified that the first signature is a valid signature of a legal account,
 			// it isn't a duplicate signature,
-			// and that the signature signed that he/she wants to transfer "amount" ERC20 token to "receiver"
+			// and that the signature signed that he/she wants to transfer "amount" ERC20 token to any chosen "receiver" by the user that has knowledge of 
+			// the private verification key to cash the check 
 
 			// push this address to the usedAddresses array
 			
 			usedAddresses[i - 1] = addressVerify;
 		}
 
-		// now verify the last element in the arrays is the verification key signing eth.sign(msg.sender)
+		// now verify the last element in the arrays is the verification key signing the recipient address
 
 		hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(recipient));
 
@@ -240,10 +241,11 @@ contract ZippieMultisigWallet{
 
 		require(addressVerify == verificationKey);
 
-		// now we have verified that the zipper wallet has signed a check, and the user has knowledge of 
-		// the private verification key to cash the check
+		// if we've made it here, past the guantlet of asserts(), then we have verified that these are all signatures of legal addresses
+		// and that they all want to transfer "amount" tokens to any chosen "receiver" by the user that has knowledge of 
+		// the private verification key to cash the check 
 
-		// changes here, where we are sending the tokens to msg.sender (the person cashing the 'blank check')
+		// now all there is left to do is transfer these tokens!
 		ERC20(multisigAndERC20Contract[1]).transferFrom(multisigAndERC20Contract[0], recipient, amount);
         
         // add to the checkCashed array to so that this check can't be cashed again.
