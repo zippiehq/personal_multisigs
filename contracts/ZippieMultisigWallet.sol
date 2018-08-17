@@ -21,7 +21,7 @@ contract ZippieMultisigWallet{
 	mapping (address => mapping(address => bool)) public checkCashed;
 
 	// empty contructor
-	function ZippieMultisigWallet() public {
+	constructor() public {
 	}
 
 	// PARAMS:
