@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity 0.4.24;
 
 // basic ERC20 interface contract 
 contract ERC20 {
@@ -70,7 +70,7 @@ contract ZippieMultisigWallet{
         // and that there are no duplicate signatures/addresses
 
         // get the new hash to verify
-        bytes32 hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(amount, recipient, nonce));
+        bytes32 hashVerify = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(abi.encodePacked(amount, recipient, nonce))));
 
         // make a memory mapping of (addresses => used this address?) to check for duplicates
         address[] memory usedAddresses = new address[](m);
@@ -129,7 +129,7 @@ contract ZippieMultisigWallet{
         // now check that all the other signatures are acceptable, and send tokens
         
         // get the new hash to verify
-        bytes32 hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(amount, recipient, nonce));
+        bytes32 hashVerify = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(abi.encodePacked(amount, recipient, nonce))));
 
         // make a memory mapping of (addresses => used this address?) to check for duplicates
         address[] memory usedAddresses = new address[](m);
@@ -194,7 +194,7 @@ contract ZippieMultisigWallet{
         // and that there are no duplicate signatures/addresses
 
         // get the new hash to verify
-        bytes32 hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(amount, verificationKey));
+        bytes32 hashVerify = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(abi.encodePacked(amount, verificationKey))));
 
         // make a memory mapping of (addresses => used this address?) to check for duplicates
         address[] memory usedAddresses = new address[](m);
@@ -222,7 +222,7 @@ contract ZippieMultisigWallet{
         }
 
         // now verify the last element in the arrays is the verification key signing the recipient address
-        hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(recipient));
+        hashVerify = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(abi.encodePacked(recipient))));
 
         // note that i == m + 1, or the last element in r,s,v
         addressVerify = ecrecover(hashVerify, v[i], r[i], s[i]);
@@ -263,7 +263,7 @@ contract ZippieMultisigWallet{
         // and that there are no duplicate signatures/addresses
 
         // get the new hash to verify
-        bytes32 hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(amount, addresses[3]));
+        bytes32 hashVerify = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(abi.encodePacked(amount, addresses[3]))));
 
         // make a memory mapping of (addresses => used this address?) to check for duplicates
         address[] memory usedAddresses = new address[](m[1] + m[3]);
@@ -275,7 +275,7 @@ contract ZippieMultisigWallet{
 
             if (i > m[1]) {
                 // verify card digests
-                hashVerify = keccak256("\x19Ethereum Signed Message:\n32", cardDigests[i-m[0]-1]);
+                hashVerify = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", cardDigests[i-m[0]-1]));
             }
 
             // get address from ec_recover
@@ -297,7 +297,7 @@ contract ZippieMultisigWallet{
         }
 
         // now verify the last element in the arrays is the verification key signing the recipient address
-        hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(addresses[2]));
+        hashVerify = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(abi.encodePacked(addresses[2]))));
 
         // note that i == m + 1, or the last element in r,s,v
         addressVerify = ecrecover(hashVerify, v[i], r[i], s[i]);
@@ -333,7 +333,7 @@ contract ZippieMultisigWallet{
         require(verifyMultisigKeyAllowsAddresses(allSignersPossible, uint8(1), multisigAndERC20Contract[0], v[0], r[0], s[0]));
 
         // get the new hash to verify
-        bytes32 hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(amount, recipient, nonce));
+        bytes32 hashVerify = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(abi.encodePacked(amount, recipient, nonce))));
 
         // get address from ec_recover
         address addressVerify = ecrecover(hashVerify, v[1], r[1], s[1]);
@@ -376,7 +376,7 @@ contract ZippieMultisigWallet{
         // and that there are no duplicate signatures/addresses
 
         // get the new hash to verify
-        bytes32 hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(amount, recipient, nonce));
+        bytes32 hashVerify = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(abi.encodePacked(amount, recipient, nonce))));
 
         // get the first address from ec_recover
         address addressVerify = ecrecover(hashVerify, v[1], r[1], s[1]);
@@ -425,7 +425,7 @@ contract ZippieMultisigWallet{
         // FEEL FREE TO REMOVE IF NECESSARY
 
         // verify that the tempPrivKey signed the initial signature of hash keccak256(allSignersPossible, m)
-        bytes32 hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(signers, m));
+        bytes32 hashVerify = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(abi.encodePacked(signers, m))));
 
         // perform the ec_recover on this hash with the first v, r, s values
         address addressVerify = ecrecover(hashVerify, v, r, s);
@@ -438,7 +438,7 @@ contract ZippieMultisigWallet{
         // NOTE: YOUR SIGNING APPLICATION MAY NOT PREPEND "\x19Ethereum Signed Message:\n32" TO THE OBJECT TO BE SIGNED. 
         // FEEL FREE TO REMOVE IF NECESSARY
         // verify that the tempPrivKey signed the initial signature of hash keccak256(allSignersPossible, m)
-        bytes32 hashVerify = keccak256("\x19Ethereum Signed Message:\n32", keccak256(signers, m));
+        bytes32 hashVerify = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(abi.encodePacked(signers, m))));
 
         // perform the ec_recover on this hash with the first v, r, s values
         address addressVerify = ecrecover(hashVerify, v, r, s);
@@ -451,26 +451,26 @@ contract ZippieMultisigWallet{
     // since truffle/web3 hashes things in a different way, we can call these pure functions
     // and hash things inside the evm so we can be sure that things will hash the same
     function soliditySha3_addresses_m(address[] validAddresses, uint8 m) public pure returns(bytes32){
-        return keccak256(validAddresses, m);
+        return keccak256(abi.encodePacked(validAddresses, m));
     }
 
     function soliditySha3_addresses_m_cards(address[] validAddresses, uint8[] m) public pure returns(bytes32){
-        return keccak256(validAddresses, m);
+        return keccak256(abi.encodePacked(validAddresses, m));
     }
 
     function soliditySha3_amount_recipient_nonce(uint256 amount, address recipient, uint256 nonce) public pure returns(bytes32){
-        return keccak256(amount, recipient, nonce);
+        return keccak256(abi.encodePacked(amount, recipient, nonce));
     }
 
     function soliditySha3_amount_address(uint256 amount, address key) public pure returns(bytes32){
-        return keccak256(amount, key);
+        return keccak256(abi.encodePacked(amount, key));
     }
 
     function soliditySha3_address(address addr) public pure returns(bytes32){
-        return keccak256(addr);
+        return keccak256(abi.encodePacked(addr));
     }
 
     function soliditySha3_sign(bytes32 hash) public pure returns(bytes32){
-        return keccak256("\x19Ethereum Signed Message:\n32", hash);
+        return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
     }
 }
