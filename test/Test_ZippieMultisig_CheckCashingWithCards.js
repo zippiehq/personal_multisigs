@@ -228,45 +228,38 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		const multisig = accounts[5] // multisig wallet (sender, don't sign with this account since the private key should be forgotten at creation)
 		const sponsor = accounts[6] // Zippie PMG server
 		
+		const addresses = [multisig, basicToken.address, recipient, verificationKey]
+		const signers = [signer, card]
 		const m = [1, 1, 1, 1]
 
-		var signByPrivateKey = await zipperMS.soliditySha3_addresses_m_cards([signer, card], m);
-		var signedByPrivateKey = web3.eth.sign(multisig, signByPrivateKey).slice(2);
-
-		var r0 = '0x' + signedByPrivateKey.slice(0,64);
-		var s0 = '0x' + signedByPrivateKey.slice(64,128);
-		var v0 = web3.toDecimal(signedByPrivateKey.slice(128,130)) + 27;
+		const multisigHash = await zipperMS.soliditySha3_addresses_m_cards(signers, m);
+		const multisigSignature = web3.eth.sign(multisig, multisigHash).slice(2);
+		const multisigSig = getRSV(multisigSignature)
 
 		// sign by multisig signer
-		var signByKey1 = await zipperMS.soliditySha3_amount_address(web3.toWei(1, "ether"), verificationKey);
-		var signedByKey1 = web3.eth.sign(signer, signByKey1).slice(2);
-
-		var r1 = '0x' + signedByKey1.slice(0,64);
-		var s1 = '0x' + signedByKey1.slice(64,128);
-		var v1 = web3.toDecimal(signedByKey1.slice(128,130)) + 27;
+		const blankCheckHash = await zipperMS.soliditySha3_amount_address(web3.toWei(1, "ether"), verificationKey);
+		const blankCheckSignature = web3.eth.sign(signer, blankCheckHash).slice(2);
+		const blankCheckSig = getRSV(blankCheckSignature)
 
 		// sign by a random verification key
-		// var signByVerification = web3.utils.soliditySha3("\x19Ethereum Signed Message:\n32", recipient);
-		var signByVerification = await zipperMS.soliditySha3_address(recipient);
-		var signedByVerification = web3.eth.sign(verificationKey, signByVerification).slice(2);
-
-		var r2 = '0x' + signedByVerification.slice(0,64);
-		var s2 = '0x' + signedByVerification.slice(64,128);
-		var v2 = web3.toDecimal(signedByVerification.slice(128,130)) + 27;
+		const recipientHash = await zipperMS.soliditySha3_address(recipient);
+		const recipientSignature = web3.eth.sign(verificationKey, recipientHash).slice(2);
+		const recipientSig = getRSV(recipientSignature)
 
 		const digest = '0xABCDEF'
-		var signByCard = await zipperMS.soliditySha3_sign(digest)
+		const digestHash = await zipperMS.soliditySha3_sign(digest)
 		// sign card with incorrect account
-		var signedByCard = web3.eth.sign(payer, signByCard).slice(2);
+		const digestSignature = web3.eth.sign(payer, digestHash).slice(2);
+		const digestSig = getRSV(digestSignature)
 		
-		var rCard = '0x' + signedByCard.slice(0,64);
-		var sCard = '0x' + signedByCard.slice(64,128);
-		var vCard = web3.toDecimal(signedByCard.slice(128,130)) + 27;
+		const v = [multisigSig.v, blankCheckSig.v, digestSig.v, recipientSig.v]
+		const r = [multisigSig.r.valueOf(), blankCheckSig.r.valueOf(), digestSig.r.valueOf(), recipientSig.r.valueOf()]
+		const s = [multisigSig.s.valueOf(), blankCheckSig.s.valueOf(), digestSig.s.valueOf(), recipientSig.s.valueOf()]
 
 		assert(await zipperMS.checkCashed(multisig, verificationKey) === false, "check already marked as cashed before transfer");
-	
+
 		try {
-			await zipperMS.checkAndTransferFrom_BlankCheck_Card([multisig, basicToken.address, recipient, verificationKey], [signer, card], m, [v0, v1, vCard, v2], [r0.valueOf(), r1.valueOf(), rCard.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), sCard.valueOf(), s2.valueOf()], web3.toWei(1, "ether"), [signByCard], {from: sponsor});
+			await zipperMS.checkAndTransferFrom_BlankCheck_Card(addresses, signers, m, v, r, s, web3.toWei(1, "ether"), [digestHash], {from: sponsor});
 			assert(false, "transfer went through even though card was signed by wrong account")
 		} catch (error) {
 			assert(error.message == 'VM Exception while processing transaction: revert', error.message)
@@ -276,4 +269,8 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 
 function log(title, msg) {
 	console.log(title + ': ' + msg)
+}
+
+function getRSV(str) {
+	return {r:'0x' + str.slice(0,64), s: '0x' + str.slice(64,128), v: web3.toDecimal(str.slice(128,130)) + 27 };
 }
