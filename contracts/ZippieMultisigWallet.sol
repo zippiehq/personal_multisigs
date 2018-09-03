@@ -20,10 +20,6 @@ contract ZippieMultisigWallet{
     mapping (address => uint256) addressNonceMapping;
     mapping (address => mapping(address => bool)) public checkCashed;
 
-    // empty contructor
-    constructor() public {
-    }
-
     // PARAMS:
 
     // address[2] multisigAndERC20Contract -- a len 2 array of [multisig address to withdraw from, ERC20 token contract to use]
