@@ -278,9 +278,6 @@ contract ZippieMultisigWallet{
         // make a memory mapping of (addresses => used this address?) to check for duplicates
         address[] memory usedAddresses = new address[](m[1] + m[3]);
 
-        // store used digests to check for duplicates
-        bytes32[] memory usedDigests = new bytes32[](m[3]); // or cardDigests.length
-
         // loop through and ec_recover each v[] r[] s[] and verify that a correct address came out, and it wasn't a duplicate
         address addressVerify;
 
@@ -289,11 +286,6 @@ contract ZippieMultisigWallet{
             if (i > m[1]) {
                 // verify card digests
                 hashVerify = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", cardDigests[i-m[0]-1]));
-
-                // check that this digest has not been used before
-                require(!checkIfBytes32InArray(usedDigests, cardDigests[i-m[0]-1]));
-
-                usedDigests[i-m[0]-1] = cardDigests[i-m[0]-1];
             }
 
             // get address from ec_recover
@@ -312,7 +304,6 @@ contract ZippieMultisigWallet{
 
             // push this address to the usedAddresses array
             usedAddresses[i - 1] = addressVerify;
-
         }
 
         // now verify the last element in the arrays is the verification key signing the recipient address
@@ -431,16 +422,6 @@ contract ZippieMultisigWallet{
         // loop through all addresses in array
         for (uint i = 0; i < validAddresses.length; i++){
             if (checkAddress == validAddresses[i]){ 
-                return true;
-            }
-        }
-        return false;
-    }
-
-    function checkIfBytes32InArray(bytes32[] validAddresses, bytes32 checkAddress) internal pure returns(bool) {
-
-        for (uint i = 0; i < validAddresses.length; i++) {
-            if (checkAddress == validAddresses[i]) { 
                 return true;
             }
         }
