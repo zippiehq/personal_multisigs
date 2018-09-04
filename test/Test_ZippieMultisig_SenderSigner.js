@@ -4,21 +4,26 @@ var ZippieMultisigWallet = artifacts.require("./ZippieMultisigWallet.sol");
 contract("Test Zippie Multisig", (accounts) => {
 	// accounts[9] is the "temporary private key"
 
-	it("should deploy zipper multisig, and basic ERC20 test contract, and fund accounts[9] and approve the zipper multisig for full balance", async () => {
-		
-		var zipperMS = await ZippieMultisigWallet.at(ZippieMultisigWallet.address);
-		var basicToken = await BasicERC20.at(BasicERC20.address);
+	var basicToken;
+	var zipperMS;
 
+	before( () => {
+    	return BasicERC20.new(accounts[9]).then( (instance) => {
+    		basicToken = instance;
+    		return ZippieMultisigWallet.new();
+     	}).then( (instance) => {
+     		zipperMS = instance;
+     		return basicToken.approve(instance.address, web3.toWei(100, "ether"), {from: accounts[9]});
+     	});
+	});
+
+	it("should deploy zipper multisig, and basic ERC20 test contract, and fund accounts[9] and approve the zipper multisig for full balance", async () => {
 		// make sure that initial balances are set, and the zipper contract is approved 
 		assert((await basicToken.balanceOf(accounts[9])).toString() === web3.toWei(100, "ether"), "balance of temp priv key != initial balance");
-		assert((await basicToken.allowance(accounts[9], ZippieMultisigWallet.address)).toString() === web3.toWei(100, "ether"), "temp priv key has not approved Zippie Multisig for withdrawals");
+		assert((await basicToken.allowance(accounts[9], zipperMS.address)).toString() === web3.toWei(100, "ether"), "temp priv key has not approved Zippie Multisig for withdrawals");
 	});
 
 	it("should allow 1 of 1 multisig transfer, and fail any duplicate transfer", async () => {
-
-		var zipperMS = await ZippieMultisigWallet.at(ZippieMultisigWallet.address);
-		var basicToken = await BasicERC20.at(BasicERC20.address);
-
 		// hash ([address], 1) in the EVM and then sign it with the temporary private key
 		// according to the zipper multisig, this allows 'address' to transfer funds out of temp priv key
 		var signByPrivateKey = await zipperMS.soliditySha3_addresses_m([accounts[0]], 1);
@@ -43,9 +48,6 @@ contract("Test Zippie Multisig", (accounts) => {
 	});
 
 	it("should allow 2 of 2 multisig transfer", async () => {
-		var zipperMS = await ZippieMultisigWallet.at(ZippieMultisigWallet.address);
-		var basicToken = await BasicERC20.at(BasicERC20.address);
-
 		var signByPrivateKey = await zipperMS.soliditySha3_addresses_m([accounts[1], accounts[2]], 2);
 		var signedByPrivateKey = web3.eth.sign(accounts[9], signByPrivateKey).slice(2);
 
@@ -70,9 +72,6 @@ contract("Test Zippie Multisig", (accounts) => {
 	});
 
 	it("should fail 2 of 2 multisig transfer, when amount is not agreed upon", async () => {
-		var zipperMS = await ZippieMultisigWallet.at(ZippieMultisigWallet.address);
-		var basicToken = await BasicERC20.at(BasicERC20.address);
-
 		var signByPrivateKey = await zipperMS.soliditySha3_addresses_m([accounts[1], accounts[2]], 2);
 		var signedByPrivateKey = web3.eth.sign(accounts[9], signByPrivateKey).slice(2);
 
@@ -100,9 +99,6 @@ contract("Test Zippie Multisig", (accounts) => {
 	});
 
 	it("should pass all three (correct) variants of 2 of 3 multisig transfer", async () => {
-		var zipperMS = await ZippieMultisigWallet.at(ZippieMultisigWallet.address);
-		var basicToken = await BasicERC20.at(BasicERC20.address);
-
 		var signByPrivateKey = await zipperMS.soliditySha3_addresses_m([accounts[1], accounts[2], accounts[3]], 2);
 		var signedByPrivateKey = web3.eth.sign(accounts[9], signByPrivateKey).slice(2);
 
@@ -154,9 +150,6 @@ contract("Test Zippie Multisig", (accounts) => {
 	});
 
 	it("should fail a 2/2 transfer when msg.sender signs and sends", async () => {
-		var zipperMS = await ZippieMultisigWallet.at(ZippieMultisigWallet.address);
-		var basicToken = await BasicERC20.at(BasicERC20.address);
-
 		var signByPrivateKey = await zipperMS.soliditySha3_addresses_m([accounts[1], accounts[2]], 2);
 		var signedByPrivateKey = web3.eth.sign(accounts[9], signByPrivateKey).slice(2);
 
