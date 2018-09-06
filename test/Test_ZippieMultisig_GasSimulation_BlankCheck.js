@@ -26,9 +26,11 @@ contract("Zippie Multisig Gas Simulator", (accounts) => {
 
         var initialBalance = await web3.eth.getBalance(accounts[10]);
 
+		const m = [1, 1, 0, 0]
+
 		// accounts[100] is multisig wallet (sender, don't sign with this account since the private key should be forgotten at creation)
 		// accounts[0] is multisig signer (1of1)
-		var signByPrivateKey = await zipperMS.soliditySha3_addresses_m([accounts[0]], 1);
+		var signByPrivateKey = await zipperMS.soliditySha3_addresses_m([accounts[0]], m);
 		var signedByPrivateKey = web3.eth.sign(accounts[100], signByPrivateKey).slice(2);
 
 		var r0 = '0x' + signedByPrivateKey.slice(0,64);
@@ -55,7 +57,7 @@ contract("Zippie Multisig Gas Simulator", (accounts) => {
         
         // account[10] is sponsor (e.g Zippie PMG server)
 		// checkAndTransferFrom_BlankCheck(address[] multisigAndERC20Contract, address[] allSignersPossible, uint8 m, uint8[] v, bytes32[] r, bytes32[] s, address recipient, uint256 amount, address verificationKey) public {
-		await zipperMS.checkAndTransferFrom_BlankCheck([accounts[100], basicToken.address], [accounts[0]], 1, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], accounts[2], web3.toWei(1, "ether"), accounts[99], {from: accounts[10], gasPrice: 1});
+		await zipperMS.checkAndTransferFrom_BlankCheck_Card([accounts[100], basicToken.address, accounts[2], accounts[99]], [accounts[0]], m, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], web3.toWei(1, "ether"), [], {from: accounts[10], gasPrice: 1});
         
         console.log(initialBalance.minus(await web3.eth.getBalance(accounts[10])).toString() + ' gas was used.');
 
@@ -83,7 +85,7 @@ contract("Zippie Multisig Gas Simulator", (accounts) => {
 		var v2 = web3.toDecimal(signedByVerification.slice(128,130)) + 27;
 
         // account[10] is sponsor (e.g Zippie PMG server)
-		await zipperMS.checkAndTransferFrom_BlankCheck([accounts[100], basicToken.address], [accounts[0]], 1, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], accounts[2], web3.toWei(1, "ether"), accounts[98], {from: accounts[10], gasPrice: 1});
+		await zipperMS.checkAndTransferFrom_BlankCheck_Card([accounts[100], basicToken.address, accounts[2], accounts[98]], [accounts[0]], m, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], web3.toWei(1, "ether"), [], {from: accounts[10], gasPrice: 1});
         
         console.log(initialBalance.minus(await web3.eth.getBalance(accounts[10])).toString() + ' gas was used.');
     });
@@ -98,10 +100,12 @@ contract("Zippie Multisig Gas Simulator", (accounts) => {
 
         var initialBalance = await web3.eth.getBalance(accounts[10]);
 
+		const m = [2, 2, 0, 0]
+
         // accounts[100] is multisig wallet (sender, don't sign with this account since the private key should be forgotten at creation)
 		// accounts[0] is multisig signer 1 (1of2)
 		// accounts[1] is multisig signer 2 (2of2)
-        var signByPrivateKey = await zipperMS.soliditySha3_addresses_m([accounts[0], accounts[1]], 2);
+        var signByPrivateKey = await zipperMS.soliditySha3_addresses_m([accounts[0], accounts[1]], m);
 		var signedByPrivateKey = web3.eth.sign(accounts[100], signByPrivateKey).slice(2);
 
 		var r0 = '0x' + signedByPrivateKey.slice(0,64);
@@ -136,7 +140,7 @@ contract("Zippie Multisig Gas Simulator", (accounts) => {
 		var v3 = web3.toDecimal(signedByVerification.slice(128,130)) + 27;
 
         // account[10] is sponsor (e.g Zippie PMG server)
-		await zipperMS.checkAndTransferFrom_BlankCheck([accounts[100], basicToken.address], [accounts[0], accounts[1]], 2, [v0, v1, v2, v3], [r0.valueOf(), r1.valueOf(), r2.valueOf(), r3.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf(), s3.valueOf()], accounts[3], web3.toWei(1, "ether"), accounts[99], {from: accounts[10], gasPrice: 1});
+		await zipperMS.checkAndTransferFrom_BlankCheck_Card([accounts[100], basicToken.address, accounts[3], accounts[99]], [accounts[0], accounts[1]], m, [v0, v1, v2, v3], [r0.valueOf(), r1.valueOf(), r2.valueOf(), r3.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf(), s3.valueOf()], web3.toWei(1, "ether"), [], {from: accounts[10], gasPrice: 1});
         
         console.log(initialBalance.minus(await web3.eth.getBalance(accounts[10])).toString() + ' gas was used.');
 
@@ -173,7 +177,7 @@ contract("Zippie Multisig Gas Simulator", (accounts) => {
 		var v3 = web3.toDecimal(signedByVerification.slice(128,130)) + 27;
         
         // account[10] is sponsor (e.g Zippie PMG server)
-		await zipperMS.checkAndTransferFrom_BlankCheck([accounts[100], basicToken.address], [accounts[0], accounts[1]], 2, [v0, v1, v2, v3], [r0.valueOf(), r1.valueOf(), r2.valueOf(), r3.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf(), s3.valueOf()], accounts[2], web3.toWei(1, "ether"), accounts[98], {from: accounts[10], gasPrice: 1});
+		await zipperMS.checkAndTransferFrom_BlankCheck_Card([accounts[100], basicToken.address, accounts[2], accounts[98]], [accounts[0], accounts[1]], m, [v0, v1, v2, v3], [r0.valueOf(), r1.valueOf(), r2.valueOf(), r3.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf(), s3.valueOf()], web3.toWei(1, "ether"), [], {from: accounts[10], gasPrice: 1});
                 
         console.log(initialBalance.minus(await web3.eth.getBalance(accounts[10])).toString() + ' gas was used.');
     });

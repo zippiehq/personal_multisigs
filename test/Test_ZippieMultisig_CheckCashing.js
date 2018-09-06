@@ -19,7 +19,9 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 	it("should allow a blank check to be cashed once from a 1 of 1 multisig, and fail the second time", async () => {
 		// accounts[100] is multisig wallet (sender, don't sign with this account since the private key should be forgotten at creation)
 		// accounts[0] is multisig signer (1of1)
-		var signByPrivateKey = await zipperMS.soliditySha3_addresses_m([accounts[0]], 1);
+		const m = [1, 1, 0, 0]
+
+		var signByPrivateKey = await zipperMS.soliditySha3_addresses_m([accounts[0]], m);
 		var signedByPrivateKey = web3.eth.sign(accounts[100], signByPrivateKey).slice(2);
 
 		var r0 = '0x' + signedByPrivateKey.slice(0,64);
@@ -50,7 +52,7 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		
 		// account[10] is sponsor (e.g Zippie PMG server)
 		// checkAndTransferFrom_BlankCheck(address[] multisigAndERC20Contract, address[] allSignersPossible, uint8 m, uint8[] v, bytes32[] r, bytes32[] s, address recipient, uint256 amount, address verificationKey) public {
-		await zipperMS.checkAndTransferFrom_BlankCheck([accounts[100], basicToken.address], [accounts[0]], 1, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], accounts[2], web3.toWei(1, "ether"), accounts[99], {from: accounts[10]});
+		await zipperMS.checkAndTransferFrom_BlankCheck_Card([accounts[100], basicToken.address, accounts[2], accounts[99]], [accounts[0]], m, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], web3.toWei(1, "ether"), [], {from: accounts[10]});
 		
 		var newBalanceSender = await basicToken.balanceOf(accounts[100])
 		var newBalanceRecipient = await basicToken.balanceOf(accounts[2])	
@@ -60,7 +62,7 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 
 		try{
 			// try the same exact transfer 			
-			await zipperMS.checkAndTransferFrom_BlankCheck([accounts[100], basicToken.address], [accounts[0]], 1, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], accounts[2], web3.toWei(1, "ether"), accounts[99], {from: accounts[10]});
+			await zipperMS.checkAndTransferFrom_BlankCheck_Card([accounts[100], basicToken.address, accounts[2], accounts[99]], [accounts[0]], [1, 1, 0, 0], [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], web3.toWei(1, "ether"), [], {from: accounts[10]});
 			assert(false, "duplicate transfer went through, but should have failed!")
 		}
 		catch(error){
@@ -71,7 +73,9 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 	it("should fail a blank check transfer when the verificationKey is false", async () => {
 		// accounts[100] is multisig wallet (sender, don't sign with this account since the private key should be forgotten at creation)
 		// accounts[0] is multisig signer (1of1)
-		var signByPrivateKey = await zipperMS.soliditySha3_addresses_m([accounts[0]], 1);
+		const m = [1, 1, 0, 0]
+
+		var signByPrivateKey = await zipperMS.soliditySha3_addresses_m([accounts[0]], m);
 		var signedByPrivateKey = web3.eth.sign(accounts[100], signByPrivateKey).slice(2);
 
 		var r0 = '0x' + signedByPrivateKey.slice(0,64);
@@ -100,7 +104,7 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		var initialBalanceRecipient = await basicToken.balanceOf(accounts[2])
 		assert(await zipperMS.checkCashed(accounts[100], accounts[99]) === false, "check already marked as cashed before transfer");
 		try{
-			await zipperMS.checkAndTransferFrom_BlankCheck([accounts[100], basicToken.address], [accounts[0]], 1, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], accounts[2], web3.toWei(1, "ether"), accounts[98], {from: accounts[10]});
+			await zipperMS.checkAndTransferFrom_BlankCheck_Card([accounts[100], basicToken.address, accounts[2], accounts[98]], [accounts[0]], m, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], web3.toWei(1, "ether"), [], {from: accounts[10]});
 			assert(false, "Verification Key was incorrect, but transfer went through!")
 		}
 		catch(error){
@@ -108,8 +112,8 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		}
 
 		try{
-			await zipperMS.checkAndTransferFrom_BlankCheck([accounts[100], basicToken.address], [accounts[0]], 1, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()],accounts[2], web3.toWei(1, "ether"), accounts[99], {from: accounts[10]});
-			assert(false, "Verification Key was incorrect, but transfer went through!")
+			await zipperMS.checkAndTransferFrom_BlankCheck_Card([accounts[100], basicToken.address, accounts[2], accounts[99]], [accounts[0]], m, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], web3.toWei(1, "ether"), [], {from: accounts[10]});
+			assert(false, "Verification Key was correct, transfer still failed!")
 		}
 		catch(error){
 			assert(error.message == 'VM Exception while processing transaction: revert', "incorrect error type...")
@@ -126,7 +130,10 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		// accounts[100] is multisig wallet (sender, don't sign with this account since the private key should be forgotten at creation)
 		// accounts[0] is multisig signer 1 (1of2)
 		// accounts[1] is multisig signer 2 (2of2)
-		var signByPrivateKey = await zipperMS.soliditySha3_addresses_m([accounts[0], accounts[1]], 2);
+		const signers = [accounts[0], accounts[1]]
+		const m = [2, 2, 0, 0]
+
+		var signByPrivateKey = await zipperMS.soliditySha3_addresses_m(signers, m);
 		var signedByPrivateKey = web3.eth.sign(accounts[100], signByPrivateKey).slice(2);
 
 		var r0 = '0x' + signedByPrivateKey.slice(0,64);
@@ -165,7 +172,7 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		assert(await zipperMS.checkCashed(accounts[100], accounts[99]) === false, "check already marked as cashed before transfer");
 		
 		// account[10] is sponsor (e.g Zippie PMG server)
-		await zipperMS.checkAndTransferFrom_BlankCheck([accounts[100], basicToken.address], [accounts[0], accounts[1]], 2, [v0, v1, v2, v3], [r0.valueOf(), r1.valueOf(), r2.valueOf(), r3.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf(), s3.valueOf()], accounts[2], web3.toWei(1, "ether"), accounts[99], {from: accounts[10]});
+		await zipperMS.checkAndTransferFrom_BlankCheck_Card([accounts[100], basicToken.address, accounts[2], accounts[99]], signers, m, [v0, v1, v2, v3], [r0.valueOf(), r1.valueOf(), r2.valueOf(), r3.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf(), s3.valueOf()], web3.toWei(1, "ether"), [], {from: accounts[10]});
 		
 		var newBalanceSender = await basicToken.balanceOf(accounts[100])
 		var newBalanceRecipient = await basicToken.balanceOf(accounts[2])

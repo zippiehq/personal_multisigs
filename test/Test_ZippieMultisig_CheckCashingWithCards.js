@@ -28,7 +28,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		const signers = [signer, card]
 		const m = [1, 1, 1, 1]
 
-		var multisigHash = await zipperMS.soliditySha3_addresses_m_cards(signers, m);
+		var multisigHash = await zipperMS.soliditySha3_addresses_m(signers, m);
 		var multisigSignature = web3.eth.sign(multisig, multisigHash).slice(2);
 		const multisigSig = getRSV(multisigSignature)
 
@@ -83,7 +83,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		const addresses = [multisig, basicToken.address, recipient, verificationKey]
 		const m = [1, 1, 0, 0]
 
-		var multisigHash = await zipperMS.soliditySha3_addresses_m_cards([signer], m);
+		var multisigHash = await zipperMS.soliditySha3_addresses_m([signer], m);
 		var multisigSignature = web3.eth.sign(multisig, multisigHash).slice(2);
 		const multisigSig = getRSV(multisigSignature)
 
@@ -136,7 +136,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		const m = [1, 1, 2, 2]
 		const signers = [signer, card, card2]
 
-		var multisigHash = await zipperMS.soliditySha3_addresses_m_cards(signers, m);
+		var multisigHash = await zipperMS.soliditySha3_addresses_m(signers, m);
 		var multisigSignature = web3.eth.sign(multisig, multisigHash).slice(2);
 		const multisigSig = getRSV(multisigSignature)
 
@@ -205,7 +205,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		const signers = [signer, card]
 		const m = [1, 1, 1, 1]
 
-		const multisigHash = await zipperMS.soliditySha3_addresses_m_cards(signers, m);
+		const multisigHash = await zipperMS.soliditySha3_addresses_m(signers, m);
 		const multisigSignature = web3.eth.sign(multisig, multisigHash).slice(2);
 		const multisigSig = getRSV(multisigSignature)
 
