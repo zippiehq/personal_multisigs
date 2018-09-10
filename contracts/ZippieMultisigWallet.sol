@@ -1,6 +1,6 @@
 pragma solidity 0.4.24;
 
-import 'openzeppelin-solidity/contracts/token/ERC20/ERC20.sol';
+import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
 contract ZippieMultisigWallet{
 
@@ -26,17 +26,17 @@ contract ZippieMultisigWallet{
         // require that v/r/s.length are equal to (m + the original temp private key sig)
         // require that the nonce is incremented by 1
         require(
-            addresses.length == 3
-            && m[1] + m[3] <= allSignersPossible.length 
-            && m[1] <= m[0]
-            && m[3] <= m[2]
-            && m[1] > 0
-            && m[1] != 0xFF
-            && r.length == m[1] + m[3] + 1
-            && s.length == m[1] + m[3] + 1
-            && v.length == m[1] + m[3] + 1
-            && cardDigests.length == m[3]
-            && nonce == addressNonceMapping[addresses[0]] + 1
+            addresses.length == 3 && 
+            m[1] + m[3] <= allSignersPossible.length && 
+            m[1] <= m[0] && 
+            m[3] <= m[2] && 
+            m[1] > 0 && 
+            m[1] != 0xFF && 
+            r.length == m[1] + m[3] + 1 && 
+            s.length == m[1] + m[3] + 1 && 
+            v.length == m[1] + m[3] + 1 && 
+            cardDigests.length == m[3] && 
+            nonce == addressNonceMapping[addresses[0]] + 1
         );
 
         // verify that the multisig wallet previously signed that these keys can access the funds
@@ -96,17 +96,17 @@ contract ZippieMultisigWallet{
     function redeemBlankCheck(address[] addresses, address[] allSignersPossible, uint8[] m, uint8[] v, bytes32[] r, bytes32[] s, uint256 amount, bytes32[] cardDigests) public {
 
         require(
-            addresses.length == 4
-            && m[1] + m[3] <= allSignersPossible.length 
-            && m[1] <= m[0]
-            && m[3] <= m[2]
-            && m[1] > 0
-            && m[1] != 0xFF
-            && r.length == m[1] + m[3] + 2
-            && s.length == m[1] + m[3] + 2
-            && v.length == m[1] + m[3] + 2
-            && cardDigests.length == m[3]
-            && !checkCashed[addresses[0]][addresses[3]]
+            addresses.length == 4 && 
+            m[1] + m[3] <= allSignersPossible.length && 
+            m[1] <= m[0] && 
+            m[3] <= m[2] && 
+            m[1] > 0 && 
+            m[1] != 0xFF && 
+            r.length == m[1] + m[3] + 2 && 
+            s.length == m[1] + m[3] + 2 && 
+            v.length == m[1] + m[3] + 2 && 
+            cardDigests.length == m[3] && 
+            !checkCashed[addresses[0]][addresses[3]]
         );
 
         // verify that the multisig wallet previously signed that these keys can access the funds
