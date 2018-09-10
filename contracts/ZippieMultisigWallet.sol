@@ -96,70 +96,21 @@ contract ZippieMultisigWallet{
     }
 
     function checkAndTransferFrom_BlankCheck(address[] multisigAndERC20Contract, address[] allSignersPossible, uint8 m, uint8[] v, bytes32[] r, bytes32[] s, address recipient, uint256 amount, address verificationKey) public {
+        address[] memory addresses = new address[](4);
+        addresses[0] = multisigAndERC20Contract[0];
+        addresses[1] = multisigAndERC20Contract[1];
+        addresses[2] = recipient;
+        addresses[3] = verificationKey;
 
-        require( 
-            multisigAndERC20Contract.length == 2
-            && m <= allSignersPossible.length 
-            && m > 0
-            && m != 0xFF
-            && r.length == m + 2
-            && s.length == m + 2
-            && v.length == m + 2
-            && !checkCashed[multisigAndERC20Contract[0]][verificationKey]
-        );
+        uint8[] memory signatureRequirements = new uint8[](4);
+        signatureRequirements[0] = m;
+        signatureRequirements[1] = m;
+        signatureRequirements[2] = 0;
+        signatureRequirements[3] = 0;
+        
+        bytes32[] memory cardDigests = new bytes32[](0);
 
-        // verify that the multisig wallet previously signed that these keys can access the funds
-        require(verifyMultisigKeyAllowsAddresses(allSignersPossible, m, multisigAndERC20Contract[0], v[0], r[0], s[0]));
-
-        // verify that all the other signatures were addresses in allSignersPossible, 
-        // that they all signed keccak256(amount, verificationKey),
-        // and that there are no duplicate signatures/addresses
-
-        // get the new hash to verify
-        bytes32 hashVerify = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(abi.encodePacked(amount, verificationKey))));
-
-        // make a memory mapping of (addresses => used this address?) to check for duplicates
-        address[] memory usedAddresses = new address[](m);
-
-        // loop through and ec_recover each v[] r[] s[] and verify that a correct address came out, and it wasn't a duplicate
-        address addressVerify;
-
-        for (uint8 i = 1; i < m + 1; i++) {
-            // get address from ec_recover
-            addressVerify = ecrecover(hashVerify, v[i], r[i], s[i]);
-            
-            // check that address is a valid address 
-            require(checkIfAddressInArray(allSignersPossible, addressVerify));
-
-            // check that this address has not been used before
-            require(!checkIfAddressInArray(usedAddresses, addressVerify));
-
-            // if we've made it here, we have verified that the first signature is a valid signature of a legal account,
-            // it isn't a duplicate signature,
-            // and that the signature signed that he/she wants to transfer "amount" ERC20 token to any chosen "receiver" by the user that has knowledge of 
-            // the private verification key to cash the check 
-
-            // push this address to the usedAddresses array
-            usedAddresses[i - 1] = addressVerify;
-        }
-
-        // now verify the last element in the arrays is the verification key signing the recipient address
-        hashVerify = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(abi.encodePacked(recipient))));
-
-        // note that i == m + 1, or the last element in r,s,v
-        addressVerify = ecrecover(hashVerify, v[i], r[i], s[i]);
-
-        require(addressVerify == verificationKey);
-
-        // if we've made it here, past the guantlet of asserts(), then we have verified that these are all signatures of legal addresses
-        // and that they all want to transfer "amount" tokens to any chosen "receiver" by the user that has knowledge of 
-        // the private verification key to cash the check 
-
-        // now all there is left to do is transfer these tokens!
-        ERC20(multisigAndERC20Contract[1]).transferFrom(multisigAndERC20Contract[0], recipient, amount);
-            
-        // add to the checkCashed array to so that this check can't be cashed again.
-        checkCashed[multisigAndERC20Contract[0]][verificationKey] = true;
+        checkAndTransferFrom_BlankCheck_Card(addresses, allSignersPossible, signatureRequirements, v, r, s, amount, cardDigests);
     }
 
     // Almost same descriptions as at top but structured (combined) to prevent stack too deep errors
@@ -280,13 +231,11 @@ contract ZippieMultisigWallet{
         // NOTE: YOUR SIGNING APPLICATION MAY NOT PREPEND "\x19Ethereum Signed Message:\n32" TO THE OBJECT TO BE SIGNED. 
         // FEEL FREE TO REMOVE IF NECESSARY
         // verify that the tempPrivKey signed the initial signature of hash keccak256(allSignersPossible, m)
-        bytes32 hashVerify = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(abi.encodePacked(signers, m))));
-
         // perform the ec_recover on this hash with the first v, r, s values
-        address addressVerify = ecrecover(hashVerify, v, r, s);
-
         // return true if the multisig address signed this hash, else return false
-        return multisigAddress == addressVerify;
+        // Support both old multisig hash (m) and new multisig hash (m[])
+        return multisigAddress == ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(abi.encodePacked(signers, m[1])))), v, r, s) ||
+        multisigAddress == ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(abi.encodePacked(signers, m)))), v, r, s);
     }
 
     // these functions are simply for testing
