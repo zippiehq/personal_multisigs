@@ -52,7 +52,7 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		
 		// account[10] is sponsor (e.g Zippie PMG server)
 		// checkAndTransferFrom_BlankCheck(address[] multisigAndERC20Contract, address[] allSignersPossible, uint8 m, uint8[] v, bytes32[] r, bytes32[] s, address recipient, uint256 amount, address verificationKey) public {
-		await zipperMS.checkAndTransferFrom_BlankCheck_Card([accounts[100], basicToken.address, accounts[2], accounts[99]], [accounts[0]], m, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], web3.toWei(1, "ether"), [], {from: accounts[10]});
+		await zipperMS.redeemBlankCheck([accounts[100], basicToken.address, accounts[2], accounts[99]], [accounts[0]], m, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], web3.toWei(1, "ether"), [], {from: accounts[10]});
 		
 		var newBalanceSender = await basicToken.balanceOf(accounts[100])
 		var newBalanceRecipient = await basicToken.balanceOf(accounts[2])	
@@ -62,7 +62,7 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 
 		try{
 			// try the same exact transfer 			
-			await zipperMS.checkAndTransferFrom_BlankCheck_Card([accounts[100], basicToken.address, accounts[2], accounts[99]], [accounts[0]], [1, 1, 0, 0], [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], web3.toWei(1, "ether"), [], {from: accounts[10]});
+			await zipperMS.redeemBlankCheck([accounts[100], basicToken.address, accounts[2], accounts[99]], [accounts[0]], [1, 1, 0, 0], [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], web3.toWei(1, "ether"), [], {from: accounts[10]});
 			assert(false, "duplicate transfer went through, but should have failed!")
 		}
 		catch(error){
@@ -104,7 +104,7 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		var initialBalanceRecipient = await basicToken.balanceOf(accounts[2])
 		assert(await zipperMS.checkCashed(accounts[100], accounts[99]) === false, "check already marked as cashed before transfer");
 		try{
-			await zipperMS.checkAndTransferFrom_BlankCheck_Card([accounts[100], basicToken.address, accounts[2], accounts[98]], [accounts[0]], m, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], web3.toWei(1, "ether"), [], {from: accounts[10]});
+			await zipperMS.redeemBlankCheck([accounts[100], basicToken.address, accounts[2], accounts[98]], [accounts[0]], m, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], web3.toWei(1, "ether"), [], {from: accounts[10]});
 			assert(false, "Verification Key was incorrect, but transfer went through!")
 		}
 		catch(error){
@@ -112,7 +112,7 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		}
 
 		try{
-			await zipperMS.checkAndTransferFrom_BlankCheck_Card([accounts[100], basicToken.address, accounts[2], accounts[99]], [accounts[0]], m, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], web3.toWei(1, "ether"), [], {from: accounts[10]});
+			await zipperMS.redeemBlankCheck([accounts[100], basicToken.address, accounts[2], accounts[99]], [accounts[0]], m, [v0, v1, v2], [r0.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf()], web3.toWei(1, "ether"), [], {from: accounts[10]});
 			assert(false, "Verification Key was correct, transfer still failed!")
 		}
 		catch(error){
@@ -172,7 +172,7 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		assert(await zipperMS.checkCashed(accounts[100], accounts[99]) === false, "check already marked as cashed before transfer");
 		
 		// account[10] is sponsor (e.g Zippie PMG server)
-		await zipperMS.checkAndTransferFrom_BlankCheck_Card([accounts[100], basicToken.address, accounts[2], accounts[99]], signers, m, [v0, v1, v2, v3], [r0.valueOf(), r1.valueOf(), r2.valueOf(), r3.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf(), s3.valueOf()], web3.toWei(1, "ether"), [], {from: accounts[10]});
+		await zipperMS.redeemBlankCheck([accounts[100], basicToken.address, accounts[2], accounts[99]], signers, m, [v0, v1, v2, v3], [r0.valueOf(), r1.valueOf(), r2.valueOf(), r3.valueOf()], [s0.valueOf(), s1.valueOf(), s2.valueOf(), s3.valueOf()], web3.toWei(1, "ether"), [], {from: accounts[10]});
 		
 		var newBalanceSender = await basicToken.balanceOf(accounts[100])
 		var newBalanceRecipient = await basicToken.balanceOf(accounts[2])

@@ -55,7 +55,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		var initialBalanceRecipient = await basicToken.balanceOf(recipient)
 		assert(await zipperMS.checkCashed(multisig, verificationKey) === false, "check already marked as cashed before transfer");
 		
-		await zipperMS.checkAndTransferFrom_BlankCheck_Card(addresses, signers, m, v, r, s, web3.toWei(1, "ether"), [digestHash], {from: sponsor});
+		await zipperMS.redeemBlankCheck(addresses, signers, m, v, r, s, web3.toWei(1, "ether"), [digestHash], {from: sponsor});
 
 		var newBalanceSender = await basicToken.balanceOf(multisig)
 		var newBalanceRecipient = await basicToken.balanceOf(recipient)	
@@ -65,7 +65,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 
 		try {
 			// try the same exact transfer
-			await zipperMS.checkAndTransferFrom_BlankCheck_Card(addresses, signers, m, v, r, s, web3.toWei(1, "ether"), [digestHash], {from: sponsor});
+			await zipperMS.redeemBlankCheck(addresses, signers, m, v, r, s, web3.toWei(1, "ether"), [digestHash], {from: sponsor});
 			assert(false, "duplicate transfer went through, but should have failed!")
 		}
 		catch(error){
@@ -105,7 +105,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		var initialBalanceRecipient = await basicToken.balanceOf(recipient)
 		assert(await zipperMS.checkCashed(multisig, verificationKey) === false, "check already marked as cashed before transfer");
 		
-		await zipperMS.checkAndTransferFrom_BlankCheck_Card(addresses, [signer], m, v, r, s, web3.toWei(1, "ether"), [], {from: sponsor});
+		await zipperMS.redeemBlankCheck(addresses, [signer], m, v, r, s, web3.toWei(1, "ether"), [], {from: sponsor});
 
 		var newBalanceSender = await basicToken.balanceOf(multisig)
 		var newBalanceRecipient = await basicToken.balanceOf(recipient)	
@@ -115,7 +115,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 
 		try{
 			// try the same exact transfer
-			await zipperMS.checkAndTransferFrom_BlankCheck_Card(addresses, [signer], m, v, r, s, web3.toWei(1, "ether"), [], {from: sponsor});
+			await zipperMS.redeemBlankCheck(addresses, [signer], m, v, r, s, web3.toWei(1, "ether"), [], {from: sponsor});
 			assert(false, "duplicate transfer went through, but should have failed!")
 		}
 		catch(error){
@@ -172,7 +172,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		var initialBalanceRecipient = await basicToken.balanceOf(recipient)
 		assert(await zipperMS.checkCashed(multisig, verificationKey) === false, "check already marked as cashed before transfer");
 		
-		await zipperMS.checkAndTransferFrom_BlankCheck_Card(addresses, signers, m, v, r, s, web3.toWei(1, "ether"), digestHashes, {from: sponsor});
+		await zipperMS.redeemBlankCheck(addresses, signers, m, v, r, s, web3.toWei(1, "ether"), digestHashes, {from: sponsor});
 
 		var newBalanceSender = await basicToken.balanceOf(multisig)
 		var newBalanceRecipient = await basicToken.balanceOf(recipient)	
@@ -184,7 +184,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 			// try transfer reusing card digest
 			const duplicatedDigestHashes = [digestHash, digestHash]
 
-			await zipperMS.checkAndTransferFrom_BlankCheck_Card(addresses, signers, m, v, r, s, web3.toWei(1, "ether"), duplicatedDigestHashes, {from: sponsor});
+			await zipperMS.redeemBlankCheck(addresses, signers, m, v, r, s, web3.toWei(1, "ether"), duplicatedDigestHashes, {from: sponsor});
 			assert(false, "duplicated digest transfer went through, but should have failed!")
 		}
 		catch(error){
@@ -232,7 +232,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		assert(await zipperMS.checkCashed(multisig, verificationKey) === false, "check already marked as cashed before transfer");
 
 		try {
-			await zipperMS.checkAndTransferFrom_BlankCheck_Card(addresses, signers, m, v, r, s, web3.toWei(1, "ether"), [digestHash], {from: sponsor});
+			await zipperMS.redeemBlankCheck(addresses, signers, m, v, r, s, web3.toWei(1, "ether"), [digestHash], {from: sponsor});
 			assert(false, "transfer went through even though card was signed by wrong account")
 		} catch (error) {
 			assert(error.message == 'VM Exception while processing transaction: revert', error.message)
