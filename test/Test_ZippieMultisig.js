@@ -1,4 +1,4 @@
-var BasicERC20 = artifacts.require("./BasicERC20.sol");
+var BasicERC20Mock = artifacts.require("./BasicERC20Mock.sol");
 var ZippieMultisigWallet = artifacts.require("./ZippieMultisigWallet.sol");
 
 contract("Test Zippie Multisig", (accounts) => {
@@ -8,7 +8,7 @@ contract("Test Zippie Multisig", (accounts) => {
 	var zipperMS;
 
 	before( () => {
-    	return BasicERC20.new(accounts[9]).then( (instance) => {
+    	return BasicERC20Mock.new(accounts[9]).then( (instance) => {
     		basicToken = instance;
     		return ZippieMultisigWallet.new();
      	}).then( (instance) => {
