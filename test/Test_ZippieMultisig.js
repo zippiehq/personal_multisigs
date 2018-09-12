@@ -1,20 +1,25 @@
+var TestFunctions = artifacts.require("./TestFunctions.sol");
 var BasicERC20Mock = artifacts.require("./BasicERC20Mock.sol");
 var ZippieMultisigWallet = artifacts.require("./ZippieMultisigWallet.sol");
 
 contract("Test Zippie Multisig", (accounts) => {
 	// accounts[9] is the "temporary private key"
 
+	var test;
 	var basicToken;
 	var zipperMS;
 
-	before( () => {
-    	return BasicERC20Mock.new(accounts[9]).then( (instance) => {
-    		basicToken = instance;
-    		return ZippieMultisigWallet.new();
-     	}).then( (instance) => {
-     		zipperMS = instance;
-     		return basicToken.approve(instance.address, web3.toWei(100, "ether"), {from: accounts[9]});
-     	});
+	before(() => {
+			return TestFunctions.new().then(instance => {
+					test = instance;
+    			return BasicERC20Mock.new(accounts[9]).then(instance => {
+						basicToken = instance;
+						return ZippieMultisigWallet.new();
+     			}).then(instance => {
+     				zipperMS = instance;
+						return basicToken.approve(instance.address, web3.toWei(100, "ether"), {from: accounts[9]});
+				});
+			});
 	});
 
 	it("should deploy zipper multisig, and basic ERC20 test contract, and fund accounts[9] and approve the zipper multisig for full balance", async () => {
@@ -28,14 +33,14 @@ contract("Test Zippie Multisig", (accounts) => {
 		
 		// hash ([address], 1) in the EVM and then sign it with the temporary private key
 		// according to the zipper multisig, this allows 'address' to transfer funds out of temp priv key
-		var signByPrivateKey = await zipperMS.soliditySha3_addresses_m([accounts[0]], m);
+		var signByPrivateKey = await test.soliditySha3_addresses_m([accounts[0]], m);
 		var signedByPrivateKey = web3.eth.sign(accounts[9], signByPrivateKey).slice(2);
 		
 		var r0 = '0x' + signedByPrivateKey.slice(0,64);
 		var s0 = '0x' + signedByPrivateKey.slice(64,128);
 		var v0 = web3.toDecimal(signedByPrivateKey.slice(128,130)) + 27;;
 		
-		var signByKey1 = await zipperMS.soliditySha3_amount_recipient_nonce(web3.toWei(1, "ether"), accounts[0], 1);
+		var signByKey1 = await test.soliditySha3_amount_recipient_nonce(web3.toWei(1, "ether"), accounts[0], 1);
 		var signedByKey1 = web3.eth.sign(accounts[0], signByKey1).slice(2);
 		
 		var r1 = '0x' + signedByKey1.slice(0,64);
@@ -69,7 +74,7 @@ contract("Test Zippie Multisig", (accounts) => {
 	it("should allow 2 of 2 multisig transfer", async () => {
 		const m = [2, 2, 0, 0]
 
-		var signByPrivateKey = await zipperMS.soliditySha3_addresses_m([accounts[1], accounts[2]], m);
+		var signByPrivateKey = await test.soliditySha3_addresses_m([accounts[1], accounts[2]], m);
 		var signedByPrivateKey = web3.eth.sign(accounts[9], signByPrivateKey).slice(2);
 
 		var r0 = '0x' + signedByPrivateKey.slice(0,64);
@@ -78,7 +83,7 @@ contract("Test Zippie Multisig", (accounts) => {
 
 		// sign this hash with both multisig keys
 		// note that the nonce is incremented here
-		var signByKeys = await zipperMS.soliditySha3_amount_recipient_nonce(web3.toWei(0.5, "ether"), accounts[1], 2);
+		var signByKeys = await test.soliditySha3_amount_recipient_nonce(web3.toWei(0.5, "ether"), accounts[1], 2);
 
 		var signedByKey1 = web3.eth.sign(accounts[1], signByKeys).slice(2);
 		
@@ -101,7 +106,7 @@ contract("Test Zippie Multisig", (accounts) => {
 	it("should fail 2 of 2 multisig transfer, when amount is not agreed upon", async () => {
 		const m = [2, 2, 0, 0]
 
-		var signByPrivateKey = await zipperMS.soliditySha3_addresses_m([accounts[1], accounts[2]], m);
+		var signByPrivateKey = await test.soliditySha3_addresses_m([accounts[1], accounts[2]], m);
 		var signedByPrivateKey = web3.eth.sign(accounts[9], signByPrivateKey).slice(2);
 
 		var r0 = '0x' + signedByPrivateKey.slice(0,64);
@@ -110,7 +115,7 @@ contract("Test Zippie Multisig", (accounts) => {
 
 		// sign this hash with the first multisig key
 		// note that the nonce is incremented here
-		var signByKey1 = await zipperMS.soliditySha3_amount_recipient_nonce(web3.toWei(0.5, "ether"), accounts[2], 3);
+		var signByKey1 = await test.soliditySha3_amount_recipient_nonce(web3.toWei(0.5, "ether"), accounts[2], 3);
 		var signedByKey1 = web3.eth.sign(accounts[1], signByKey1).slice(2);
 		
 		var r1 = '0x' + signedByKey1.slice(0,64);
@@ -119,7 +124,7 @@ contract("Test Zippie Multisig", (accounts) => {
 
 		// sign this hash with the second multisig key, note that the amounts are different
 		// note that the nonce is incremented here
-		var signByKey2 = await zipperMS.soliditySha3_amount_recipient_nonce(web3.toWei(0.51, "ether"), accounts[2], 3);
+		var signByKey2 = await test.soliditySha3_amount_recipient_nonce(web3.toWei(0.51, "ether"), accounts[2], 3);
 		var signedByKey2 = web3.eth.sign(accounts[2], signByKey2).slice(2);
 		
 		var r2 = '0x' + signedByKey2.slice(0,64);
@@ -174,7 +179,7 @@ contract("Test Zippie Multisig", (accounts) => {
 	it("should pass all three (correct) variants of 2 of 3 multisig transfer", async () => {
 		const m = [2, 2, 0, 0]
 
-		var signByPrivateKey = await zipperMS.soliditySha3_addresses_m([accounts[1], accounts[2], accounts[3]], m);
+		var signByPrivateKey = await test.soliditySha3_addresses_m([accounts[1], accounts[2], accounts[3]], m);
 		var signedByPrivateKey = web3.eth.sign(accounts[9], signByPrivateKey).slice(2);
 
 		var r0 = '0x' + signedByPrivateKey.slice(0,64);
@@ -185,7 +190,7 @@ contract("Test Zippie Multisig", (accounts) => {
 
 		// sign this hash with the first and second key
 		// note that the nonce is 3
-		var signByKeys = await zipperMS.soliditySha3_amount_recipient_nonce(web3.toWei(0.75, "ether"), accounts[2], 3);
+		var signByKeys = await test.soliditySha3_amount_recipient_nonce(web3.toWei(0.75, "ether"), accounts[2], 3);
 		var signedByKey1 = web3.eth.sign(accounts[1], signByKeys).slice(2);
 		var signedByKey2 = web3.eth.sign(accounts[2], signByKeys).slice(2);
 
@@ -204,7 +209,7 @@ contract("Test Zippie Multisig", (accounts) => {
 
 		// sign this hash with the first and third key
 		// note that the nonce is 4
-		var signByKeys = await zipperMS.soliditySha3_amount_recipient_nonce(web3.toWei(0.75, "ether"), accounts[2], 4);
+		var signByKeys = await test.soliditySha3_amount_recipient_nonce(web3.toWei(0.75, "ether"), accounts[2], 4);
 		var signedByKey1 = web3.eth.sign(accounts[1], signByKeys).slice(2);
 		var signedByKey3 = web3.eth.sign(accounts[3], signByKeys).slice(2);
 
@@ -223,7 +228,7 @@ contract("Test Zippie Multisig", (accounts) => {
 
 		// sign this hash with the second and third key
 		// note that the nonce is 5
-		var signByKeys = await zipperMS.soliditySha3_amount_recipient_nonce(web3.toWei(0.75, "ether"), accounts[2], 5);
+		var signByKeys = await test.soliditySha3_amount_recipient_nonce(web3.toWei(0.75, "ether"), accounts[2], 5);
 		var signedByKey2 = web3.eth.sign(accounts[2], signByKeys).slice(2);
 		var signedByKey3 = web3.eth.sign(accounts[3], signByKeys).slice(2);
 
@@ -242,7 +247,7 @@ contract("Test Zippie Multisig", (accounts) => {
 	it("should fail a 2/2 transfer when the same sig is used twice", async () => {
 		const m = [2, 2, 0, 0]
 
-		var signByPrivateKey = await zipperMS.soliditySha3_addresses_m([accounts[1], accounts[2]], m);
+		var signByPrivateKey = await test.soliditySha3_addresses_m([accounts[1], accounts[2]], m);
 		var signedByPrivateKey = web3.eth.sign(accounts[9], signByPrivateKey).slice(2);
 
 		var r0 = '0x' + signedByPrivateKey.slice(0,64);
@@ -251,7 +256,7 @@ contract("Test Zippie Multisig", (accounts) => {
 
 		// sign this hash with the first multisig key, but then submit this twice
 		// nonce = 6
-		var signByKey1 = await zipperMS.soliditySha3_amount_recipient_nonce(web3.toWei(0.5, "ether"), accounts[2], 6);
+		var signByKey1 = await test.soliditySha3_amount_recipient_nonce(web3.toWei(0.5, "ether"), accounts[2], 6);
 		var signedByKey1 = web3.eth.sign(accounts[1], signByKey1).slice(2);
 		
 		var r1 = '0x' + signedByKey1.slice(0,64);
@@ -273,7 +278,7 @@ contract("Test Zippie Multisig", (accounts) => {
 
 		// note that the private key "signed" an error here, where m = 2 but only a 1/1 multisig by definition
 		// so the private key will not be recovered properly
-		var signByPrivateKey = await zipperMS.soliditySha3_addresses_m([accounts[1]], m);
+		var signByPrivateKey = await test.soliditySha3_addresses_m([accounts[1]], m);
 		var signedByPrivateKey = web3.eth.sign(accounts[9], signByPrivateKey).slice(2);
 
 		var r0 = '0x' + signedByPrivateKey.slice(0,64);
@@ -282,7 +287,7 @@ contract("Test Zippie Multisig", (accounts) => {
 
 		// sign this hash with the first multisig key
 		// nonce = 6
-		var signByKey1 = await zipperMS.soliditySha3_amount_recipient_nonce(web3.toWei(1.5, "ether"), accounts[2], 6);
+		var signByKey1 = await test.soliditySha3_amount_recipient_nonce(web3.toWei(1.5, "ether"), accounts[2], 6);
 		var signedByKey1 = web3.eth.sign(accounts[1], signByKey1).slice(2);
 		
 		var r1 = '0x' + signedByKey1.slice(0,64);
@@ -315,7 +320,7 @@ contract("Test Zippie Multisig", (accounts) => {
 			}
 		}
 
-		var signByPrivateKey = await zipperMS.soliditySha3_addresses_m(multisigAccounts, m);
+		var signByPrivateKey = await test.soliditySha3_addresses_m(multisigAccounts, m);
 		var signedByPrivateKey = web3.eth.sign(accounts[9], signByPrivateKey).slice(2);
 
 		rArray.push('0x' + signedByPrivateKey.slice(0,64).valueOf());
@@ -323,7 +328,7 @@ contract("Test Zippie Multisig", (accounts) => {
 		vArray.push(web3.toDecimal(signedByPrivateKey.slice(128,130)) + 27);
 
 		// nonce is at 6
-		var signByKeys = await zipperMS.soliditySha3_amount_recipient_nonce(web3.toWei(10, "ether"), accounts[100], 6);
+		var signByKeys = await test.soliditySha3_amount_recipient_nonce(web3.toWei(10, "ether"), accounts[100], 6);
 		var signedByKey;
 
 		for (i = 0; i < multisigAccounts.length; i++){

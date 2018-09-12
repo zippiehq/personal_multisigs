@@ -1,19 +1,24 @@
+var TestFunctions = artifacts.require("./TestFunctions.sol");
 var BasicERC20Mock = artifacts.require("./BasicERC20Mock.sol");
 var ZippieMultisigWallet = artifacts.require("./ZippieMultisigWallet.sol");
 
 contract("Zippie Multisig Gas Simulator", (accounts) => {
 
+	var test;
 	var basicToken;
 	var zipperMS;
 
-	beforeEach( () => {
-    	return BasicERC20Mock.new(accounts[100]).then( (instance) => {
-    		basicToken = instance;
-    		return ZippieMultisigWallet.new();
-     	}).then( (instance) => {
-     		zipperMS = instance;
-     		return basicToken.approve(instance.address, web3.toWei(100, "ether"), {from: accounts[100]});
-     	});
+	beforeEach(() => {
+		return TestFunctions.new().then(instance => {
+				test = instance;
+			return BasicERC20Mock.new(accounts[100]).then(instance => {
+					basicToken = instance;
+					return ZippieMultisigWallet.new();
+			}).then(instance => {
+				zipperMS = instance;
+					return basicToken.approve(instance.address, web3.toWei(100, "ether"), {from: accounts[100]});
+			});
+		});
 	});
 
     it("should run a 1of1 multisig (blank check) through the general function", async () => {
@@ -30,7 +35,7 @@ contract("Zippie Multisig Gas Simulator", (accounts) => {
 
 		// accounts[100] is multisig wallet (sender, don't sign with this account since the private key should be forgotten at creation)
 		// accounts[0] is multisig signer (1of1)
-		var signByPrivateKey = await zipperMS.soliditySha3_addresses_m([accounts[0]], m);
+		var signByPrivateKey = await test.soliditySha3_addresses_m([accounts[0]], m);
 		var signedByPrivateKey = web3.eth.sign(accounts[100], signByPrivateKey).slice(2);
 
 		var r0 = '0x' + signedByPrivateKey.slice(0,64);
@@ -39,7 +44,7 @@ contract("Zippie Multisig Gas Simulator", (accounts) => {
 
 		// accounts[99] is random verification key
 		// sign by multisig signer
-		var signByKey1 = await zipperMS.soliditySha3_amount_address(web3.toWei(1, "ether"), accounts[99]);
+		var signByKey1 = await test.soliditySha3_amount_address(web3.toWei(1, "ether"), accounts[99]);
 		var signedByKey1 = web3.eth.sign(accounts[0], signByKey1).slice(2);
 
 		var r1 = '0x' + signedByKey1.slice(0,64);
@@ -48,7 +53,7 @@ contract("Zippie Multisig Gas Simulator", (accounts) => {
 
         // account[2] is recipent
 		// sign by a random verification key
-		var signByVerification = await zipperMS.soliditySha3_address(accounts[2]);
+		var signByVerification = await test.soliditySha3_address(accounts[2]);
 		var signedByVerification = web3.eth.sign(accounts[99], signByVerification).slice(2);
 
 		var r2 = '0x' + signedByVerification.slice(0,64);
@@ -68,7 +73,7 @@ contract("Zippie Multisig Gas Simulator", (accounts) => {
         
 		// accounts[98] is new random verification key
 		// sign by multisig signer
-		var signByKey1 = await zipperMS.soliditySha3_amount_address(web3.toWei(1, "ether"), accounts[98]);
+		var signByKey1 = await test.soliditySha3_amount_address(web3.toWei(1, "ether"), accounts[98]);
 		var signedByKey1 = web3.eth.sign(accounts[0], signByKey1).slice(2);
 
 		var r1 = '0x' + signedByKey1.slice(0,64);
@@ -77,7 +82,7 @@ contract("Zippie Multisig Gas Simulator", (accounts) => {
 
         // account[2] is recipent
 		// sign by a random verification key
-		var signByVerification = await zipperMS.soliditySha3_address(accounts[2]);
+		var signByVerification = await test.soliditySha3_address(accounts[2]);
 		var signedByVerification = web3.eth.sign(accounts[98], signByVerification).slice(2);
 
 		var r2 = '0x' + signedByVerification.slice(0,64);
@@ -105,7 +110,7 @@ contract("Zippie Multisig Gas Simulator", (accounts) => {
         // accounts[100] is multisig wallet (sender, don't sign with this account since the private key should be forgotten at creation)
 		// accounts[0] is multisig signer 1 (1of2)
 		// accounts[1] is multisig signer 2 (2of2)
-        var signByPrivateKey = await zipperMS.soliditySha3_addresses_m([accounts[0], accounts[1]], m);
+        var signByPrivateKey = await test.soliditySha3_addresses_m([accounts[0], accounts[1]], m);
 		var signedByPrivateKey = web3.eth.sign(accounts[100], signByPrivateKey).slice(2);
 
 		var r0 = '0x' + signedByPrivateKey.slice(0,64);
@@ -114,7 +119,7 @@ contract("Zippie Multisig Gas Simulator", (accounts) => {
 
 		// accounts[99] is random verification key
 		// sign by multisig signer 1
-		var signByKey1 = await zipperMS.soliditySha3_amount_address(web3.toWei(1, "ether"), accounts[99]);
+		var signByKey1 = await test.soliditySha3_amount_address(web3.toWei(1, "ether"), accounts[99]);
 		var signedByKey1 = web3.eth.sign(accounts[0], signByKey1).slice(2);
 
 		var r1 = '0x' + signedByKey1.slice(0,64);
@@ -123,7 +128,7 @@ contract("Zippie Multisig Gas Simulator", (accounts) => {
 
         // accounts[99] is random verification key
 		// sign by multisig signer 2
-		var signByKey2 = await zipperMS.soliditySha3_amount_address(web3.toWei(1, "ether"), accounts[99]);
+		var signByKey2 = await test.soliditySha3_amount_address(web3.toWei(1, "ether"), accounts[99]);
 		var signedByKey2 = web3.eth.sign(accounts[1], signByKey2).slice(2);
 
 		var r2 = '0x' + signedByKey2.slice(0,64);
@@ -132,7 +137,7 @@ contract("Zippie Multisig Gas Simulator", (accounts) => {
 
 		// account[2] is recipent
 		// sign by a random verification key
-		var signByVerification = await zipperMS.soliditySha3_address(accounts[3]);
+		var signByVerification = await test.soliditySha3_address(accounts[3]);
 		var signedByVerification = web3.eth.sign(accounts[99], signByVerification).slice(2);
 
 		var r3 = '0x' + signedByVerification.slice(0,64);
@@ -151,7 +156,7 @@ contract("Zippie Multisig Gas Simulator", (accounts) => {
         
 		// accounts[98] is new random verification key
 		// sign by multisig signer 1
-		var signByKey1 = await zipperMS.soliditySha3_amount_address(web3.toWei(1, "ether"), accounts[98]);
+		var signByKey1 = await test.soliditySha3_amount_address(web3.toWei(1, "ether"), accounts[98]);
 		var signedByKey1 = web3.eth.sign(accounts[0], signByKey1).slice(2);
 
 		var r1 = '0x' + signedByKey1.slice(0,64);
@@ -160,7 +165,7 @@ contract("Zippie Multisig Gas Simulator", (accounts) => {
 
         // accounts[98] is new random verification key
 		// sign by multisig signer 2
-		var signByKey2 = await zipperMS.soliditySha3_amount_address(web3.toWei(1, "ether"), accounts[98]);
+		var signByKey2 = await test.soliditySha3_amount_address(web3.toWei(1, "ether"), accounts[98]);
 		var signedByKey2 = web3.eth.sign(accounts[1], signByKey2).slice(2);
 
 		var r2 = '0x' + signedByKey2.slice(0,64);
@@ -169,7 +174,7 @@ contract("Zippie Multisig Gas Simulator", (accounts) => {
 
         // account[2] is recipent
 		// sign by a random verification key
-		var signByVerification = await zipperMS.soliditySha3_address(accounts[2]);
+		var signByVerification = await test.soliditySha3_address(accounts[2]);
 		var signedByVerification = web3.eth.sign(accounts[98], signByVerification).slice(2);
         
 		var r3 = '0x' + signedByVerification.slice(0,64);
