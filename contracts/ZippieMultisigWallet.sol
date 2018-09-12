@@ -28,6 +28,8 @@ contract ZippieMultisigWallet{
         // verify that the multisig wallet previously signed that these keys can access the funds
         require(verifyMultisigKeyAllowsAddresses(allSignersPossible, m, addresses[0], v[0], r[0], s[0]));
 
+        // if we've made it here, we have verified that the first signature is a valid signature of a legal account
+
         // verify that all the other signatures were addresses in allSignersPossible, 
         // that they all signed keccak256(amount, receiver, nonce), 
         // and that there are no duplicate signatures/addresses
@@ -35,35 +37,7 @@ contract ZippieMultisigWallet{
         // get the new hash to verify
         bytes32 hashVerify = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(abi.encodePacked(amount, addresses[2], nonce))));
 
-        // make a memory mapping of (addresses => used this address?) to check for duplicates
-        address[] memory usedAddresses = new address[](m[1] + m[3]);
-
-        // loop through and ec_recover each v[] r[] s[] and verify that a correct address came out, and it wasn't a duplicate
-        address addressVerify;
-
-        for (uint8 i = 1; i < m[1] + m[3] + 1; i++) {
-
-            if (i > m[1]) {
-                // verify card digests
-                hashVerify = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", cardDigests[i-m[0]-1]));
-            }
-
-            // get address from ec_recover
-            addressVerify = ecrecover(hashVerify, v[i], r[i], s[i]);
-
-            // check that address is a valid address 
-            require(checkIfAddressInArray(allSignersPossible, addressVerify));
-
-            // check that this address has not been used before
-            require(!checkIfAddressInArray(usedAddresses, addressVerify));
-
-            // if we've made it here, we have verified that the first signature is a valid signature of a legal account,
-            // it isn't a duplicate signature,
-            // and that the signature signed that he/she wants to transfer "amount" ERC20 token to "receiver"
-
-            // push this address to the usedAddresses array
-            usedAddresses[i - 1] = addressVerify;
-        }
+        verifySignatures(hashVerify, allSignersPossible, m, v, r, s, cardDigests);
 
         // if we've made it here, past the guantlet of asserts(), then we have verified that these are all signatures of legal addresses
         // and that they all want to transfer "amount" tokens to "receiver"
@@ -86,6 +60,8 @@ contract ZippieMultisigWallet{
         // verify that the multisig wallet previously signed that these keys can access the funds
         require(verifyMultisigKeyAllowsAddresses(allSignersPossible, m, addresses[0], v[0], r[0], s[0]));
 
+        // if we've made it here, we have verified that the first signature is a valid signature of a legal account
+
         // verify that all the other signatures were addresses in allSignersPossible, 
         // that they all signed keccak256(amount, verificationKey),
         // and that there are no duplicate signatures/addresses
@@ -93,6 +69,31 @@ contract ZippieMultisigWallet{
         // get the new hash to verify
         bytes32 hashVerify = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(abi.encodePacked(amount, addresses[3]))));
 
+        verifySignatures(hashVerify, allSignersPossible, m, v, r, s, cardDigests);
+
+        // if we've made it here, we have verified that the signature signed that he/she wants to transfer "amount" ERC20 token to any chosen "receiver" by the user that has knowledge of 
+        // the private verification key to cash the check 
+
+        // now verify the last element in the arrays is the verification key signing the recipient address
+        hashVerify = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(abi.encodePacked(addresses[2]))));
+
+        // note that i == m + 1, or the last element in r,s,v
+        address addressVerify = ecrecover(hashVerify, v[s.length - 1], r[s.length - 1], s[s.length - 1]);
+
+        require(addressVerify == addresses[3]);
+
+        // if we've made it here, past the guantlet of asserts(), then we have verified that these are all signatures of legal addresses
+        // and that they all want to transfer "amount" tokens to any chosen "receiver" by the user that has knowledge of 
+        // the private verification key to cash the check 
+
+        // now all there is left to do is transfer these tokens!
+        ERC20(addresses[1]).transferFrom(addresses[0], addresses[2], amount);
+            
+        // add to the checkCashed array to so that this check can't be cashed again.
+        checkCashed[addresses[0]][addresses[3]] = true;
+    }
+
+    function verifySignatures(bytes32 hashVerify, address[] allSignersPossible, uint8[] m, uint8[] v, bytes32[] r, bytes32[] s, bytes32[] cardDigests) internal pure {
         // make a memory mapping of (addresses => used this address?) to check for duplicates
         address[] memory usedAddresses = new address[](m[1] + m[3]);
 
@@ -115,34 +116,10 @@ contract ZippieMultisigWallet{
             // check that this address has not been used before
             require(!checkIfAddressInArray(usedAddresses, addressVerify));
 
-            // if we've made it here, we have verified that the first signature is a valid signature of a legal account,
-            // it isn't a duplicate signature,
-            // and that the signature signed that he/she wants to transfer "amount" ERC20 token to any chosen "receiver" by the user that has knowledge of 
-            // the private verification key to cash the check 
-
             // push this address to the usedAddresses array
             usedAddresses[i - 1] = addressVerify;
         }
-
-        // now verify the last element in the arrays is the verification key signing the recipient address
-        hashVerify = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(abi.encodePacked(addresses[2]))));
-
-        // note that i == m + 1, or the last element in r,s,v
-        addressVerify = ecrecover(hashVerify, v[i], r[i], s[i]);
-
-        require(addressVerify == addresses[3]);
-
-        // if we've made it here, past the guantlet of asserts(), then we have verified that these are all signatures of legal addresses
-        // and that they all want to transfer "amount" tokens to any chosen "receiver" by the user that has knowledge of 
-        // the private verification key to cash the check 
-
-        // now all there is left to do is transfer these tokens!
-        ERC20(addresses[1]).transferFrom(addresses[0], addresses[2], amount);
-            
-        // add to the checkCashed array to so that this check can't be cashed again.
-        checkCashed[addresses[0]][addresses[3]] = true;
     }
-
 
     // a simple helper function to check if an address is in an array...
     function checkIfAddressInArray(address[] validAddresses, address checkAddress) internal pure returns(bool){
