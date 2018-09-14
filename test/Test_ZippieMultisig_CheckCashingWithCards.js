@@ -8,6 +8,13 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 	var basicToken;
 	var zipperMS;
 
+	const signer = accounts[0] // multisig signer (1of1)
+	const recipient = accounts[2]
+	const card = accounts[3]
+	const verificationKey = accounts[4] // random verification key
+	const multisig = accounts[5] // multisig wallet (sender, don't sign with this account since the private key should be forgotten at creation)
+	const sponsor = accounts[6] // Zippie PMG server
+
 	beforeEach(() => {
 			return TestFunctions.new().then(instance => {
 					test = instance;
@@ -22,13 +29,6 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 	});
 
 	it("should allow a blank check to be cashed once from a 1 of 1 multisig with 2FA, and fail the second time", async () => {
-		const signer = accounts[0] // multisig signer (1of1)
-		const recipient = accounts[2]
-		const card = accounts[3]
-		const verificationKey = accounts[4] // random verification key
-		const multisig = accounts[5] // multisig wallet (sender, don't sign with this account since the private key should be forgotten at creation)
-		const sponsor = accounts[6] // Zippie PMG server
-		
 		const addresses = [multisig, basicToken.address, recipient, verificationKey]
 		const signers = [signer, card]
 		const m = [1, 1, 1, 1]
@@ -68,12 +68,6 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 	});
 
 	it("should allow a blank check to be cashed once even if no card is required, and fail the second time", async () => {
-		const signer = accounts[0] // multisig signer (1of1)
-		const recipient = accounts[2]
-		const verificationKey = accounts[4] // random verification key
-		const multisig = accounts[5] // multisig wallet (sender, don't sign with this account since the private key should be forgotten at creation)
-		const sponsor = accounts[6] // Zippie PMG server
-		
 		const addresses = [multisig, basicToken.address, recipient, verificationKey]
 		const m = [1, 1, 0, 0]
 
@@ -108,12 +102,6 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 	});
 
 	it("should allow a blank check to be cashed when using two cards, and fail the second time if card digest is reused", async () => {
-		const signer = accounts[0] // multisig signer (1of1)
-		const recipient = accounts[2]
-		const card = accounts[3]
-		const verificationKey = accounts[4] // random verification key
-		const multisig = accounts[5] // multisig wallet (sender, don't sign with this account since the private key should be forgotten at creation)
-		const sponsor = accounts[6] // Zippie PMG server
 		const card2 = accounts[7]
 		
 		const addresses = [multisig, basicToken.address, recipient, verificationKey]
@@ -165,14 +153,8 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 	});
 
 	it("should prevent a blank check to be cashed if card is incorrectly signed", async () => {
-		const signer = accounts[0] // multisig signer (1of1)
 		const payer = accounts[1]
-		const recipient = accounts[2]
-		const card = accounts[3]
-		const verificationKey = accounts[4] // random verification key
-		const multisig = accounts[5] // multisig wallet (sender, don't sign with this account since the private key should be forgotten at creation)
-		const sponsor = accounts[6] // Zippie PMG server
-		
+
 		const addresses = [multisig, basicToken.address, recipient, verificationKey]
 		const signers = [signer, card]
 		const m = [1, 1, 1, 1]
