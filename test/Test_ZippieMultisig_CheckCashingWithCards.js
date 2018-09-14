@@ -1,10 +1,10 @@
 var TestFunctions = artifacts.require("./TestFunctions.sol");
 var BasicERC20Mock = artifacts.require("./BasicERC20Mock.sol");
 var ZippieMultisigWallet = artifacts.require("./ZippieMultisigWallet.sol");
+var test;
 
 contract("Test Zippie Multisig Check Cashing With Cards Functionality", (accounts) => {
 
-	var test;
 	var basicToken;
 	var zipperMS;
 
@@ -33,28 +33,17 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		const signers = [signer, card]
 		const m = [1, 1, 1, 1]
 
-		var multisigHash = await test.soliditySha3_addresses_m(signers, m);
-		var multisigSignature = web3.eth.sign(multisig, multisigHash).slice(2);
-		const multisigSig = getRSV(multisigSignature)
-
-		// sign by multisig signer
-		var blankCheckHash = await test.soliditySha3_amount_address(web3.toWei(1, "ether"), verificationKey);
-		var blankCheckSignature = web3.eth.sign(signer, blankCheckHash).slice(2);
-		const blankCheckSig = getRSV(blankCheckSignature)
-
-		// sign by a random verification key
-		var recipientHash = await test.soliditySha3_address(recipient);
-		var recipientSignature = web3.eth.sign(verificationKey, recipientHash).slice(2);
-		const recipientSig = getRSV(recipientSignature)
+		const multisigSignature = await getMultisigSignature(signers, m, multisig)
+		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer)
+		const recipientSignature = await getRecipientSignature(recipient, verificationKey)
 
 		const digest = '0xABCDEF'
-		var digestHash = await test.soliditySha3_sign(digest)
-		var digestSignature = web3.eth.sign(card, digestHash).slice(2);
-		const digestSig = getRSV(digestSignature)
+		const digestHash = await test.soliditySha3_sign(digest)
+		const digestSignature = await getDigestSignature(digestHash, card)
 		
-		const v = [multisigSig.v, blankCheckSig.v, digestSig.v, recipientSig.v]
-		const r = [multisigSig.r.valueOf(), blankCheckSig.r.valueOf(), digestSig.r.valueOf(), recipientSig.r.valueOf()]
-		const s = [multisigSig.s.valueOf(), blankCheckSig.s.valueOf(), digestSig.s.valueOf(), recipientSig.s.valueOf()]
+		const v = [multisigSignature.v, blankCheckSignature.v, digestSignature.v, recipientSignature.v]
+		const r = [multisigSignature.r.valueOf(), blankCheckSignature.r.valueOf(), digestSignature.r.valueOf(), recipientSignature.r.valueOf()]
+		const s = [multisigSignature.s.valueOf(), blankCheckSignature.s.valueOf(), digestSignature.s.valueOf(), recipientSignature.s.valueOf()]
 
 		var initialBalanceSender = await basicToken.balanceOf(multisig)
 		var initialBalanceRecipient = await basicToken.balanceOf(recipient)
@@ -88,23 +77,13 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		const addresses = [multisig, basicToken.address, recipient, verificationKey]
 		const m = [1, 1, 0, 0]
 
-		var multisigHash = await test.soliditySha3_addresses_m([signer], m);
-		var multisigSignature = web3.eth.sign(multisig, multisigHash).slice(2);
-		const multisigSig = getRSV(multisigSignature)
+		const multisigSignature = await getMultisigSignature([signer], m, multisig)
+		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer)
+		const recipientSignature = await getRecipientSignature(recipient, verificationKey)
 
-		// sign by multisig signer
-		var blankCheckHash = await test.soliditySha3_amount_address(web3.toWei(1, "ether"), verificationKey);
-		var blankCheckSignature = web3.eth.sign(signer, blankCheckHash).slice(2);
-		const blankCheckSig = getRSV(blankCheckSignature)
-
-		// sign by a random verification key
-		var recipientHash = await test.soliditySha3_address(recipient);
-		var recipientSignature = web3.eth.sign(verificationKey, recipientHash).slice(2);
-		const recipientSig = getRSV(recipientSignature)
-
-		const v = [multisigSig.v, blankCheckSig.v, recipientSig.v]
-		const r = [multisigSig.r.valueOf(), blankCheckSig.r.valueOf(), recipientSig.r.valueOf()]
-		const s = [multisigSig.s.valueOf(), blankCheckSig.s.valueOf(), recipientSig.s.valueOf()]
+		const v = [multisigSignature.v, blankCheckSignature.v, recipientSignature.v]
+		const r = [multisigSignature.r.valueOf(), blankCheckSignature.r.valueOf(), recipientSignature.r.valueOf()]
+		const s = [multisigSignature.s.valueOf(), blankCheckSignature.s.valueOf(), recipientSignature.s.valueOf()]
 
 		var initialBalanceSender = await basicToken.balanceOf(multisig)
 		var initialBalanceRecipient = await basicToken.balanceOf(recipient)
@@ -141,35 +120,23 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		const m = [1, 1, 2, 2]
 		const signers = [signer, card, card2]
 
-		var multisigHash = await test.soliditySha3_addresses_m(signers, m);
-		var multisigSignature = web3.eth.sign(multisig, multisigHash).slice(2);
-		const multisigSig = getRSV(multisigSignature)
-
-		// sign by multisig signer
-		var blankCheckHash = await test.soliditySha3_amount_address(web3.toWei(1, "ether"), verificationKey);
-		var blankCheckSignature = web3.eth.sign(signer, blankCheckHash).slice(2);
-		const blankCheckSig = getRSV(blankCheckSignature)
-
-		// sign by a random verification key
-		var recipientHash = await test.soliditySha3_address(recipient);
-		var recipientSignature = web3.eth.sign(verificationKey, recipientHash).slice(2);
-		const recipientSig = getRSV(recipientSignature)
+		const multisigSignature = await getMultisigSignature(signers, m, multisig)
+		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer)
+		const recipientSignature = await getRecipientSignature(recipient, verificationKey)
 
 		// card 1
 		const digest = '0xABCDEF'
 		var digestHash = await test.soliditySha3_sign(digest)
-		var digestSignature = web3.eth.sign(card, digestHash).slice(2);
-		const digestSig = getRSV(digestSignature)
+		const digestSig = await getDigestSignature(digestHash, card)
 		
 		// card 2
 		const digest2 = '0xFEDCBA'
 		var digestHash2 = await test.soliditySha3_sign(digest2)
-		var digestSignature2 = web3.eth.sign(card2, digestHash2).slice(2);
-		const digestSig2 = getRSV(digestSignature2)
+		const digestSig2 = await getDigestSignature(digestHash2, card2)
 		
-		const v = [multisigSig.v, blankCheckSig.v, digestSig.v, digestSig2.v, recipientSig.v]
-		const r = [multisigSig.r.valueOf(), blankCheckSig.r.valueOf(), digestSig.r.valueOf(), digestSig2.r.valueOf(), recipientSig.r.valueOf()]
-		const s = [multisigSig.s.valueOf(), blankCheckSig.s.valueOf(), digestSig.s.valueOf(), digestSig2.s.valueOf(), recipientSig.s.valueOf()]
+		const v = [multisigSignature.v, blankCheckSignature.v, digestSig.v, digestSig2.v, recipientSignature.v]
+		const r = [multisigSignature.r.valueOf(), blankCheckSignature.r.valueOf(), digestSig.r.valueOf(), digestSig2.r.valueOf(), recipientSignature.r.valueOf()]
+		const s = [multisigSignature.s.valueOf(), blankCheckSignature.s.valueOf(), digestSig.s.valueOf(), digestSig2.s.valueOf(), recipientSignature.s.valueOf()]
 
 		const digestHashes = [digestHash, digestHash2]
 
@@ -210,29 +177,18 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		const signers = [signer, card]
 		const m = [1, 1, 1, 1]
 
-		const multisigHash = await test.soliditySha3_addresses_m(signers, m);
-		const multisigSignature = web3.eth.sign(multisig, multisigHash).slice(2);
-		const multisigSig = getRSV(multisigSignature)
-
-		// sign by multisig signer
-		const blankCheckHash = await test.soliditySha3_amount_address(web3.toWei(1, "ether"), verificationKey);
-		const blankCheckSignature = web3.eth.sign(signer, blankCheckHash).slice(2);
-		const blankCheckSig = getRSV(blankCheckSignature)
-
-		// sign by a random verification key
-		const recipientHash = await test.soliditySha3_address(recipient);
-		const recipientSignature = web3.eth.sign(verificationKey, recipientHash).slice(2);
-		const recipientSig = getRSV(recipientSignature)
+		const multisigSignature = await getMultisigSignature(signers, m, multisig)
+		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer)
+		const recipientSignature = await getRecipientSignature(recipient, verificationKey)
 
 		const digest = '0xABCDEF'
 		const digestHash = await test.soliditySha3_sign(digest)
 		// sign card with incorrect account
-		const digestSignature = web3.eth.sign(payer, digestHash).slice(2);
-		const digestSig = getRSV(digestSignature)
+		const digestSig = await getDigestSignature(digestHash, payer)
 		
-		const v = [multisigSig.v, blankCheckSig.v, digestSig.v, recipientSig.v]
-		const r = [multisigSig.r.valueOf(), blankCheckSig.r.valueOf(), digestSig.r.valueOf(), recipientSig.r.valueOf()]
-		const s = [multisigSig.s.valueOf(), blankCheckSig.s.valueOf(), digestSig.s.valueOf(), recipientSig.s.valueOf()]
+		const v = [multisigSignature.v, blankCheckSignature.v, digestSig.v, recipientSignature.v]
+		const r = [multisigSignature.r.valueOf(), blankCheckSignature.r.valueOf(), digestSig.r.valueOf(), recipientSignature.r.valueOf()]
+		const s = [multisigSignature.s.valueOf(), blankCheckSignature.s.valueOf(), digestSig.s.valueOf(), recipientSignature.s.valueOf()]
 
 		assert(await zipperMS.checkCashed(multisig, verificationKey) === false, "check already marked as cashed before transfer");
 
@@ -251,4 +207,29 @@ function log(title, msg) {
 
 function getRSV(str) {
 	return {r:'0x' + str.slice(0,64), s: '0x' + str.slice(64,128), v: web3.toDecimal(str.slice(128,130)) + 27 };
+}
+
+async function getMultisigSignature(signers, m, multisig) {
+	const multisigHash = await test.soliditySha3_addresses_m(signers, m);
+	const multisigSignature = web3.eth.sign(multisig, multisigHash).slice(2);
+	return getRSV(multisigSignature)
+}
+
+async function getBlankCheckSignature(verificationKey, signer) {
+	// sign by multisig signer
+	const blankCheckHash = await test.soliditySha3_amount_address(web3.toWei(1, "ether"), verificationKey);
+	const blankCheckSignature = web3.eth.sign(signer, blankCheckHash).slice(2);
+	return getRSV(blankCheckSignature)
+}
+
+async function getRecipientSignature(recipient, verificationKey) {
+	// sign by a random verification key
+	const recipientHash = await test.soliditySha3_address(recipient);
+	const recipientSignature = web3.eth.sign(verificationKey, recipientHash).slice(2);
+	return getRSV(recipientSignature)
+}
+
+async function getDigestSignature(digestHash, card) {
+	const digestSignature = web3.eth.sign(card, digestHash).slice(2);
+	return getRSV(digestSignature)
 }
