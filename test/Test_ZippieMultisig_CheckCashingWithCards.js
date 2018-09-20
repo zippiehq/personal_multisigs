@@ -23,7 +23,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 						return ZippieMultisigWallet.new();
      			}).then(instance => {
      				zipperMS = instance;
-						return basicToken.approve(instance.address, web3.toWei(100, "ether"), {from: accounts[5]});
+						return basicToken.approve(instance.address, web3.utils.toWei("100", "ether"), {from: accounts[5]});
 				});
 			});
 	});
@@ -49,21 +49,22 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		var initialBalanceRecipient = await basicToken.balanceOf(recipient)
 		assert(await zipperMS.checkCashed(multisig, verificationKey) === false, "check already marked as cashed before transfer");
 		
-		await zipperMS.redeemBlankCheck(addresses, signers, m, v, r, s, web3.toWei(1, "ether"), [digestHash], {from: sponsor});
+		const amount = web3.utils.toWei("1", "ether")
+		await zipperMS.redeemBlankCheck(addresses, signers, m, v, r, s, amount, [digestHash], {from: sponsor});
 
 		var newBalanceSender = await basicToken.balanceOf(multisig)
 		var newBalanceRecipient = await basicToken.balanceOf(recipient)	
-		assert(initialBalanceSender.minus(newBalanceSender).toString() === web3.toWei(1, "ether"), "balance did not transfer from sender");
-		assert(newBalanceRecipient.minus(initialBalanceRecipient).toString() === web3.toWei(1, "ether"), "balance did not transfer to recipient");
+		assert((initialBalanceSender - newBalanceSender).toString() === amount, "amount did not transfer from sender");
+		assert((newBalanceRecipient - initialBalanceRecipient).toString() === amount, "amount did not transfer to recipient");
 		assert(await zipperMS.checkCashed(multisig, verificationKey) === true, "check has not been marked as cashed after transfer");
 
 		try {
 			// try the same exact transfer
-			await zipperMS.redeemBlankCheck(addresses, signers, m, v, r, s, web3.toWei(1, "ether"), [digestHash], {from: sponsor});
+			await zipperMS.redeemBlankCheck(addresses, signers, m, v, r, s, amount, [digestHash], {from: sponsor});
 			assert(false, "duplicate transfer went through, but should have failed!")
-		}
-		catch(error){
-			assert(error.message == 'VM Exception while processing transaction: revert', error.message)
+		} catch(error){
+			assert(error.reason == 'Invalid blank check', error.reason)
+			assert(error.message.includes('VM Exception while processing transaction: revert'), error.message)
 		}
 	});
 
@@ -83,21 +84,21 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		var initialBalanceRecipient = await basicToken.balanceOf(recipient)
 		assert(await zipperMS.checkCashed(multisig, verificationKey) === false, "check already marked as cashed before transfer");
 		
-		await zipperMS.redeemBlankCheck(addresses, [signer], m, v, r, s, web3.toWei(1, "ether"), [], {from: sponsor});
+		const amount = web3.utils.toWei("1", "ether")
+		await zipperMS.redeemBlankCheck(addresses, [signer], m, v, r, s, amount, [], {from: sponsor});
 
 		var newBalanceSender = await basicToken.balanceOf(multisig)
 		var newBalanceRecipient = await basicToken.balanceOf(recipient)	
-		assert(initialBalanceSender.minus(newBalanceSender).toString() === web3.toWei(1, "ether"), "balance did not transfer from sender");
-		assert(newBalanceRecipient.minus(initialBalanceRecipient).toString() === web3.toWei(1, "ether"), "balance did not transfer to recipient");
+		assert((initialBalanceSender - newBalanceSender).toString() === amount, "amount did not transfer from sender");
+		assert((newBalanceRecipient - initialBalanceRecipient).toString() === amount, "amount did not transfer to recipient");
 		assert(await zipperMS.checkCashed(multisig, verificationKey) === true, "check has not been marked as cashed after transfer");
 
 		try{
 			// try the same exact transfer
-			await zipperMS.redeemBlankCheck(addresses, [signer], m, v, r, s, web3.toWei(1, "ether"), [], {from: sponsor});
+			await zipperMS.redeemBlankCheck(addresses, [signer], m, v, r, s, amount, [], {from: sponsor});
 			assert(false, "duplicate transfer went through, but should have failed!")
-		}
-		catch(error){
-			assert(error.message == 'VM Exception while processing transaction: revert', error.message)
+		} catch(error){
+			assert(error.reason == 'Invalid blank check', error.reason)
 		}
 	});
 
@@ -132,23 +133,23 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		var initialBalanceRecipient = await basicToken.balanceOf(recipient)
 		assert(await zipperMS.checkCashed(multisig, verificationKey) === false, "check already marked as cashed before transfer");
 		
-		await zipperMS.redeemBlankCheck(addresses, signers, m, v, r, s, web3.toWei(1, "ether"), digestHashes, {from: sponsor});
+		const amount = web3.utils.toWei("1", "ether")
+		await zipperMS.redeemBlankCheck(addresses, signers, m, v, r, s, amount, digestHashes, {from: sponsor});
 
 		var newBalanceSender = await basicToken.balanceOf(multisig)
 		var newBalanceRecipient = await basicToken.balanceOf(recipient)	
-		assert(initialBalanceSender.minus(newBalanceSender).toString() === web3.toWei(1, "ether"), "balance did not transfer from sender");
-		assert(newBalanceRecipient.minus(initialBalanceRecipient).toString() === web3.toWei(1, "ether"), "balance did not transfer to recipient");
+		assert((initialBalanceSender - newBalanceSender).toString() === amount, "amount did not transfer from sender");
+		assert((newBalanceRecipient - initialBalanceRecipient).toString() === amount, "amount did not transfer to recipient");
 		assert(await zipperMS.checkCashed(multisig, verificationKey) === true, "check has not been marked as cashed after transfer");
 
 		try {
 			// try transfer reusing card digest
 			const duplicatedDigestHashes = [digestHash, digestHash]
 
-			await zipperMS.redeemBlankCheck(addresses, signers, m, v, r, s, web3.toWei(1, "ether"), duplicatedDigestHashes, {from: sponsor});
+			await zipperMS.redeemBlankCheck(addresses, signers, m, v, r, s, amount, duplicatedDigestHashes, {from: sponsor});
 			assert(false, "duplicated digest transfer went through, but should have failed!")
-		}
-		catch(error){
-			assert(error.message == 'VM Exception while processing transaction: revert', error.message)
+		} catch(error) {
+			assert(error.message.includes('VM Exception while processing transaction: revert'), error.message)
 		}
 	});
 
@@ -175,43 +176,44 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		assert(await zipperMS.checkCashed(multisig, verificationKey) === false, "check already marked as cashed before transfer");
 
 		try {
-			await zipperMS.redeemBlankCheck(addresses, signers, m, v, r, s, web3.toWei(1, "ether"), [digestHash], {from: sponsor});
+			const amount = web3.utils.toWei("1", "ether")
+			await zipperMS.redeemBlankCheck(addresses, signers, m, v, r, s, amount, [digestHash], {from: sponsor});
 			assert(false, "transfer went through even though card was signed by wrong account")
 		} catch (error) {
-			assert(error.message == 'VM Exception while processing transaction: revert', error.message)
+			assert(error.message.includes('VM Exception while processing transaction: revert'), error.message)
 		}
 	});
 });
 
-function log(title, msg) {
-	console.log(title + ': ' + msg)
+function log(msg) {
+	console.log(msg)
 }
 
 function getRSV(str) {
-	return {r:'0x' + str.slice(0,64), s: '0x' + str.slice(64,128), v: web3.toDecimal(str.slice(128,130)) + 27 };
+	return {r:'0x' + str.slice(0,64), s: '0x' + str.slice(64,128), v: web3.utils.hexToNumber(str.slice(128,130)) + 27 };
 }
 
 async function getMultisigSignature(signers, m, multisig) {
 	const multisigHash = await test.soliditySha3_addresses_m(signers, m);
-	const multisigSignature = web3.eth.sign(multisig, multisigHash).slice(2);
-	return getRSV(multisigSignature)
+	const multisigSignature = await web3.eth.sign(multisigHash, multisig);
+	return getRSV(multisigSignature.slice(2))
 }
 
 async function getBlankCheckSignature(verificationKey, signer) {
 	// sign by multisig signer
-	const blankCheckHash = await test.soliditySha3_amount_address(web3.toWei(1, "ether"), verificationKey);
-	const blankCheckSignature = web3.eth.sign(signer, blankCheckHash).slice(2);
-	return getRSV(blankCheckSignature)
+	const blankCheckHash = await test.soliditySha3_amount_address(web3.utils.toWei("1", "ether"), verificationKey);
+	const blankCheckSignature = await web3.eth.sign(blankCheckHash, signer);
+	return getRSV(blankCheckSignature.slice(2))
 }
 
 async function getRecipientSignature(recipient, verificationKey) {
 	// sign by a random verification key
 	const recipientHash = await test.soliditySha3_address(recipient);
-	const recipientSignature = web3.eth.sign(verificationKey, recipientHash).slice(2);
-	return getRSV(recipientSignature)
+	const recipientSignature = await web3.eth.sign(recipientHash, verificationKey);
+	return getRSV(recipientSignature.slice(2))
 }
 
 async function getDigestSignature(digestHash, card) {
-	const digestSignature = web3.eth.sign(card, digestHash).slice(2);
-	return getRSV(digestSignature)
+	const digestSignature = await web3.eth.sign(digestHash, card);
+	return getRSV(digestSignature.slice(2))
 }
