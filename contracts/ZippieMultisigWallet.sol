@@ -26,7 +26,7 @@ contract ZippieMultisigWallet{
         require(isValidCheck(addresses, nonce),  "Invalid check");
 
         // verify that the multisig wallet previously signed that these keys can access the funds
-        require(verifyMultisigKeyAllowsAddresses(allSignersPossible, m, addresses[0], v[0], r[0], s[0]));
+        require(verifyMultisigKeyAllowsAddresses(allSignersPossible, m, addresses[0], v[0], r[0], s[0]), "Invalid address");
 
         // if we've made it here, we have verified that the first signature is a valid signature of a legal account
 
@@ -53,12 +53,11 @@ contract ZippieMultisigWallet{
     // -- [0..2] as above
     // -- [3] verification key
     function redeemBlankCheck(address[] addresses, address[] allSignersPossible, uint8[] m, uint8[] v, bytes32[] r, bytes32[] s, uint256 amount, bytes32[] cardDigests) public {
-
         require(verifySignatureRequirements(m, allSignersPossible.length, v, r, s, 2, cardDigests.length), "Invalid blank check signatures");
         require(isValidBlankCheck(addresses),  "Invalid blank check");
 
         // verify that the multisig wallet previously signed that these keys can access the funds
-        require(verifyMultisigKeyAllowsAddresses(allSignersPossible, m, addresses[0], v[0], r[0], s[0]));
+        require(verifyMultisigKeyAllowsAddresses(allSignersPossible, m, addresses[0], v[0], r[0], s[0]), "Invalid address");
 
         // if we've made it here, we have verified that the first signature is a valid signature of a legal account
 
@@ -80,17 +79,16 @@ contract ZippieMultisigWallet{
         // note that i == m + 1, or the last element in r,s,v
         address addressVerify = ecrecover(hashVerify, v[s.length - 1], r[s.length - 1], s[s.length - 1]);
 
-        require(addressVerify == addresses[3]);
+        require(addressVerify == addresses[3], "Incorrect address");
 
         // if we've made it here, past the guantlet of asserts(), then we have verified that these are all signatures of legal addresses
         // and that they all want to transfer "amount" tokens to any chosen "receiver" by the user that has knowledge of 
         // the private verification key to cash the check 
-
-        // now all there is left to do is transfer these tokens!
-        ERC20(addresses[1]).transferFrom(addresses[0], addresses[2], amount);
-            
         // add to the checkCashed array to so that this check can't be cashed again.
         checkCashed[addresses[0]][addresses[3]] = true;
+
+        // now all there is left to do is transfer these tokens!
+        require(ERC20(addresses[1]).transferFrom(addresses[0], addresses[2], amount), "Transfer failed");
     }
 
     function verifySignatures(bytes32 hashVerify, address[] allSignersPossible, uint8[] m, uint8[] v, bytes32[] r, bytes32[] s, bytes32[] cardDigests) internal pure {
@@ -111,10 +109,10 @@ contract ZippieMultisigWallet{
             addressVerify = ecrecover(hashVerify, v[i], r[i], s[i]);
 
             // check that address is a valid address 
-            require(checkIfAddressInArray(allSignersPossible, addressVerify));
+            require(checkIfAddressInArray(allSignersPossible, addressVerify), "Invalid address found when verifying signatures");
 
             // check that this address has not been used before
-            require(!checkIfAddressInArray(usedAddresses, addressVerify));
+            require(!checkIfAddressInArray(usedAddresses, addressVerify), "Address has been used already");
 
             // push this address to the usedAddresses array
             usedAddresses[i - 1] = addressVerify;
@@ -130,6 +128,7 @@ contract ZippieMultisigWallet{
                 return true;
             }
         }
+        
         return false;
     }
 
