@@ -18,9 +18,9 @@ export async function getMultisigSignature(signers, m, multisig) {
 	return getRSV(multisigSignature.slice(2))
 }
 
-export async function getBlankCheckSignature(verificationKey, signer) {
+export async function getBlankCheckSignature(verificationKey, signer, amount) {
 	// sign by multisig signer
-	const blankCheckHash = await test.soliditySha3_amount_address(web3.utils.toWei("1", "ether"), verificationKey);
+	const blankCheckHash = await test.soliditySha3_amount_address(web3.utils.toWei(amount, "ether"), verificationKey);
 	const blankCheckSignature = await web3.eth.sign(blankCheckHash, signer);
 	return getRSV(blankCheckSignature.slice(2))
 }
@@ -35,6 +35,14 @@ export async function getRecipientSignature(recipient, verificationKey) {
 export async function getDigestSignature(digestHash, card) {
 	const digestSignature = await web3.eth.sign(digestHash, card);
 	return getRSV(digestSignature.slice(2))
+}
+
+export function getSignatureFrom3(multisigSignature, blankCheckSignature, recipientSignature) {
+	const v = [multisigSignature.v, blankCheckSignature.v, recipientSignature.v]
+	const r = [multisigSignature.r.valueOf(), blankCheckSignature.r.valueOf(), recipientSignature.r.valueOf()]
+	const s = [multisigSignature.s.valueOf(), blankCheckSignature.s.valueOf(), recipientSignature.s.valueOf()]
+
+	return {v:v, r:r, s:s}
 }
 
 export function getSignature(multisigSignature, blankCheckSignature, digestSignature, recipientSignature) {
