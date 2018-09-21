@@ -2,6 +2,7 @@ var TestFunctions = artifacts.require("./TestFunctions.sol");
 var BasicERC20Mock = artifacts.require("./BasicERC20Mock.sol");
 var ZippieMultisigWallet = artifacts.require("./ZippieMultisigWallet.sol");
 var test;
+import { getMultisigSignature, getBlankCheckSignature, getRecipientSignature, getDigestSignature, getSignature, log } from './HelpFunctions';
 
 contract("Test Zippie Multisig Balance or Allowance Too Low", (accounts) => {
 
@@ -108,36 +109,3 @@ contract("Test Zippie Multisig Balance or Allowance Too Low", (accounts) => {
 		assert(await zipperMS.checkCashed(multisig, verificationKey) === false, "check was incorrectly marked as cashed after failed transfer");
 	});
 });
-
-function log(msg) {
-	console.log(msg)
-}
-
-function getRSV(str) {
-	return {r:'0x' + str.slice(0,64), s: '0x' + str.slice(64,128), v: web3.utils.hexToNumber(str.slice(128,130)) + 27 };
-}
-
-async function getMultisigSignature(signers, m, multisig) {
-	const multisigHash = await test.soliditySha3_addresses_m(signers, m);
-	const multisigSignature = await web3.eth.sign(multisigHash, multisig);
-	return getRSV(multisigSignature.slice(2))
-}
-
-async function getBlankCheckSignature(verificationKey, signer, amount) {
-	// sign by multisig signer
-	const blankCheckHash = await test.soliditySha3_amount_address(web3.utils.toWei(amount, "ether"), verificationKey);
-	const blankCheckSignature = await web3.eth.sign(blankCheckHash, signer);
-	return getRSV(blankCheckSignature.slice(2))
-}
-
-async function getRecipientSignature(recipient, verificationKey) {
-	// sign by a random verification key
-	const recipientHash = await test.soliditySha3_address(recipient);
-	const recipientSignature = await web3.eth.sign(recipientHash, verificationKey);
-	return getRSV(recipientSignature.slice(2))
-}
-
-async function getDigestSignature(digestHash, card) {
-	const digestSignature = await web3.eth.sign(digestHash, card);
-	return getRSV(digestSignature.slice(2))
-}

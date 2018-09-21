@@ -35,7 +35,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		const m = [1, 1, 1, 1]
 
 		const multisigSignature = await getMultisigSignature(signers, m, multisig)
-		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer)
+		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1")
 		const recipientSignature = await getRecipientSignature(recipient, verificationKey)
 
 		const digest = '0xABCDEF'
@@ -72,7 +72,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		const m = [1, 1, 0, 0]
 
 		const multisigSignature = await getMultisigSignature([signer], m, multisig)
-		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer)
+		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1")
 		const recipientSignature = await getRecipientSignature(recipient, verificationKey)
 
 		const v = [multisigSignature.v, blankCheckSignature.v, recipientSignature.v]
@@ -109,7 +109,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		const signers = [signer, card, card2]
 
 		const multisigSignature = await getMultisigSignature(signers, m, multisig)
-		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer)
+		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1")
 		const recipientSignature = await getRecipientSignature(recipient, verificationKey)
 
 		// card 1
@@ -160,7 +160,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		const m = [1, 1, 1, 1]
 
 		const multisigSignature = await getMultisigSignature(signers, m, multisig)
-		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer)
+		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1")
 		const recipientSignature = await getRecipientSignature(recipient, verificationKey)
 
 		const digest = '0xABCDEF'

@@ -35,7 +35,7 @@ contract("Test Zippie Multisig Reuse Card Nonces", (accounts) => {
 		const m = [1, 1, 1, 1]
 
 		const multisigSignature = await getMultisigSignature(signers, m, multisig)
-		var blankCheckSignature = await getBlankCheckSignature(verificationKey, signer)
+		var blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1")
 		var recipientSignature = await getRecipientSignature(recipient, verificationKey)
 
 		const digest = '0xABCDEF'
@@ -61,7 +61,7 @@ contract("Test Zippie Multisig Reuse Card Nonces", (accounts) => {
 		const verificationKey2 = accounts[7]
 		addresses = [multisig, basicToken.address, recipient, verificationKey2]
 		
-		blankCheckSignature = await getBlankCheckSignature(verificationKey2, signer)
+		blankCheckSignature = await getBlankCheckSignature(verificationKey2, signer, "1")
 		recipientSignature = await getRecipientSignature(recipient, verificationKey2)
 
 		signature = getSignature(multisigSignature, blankCheckSignature, digestSignature, recipientSignature)
@@ -77,7 +77,7 @@ contract("Test Zippie Multisig Reuse Card Nonces", (accounts) => {
 		const verificationKey3 = accounts[8]
 		addresses = [multisig, basicToken.address, recipient, verificationKey3]
 		
-		blankCheckSignature = await getBlankCheckSignature(verificationKey3, signer)
+		blankCheckSignature = await getBlankCheckSignature(verificationKey3, signer, "1")
 		recipientSignature = await getRecipientSignature(recipient, verificationKey3)
 
 		const digest2 = '0xFEDCBA'
