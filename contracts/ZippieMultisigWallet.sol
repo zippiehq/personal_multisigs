@@ -7,6 +7,7 @@ contract ZippieMultisigWallet{
     // this is needed to prevent someone from reusing signatures to create unwanted transactions and drain a multsig
     mapping (address => uint256) addressNonceMapping;
     mapping (address => mapping(address => bool)) public checkCashed;
+    mapping (address => mapping(bytes32 => bool)) public cardNonces;
 
     // address[] addresses 
     // -- [0] multisig address to withdraw from
@@ -91,7 +92,7 @@ contract ZippieMultisigWallet{
         require(ERC20(addresses[1]).transferFrom(addresses[0], addresses[2], amount), "Transfer failed");
     }
 
-    function verifySignatures(bytes32 hashVerify, address[] allSignersPossible, uint8[] m, uint8[] v, bytes32[] r, bytes32[] s, bytes32[] cardDigests) internal pure {
+    function verifySignatures(bytes32 hashVerify, address[] allSignersPossible, uint8[] m, uint8[] v, bytes32[] r, bytes32[] s, bytes32[] cardDigests) internal {
         // make a memory mapping of (addresses => used this address?) to check for duplicates
         address[] memory usedAddresses = new address[](m[1] + m[3]);
 
@@ -102,7 +103,11 @@ contract ZippieMultisigWallet{
 
             if (i > m[1]) {
                 // verify card digests
-                hashVerify = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", cardDigests[i-m[0]-1]));
+                bytes32 digest = cardDigests[i - m[0] - 1];
+                hashVerify = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest));
+                require(cardNonces[allSignersPossible[i - 1]][digest] == false, "Card nonce reused");
+                // store the card digest to prevent future reuse
+                cardNonces[allSignersPossible[i - 1]][digest] = true;
             }
 
             // get address from ec_recover
