@@ -67,40 +67,6 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		}
 	});
 
-	it("should allow a blank check to be cashed once even if no card is required, and fail the second time", async () => {
-		const addresses = [multisig, basicToken.address, recipient, verificationKey]
-		const m = [1, 1, 0, 0]
-
-		const multisigSignature = await getMultisigSignature([signer], m, multisig)
-		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1")
-		const recipientSignature = await getRecipientSignature(recipient, verificationKey)
-
-		const v = [multisigSignature.v, blankCheckSignature.v, recipientSignature.v]
-		const r = [multisigSignature.r.valueOf(), blankCheckSignature.r.valueOf(), recipientSignature.r.valueOf()]
-		const s = [multisigSignature.s.valueOf(), blankCheckSignature.s.valueOf(), recipientSignature.s.valueOf()]
-
-		const initialBalanceSender = await basicToken.balanceOf(multisig)
-		const initialBalanceRecipient = await basicToken.balanceOf(recipient)
-		assert(await zipperMS.checkCashed(multisig, verificationKey) === false, "check already marked as cashed before transfer");
-		
-		const amount = web3.utils.toWei("1", "ether")
-		await zipperMS.redeemBlankCheck(addresses, [signer], m, v, r, s, amount, [], {from: sponsor});
-
-		const newBalanceSender = await basicToken.balanceOf(multisig)
-		const newBalanceRecipient = await basicToken.balanceOf(recipient)	
-		assert((initialBalanceSender - newBalanceSender).toString() === amount, "amount did not transfer from sender");
-		assert((newBalanceRecipient - initialBalanceRecipient).toString() === amount, "amount did not transfer to recipient");
-		assert(await zipperMS.checkCashed(multisig, verificationKey) === true, "check has not been marked as cashed after transfer");
-
-		try{
-			// try the same exact transfer
-			await zipperMS.redeemBlankCheck(addresses, [signer], m, v, r, s, amount, [], {from: sponsor});
-			assert(false, "duplicate transfer went through, but should have failed!")
-		} catch(error){
-			assert(error.reason == 'Invalid blank check', error.reason)
-		}
-	});
-
 	it("should allow a blank check to be cashed when using two cards, and fail the second time if card digest is reused", async () => {
 		const card2 = accounts[7]
 		
