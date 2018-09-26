@@ -151,6 +151,7 @@ contract ZippieMultisigWallet{
     function verifySignatureRequirements(uint8[] m, uint256 nrOfSigners, uint8[] v, bytes32[] r, bytes32[] s, uint256 offset, uint256 nrOfCards) internal pure returns(bool successfulVerification) {
         return 
             // require that m, allSignersPossible are well formed (m <= nrOfSigners, m not zero, and m not MAX_UINT8)
+            m[0] + m[2] == nrOfSigners && 
             m[1] + m[3] <= nrOfSigners && 
             m[1] <= m[0] && 
             m[3] <= m[2] && 

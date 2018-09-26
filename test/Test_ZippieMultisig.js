@@ -188,7 +188,7 @@ contract("Test Zippie Multisig", (accounts) => {
 	});
 
 	it("should pass all three (correct) variants of 2 of 3 multisig transfer", async () => {
-		const m = [2, 2, 0, 0]
+		const m = [3, 2, 0, 0]
 
 		var signByPrivateKey = await test.soliditySha3_addresses_m([accounts[1], accounts[2], accounts[3]], m);
 		var signedByPrivateKey = await web3.eth.sign(signByPrivateKey, accounts[9]);
