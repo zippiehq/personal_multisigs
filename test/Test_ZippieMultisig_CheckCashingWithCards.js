@@ -30,7 +30,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 	});
 
 	it("should allow a blank check to be cashed once from a 1 of 1 multisig with 2FA, and fail the second time", async () => {
-		const addresses = [multisig, basicToken.address, recipient, verificationKey]
+		var addresses = [multisig, basicToken.address, recipient, verificationKey]
 		const signers = [signer, card]
 		const m = [1, 1, 1, 1]
 
@@ -63,14 +63,22 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 			assert(false, "duplicate transfer went through, but should have failed!")
 		} catch(error){
 			assert(error.reason == 'Invalid blank check', error.reason)
-			assert(error.message.includes('VM Exception while processing transaction: revert'), error.message)
+		}
+
+		try {
+			const newVerificationKey = accounts[42]
+			addresses = [multisig, basicToken.address, recipient, newVerificationKey]
+			await zipperMS.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [digestHash], {from: sponsor});
+			assert(false, "duplicate transfer went through, but should have failed!")
+		} catch(error){
+			assert(error.reason == 'Invalid address found when verifying signatures', error.reason)
 		}
 	});
 
-	it("should allow a blank check to be cashed when using two cards, and fail the second time if card digest is reused", async () => {
+	it("should allow a blank check to be cashed when using two cards", async () => {
 		const card2 = accounts[7]
 		
-		const addresses = [multisig, basicToken.address, recipient, verificationKey]
+		var addresses = [multisig, basicToken.address, recipient, verificationKey]
 		const m = [1, 1, 2, 2]
 		const signers = [signer, card, card2]
 
@@ -106,44 +114,5 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		assert((initialBalanceSender - newBalanceSender).toString() === amount, "amount did not transfer from sender");
 		assert((newBalanceRecipient - initialBalanceRecipient).toString() === amount, "amount did not transfer to recipient");
 		assert(await zipperMS.checkCashed(multisig, verificationKey) === true, "check has not been marked as cashed after transfer");
-
-		try {
-			// try transfer reusing card digest
-			const duplicatedDigestHashes = [digestHash, digestHash]
-
-			await zipperMS.redeemBlankCheck(addresses, signers, m, v, r, s, amount, duplicatedDigestHashes, {from: sponsor});
-			assert(false, "duplicated digest transfer went through, but should have failed!")
-		} catch(error) {
-			assert(error.message.includes('VM Exception while processing transaction: revert'), error.message)
-		}
-	});
-
-	it("should prevent a blank check to be cashed if card is incorrectly signed", async () => {
-		const payer = accounts[1]
-
-		const addresses = [multisig, basicToken.address, recipient, verificationKey]
-		const signers = [signer, card]
-		const m = [1, 1, 1, 1]
-
-		const multisigSignature = await getMultisigSignature(signers, m, multisig)
-		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1")
-		const recipientSignature = await getRecipientSignature(recipient, verificationKey)
-
-		const digest = '0xABCDEF'
-		const digestHash = await test.soliditySha3_sign(digest)
-		// sign with incorrect account
-		const digestSignature = await getDigestSignature(digestHash, payer)
-		
-		const signature = getSignature(multisigSignature, blankCheckSignature, digestSignature, recipientSignature)
-
-		assert(await zipperMS.checkCashed(multisig, verificationKey) === false, "check already marked as cashed before transfer");
-
-		try {
-			const amount = web3.utils.toWei("1", "ether")
-			await zipperMS.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [digestHash], {from: sponsor});
-			assert(false, "transfer went through even though card was signed by wrong account")
-		} catch (error) {
-			assert(error.message.includes('VM Exception while processing transaction: revert'), error.message)
-		}
 	});
 });

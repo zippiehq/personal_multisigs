@@ -63,45 +63,6 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		}
 	});
 
-	it("should fail a blank check transfer when the verificationKey is false", async () => {
-		const addresses = [multisig, basicToken.address, recipient, verificationKey]
-		const signers = [signer]
-		const m = [1, 1, 0, 0]
-		const wrongVerificationKey = accounts[98]
-
-		const multisigSignature = await getMultisigSignature(signers, m, multisig)
-		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1")
-		const recipientSignature = await getRecipientSignature(recipient, wrongVerificationKey)
-
-		const signature = getSignatureFrom3(multisigSignature, blankCheckSignature, recipientSignature)
-
-		var initialBalanceSender = await basicToken.balanceOf(multisig)
-		var initialBalanceRecipient = await basicToken.balanceOf(recipient)
-		assert(await zipperMS.checkCashed(multisig, verificationKey) === false, "check already marked as cashed before transfer");
-		const addresses2 = [multisig, basicToken.address, recipient, wrongVerificationKey]
-		
-		const amount = web3.utils.toWei("1", "ether")
-		try {
-			await zipperMS.redeemBlankCheck(addresses2, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
-			assert(false, "Verification Key was incorrect, but transfer went through!")
-		} catch(error) {
-			assert(error.message.includes('VM Exception while processing transaction: revert'), "incorrect error type...")
-		}
-
-		try {
-			await zipperMS.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
-			assert(false, "Verification Key was correct, transfer still failed!")
-		} catch(error) {
-			assert(error.message.includes('VM Exception while processing transaction: revert'), "incorrect error type 2...")
-		}
-
-		var newBalanceSender = await basicToken.balanceOf(multisig)
-		var newBalanceRecipient = await basicToken.balanceOf(recipient)	
-		assert((initialBalanceSender - newBalanceSender).toString() === web3.utils.toWei("0", "ether"), "balance transfer from sender even if transaction didn't went through");
-		assert((newBalanceRecipient - initialBalanceRecipient).toString() === web3.utils.toWei("0", "ether"), "balance transfer to recipient even if transaction didn't went through");
-		assert(await zipperMS.checkCashed(multisig, verificationKey) === false, "check has been marked as cashed even if transaction didn't went through");
-	});
-
 	it("should allow a blank check to be cashed from a 2 of 2 multisig", async () => {
 		const addresses = [multisig, basicToken.address, recipient, verificationKey]
 		const signers = [signer, signer2]
