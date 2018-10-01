@@ -104,7 +104,7 @@ contract ZippieMultisigWallet{
             if (i > m[1]) {
                 // verify card digests
                 bytes32 digest = cardDigests[i - m[0] - 1];
-                hashVerify = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest));
+                hashVerify = digest;
                 require(cardNonces[allSignersPossible[i - 1]][digest] == false, "Card nonce reused");
                 // store the card digest to prevent future reuse
                 cardNonces[allSignersPossible[i - 1]][digest] = true;
