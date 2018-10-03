@@ -16,7 +16,7 @@ docker build . -f Dockerfile -t ${YOURORG}/personal_multisigs
 ```
 
 * Run the ganache service and tests
-````
+```
 docker run --name personal_multisigs_ganache --detach --network=host ${YOURORG}/ganache
 docker run --name personal_multisigs_truffle --network=host ${YOURORG}/personal_multisigs truffle test
 ```
