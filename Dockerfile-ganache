@@ -1,0 +1,9 @@
+FROM node:10-alpine
+
+WORKDIR /app
+
+RUN npm install -g ganache-cli
+
+EXPOSE 8545/tcp
+
+CMD ganache-cli -m zippie -a 101 -v -h 0.0.0.0
