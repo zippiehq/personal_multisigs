@@ -18,4 +18,9 @@ ADD truffle-config.js /app/truffle-config.js
 RUN apk add git g++ make python
 
 RUN npm install
+
+# Needed when running in AWS on c5/m5/t3, see
+# https://github.com/npm/npm/issues/20861
+RUN npm config set unsafe-perm true
+
 RUN npm install -g truffle@beta
