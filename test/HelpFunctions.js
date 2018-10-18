@@ -46,9 +46,9 @@ export function getSignatureFrom3(multisigSignature, blankCheckSignature, recipi
 }
 
 export function getSignature(multisigSignature, blankCheckSignature, digestSignature, recipientSignature) {
-	const v = [multisigSignature.v, blankCheckSignature.v, digestSignature.v, recipientSignature.v]
-	const r = [multisigSignature.r.valueOf(), blankCheckSignature.r.valueOf(), digestSignature.r.valueOf(), recipientSignature.r.valueOf()]
-	const s = [multisigSignature.s.valueOf(), blankCheckSignature.s.valueOf(), digestSignature.s.valueOf(), recipientSignature.s.valueOf()]
+	const v = [multisigSignature.v, recipientSignature.v, blankCheckSignature.v, digestSignature.v]
+	const r = [multisigSignature.r.valueOf(), recipientSignature.r.valueOf(), blankCheckSignature.r.valueOf(), digestSignature.r.valueOf()]
+	const s = [multisigSignature.s.valueOf(), recipientSignature.s.valueOf(), blankCheckSignature.s.valueOf(), digestSignature.s.valueOf()]
 
 	return {v:v, r:r, s:s}
 }
