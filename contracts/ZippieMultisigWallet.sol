@@ -14,6 +14,7 @@ contract ZippieMultisigWallet {
     // this is needed to prevent someone from reusing signatures to create unwanted transactions (replay protection)
     mapping (address => mapping(address => bool)) public usedNonces;
     mapping (address => mapping(bytes32 => bool)) public usedCardNonces;
+    mapping (address => uint256) public accountLimits;
 
     /** @notice Redeems a check after verifying all required signers/cards
         @dev Upon successful verification of the signatures, it's necessary to verify that the signers signed keccak256(recipient, amount, nonce)
@@ -43,8 +44,10 @@ contract ZippieMultisigWallet {
 
         // get the check hash (amount, recipient, nonce) to verify signer signatures
         bytes32 checkHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(abi.encodePacked(amount, addresses[2], addresses[3]))));
+        // need to check card signatures if account limit is exceeded
+        bool limitExceeded = amount > accountLimits[addresses[0]];
         // verify that the signers signed that they want to transfer "amount" ERC20 tokens and verify card signatures
-        verifySignatures(checkHash, signers, m, v, r, s, cardNonces);
+        verifySignatures(checkHash, signers, m, v, r, s, cardNonces, limitExceeded);
 
         // transfer tokens
         require(ERC20(addresses[1]).transferFrom(addresses[0], addresses[2], amount), "Transfer failed");
@@ -75,20 +78,36 @@ contract ZippieMultisigWallet {
       */
     function redeemBlankCheck(address[] addresses, address[] signers, uint8[] m, uint8[] v, bytes32[] r, bytes32[] s, uint256 amount, bytes32[] cardNonces) public {
         verifyData(addresses, signers, m, v, r, s, amount, cardNonces);
+        require(amount > 0, "Amount must be greater than 0");
+        
+        // need to check card signatures if account limit is exceeded
+        bool limitExceeded = amount > accountLimits[addresses[0]];
 
         // get the blank check hash (amount, verification key) to verify signer signatures
         bytes32 blankCheckHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(abi.encodePacked(amount, addresses[3]))));
-        // verify that the signers signed that they want to transfer "amount" ERC20 token and verify card signatures
-        verifySignatures(blankCheckHash, signers, m, v, r, s, cardNonces);
+        // verify that the signers signed that they want to transfer "amount" ERC20 token and verify card signatures (unless below limit)
+        verifySignatures(blankCheckHash, signers, m, v, r, s, cardNonces, limitExceeded);
 
         // transfer tokens
         require(ERC20(addresses[1]).transferFrom(addresses[0], addresses[2], amount), "Transfer failed");
     }
 
+    function setLimit(address[] addresses, address[] signers, uint8[] m, uint8[] v, bytes32[] r, bytes32[] s, uint256 amount, bytes32[] cardNonces) public {
+        verifyData(addresses, signers, m, v, r, s, amount, cardNonces);
+
+        // get the limit hash (amount, verification key) to verify signer signatures
+        bytes32 limitHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(abi.encodePacked(amount, addresses[3]))));
+        // verify that the signers signed that they want to transfer "amount" ERC20 token and verify card signatures
+        verifySignatures(limitHash, signers, m, v, r, s, cardNonces, true);
+
+        // set limit
+        accountLimits[addresses[0]] = amount;
+    }
+
     function verifyData(address[] addresses, address[] signers, uint8[] m, uint8[] v, bytes32[] r, bytes32[] s, uint256 amount, bytes32[] cardNonces) internal {
         require(addresses.length == 4, "Incorrect address input");
-        require(amount > 0, "Amount must be greater than 0");
-        require(verifySignatureRequirements(m, signers.length, v, r, s, cardNonces.length), "Invalid signature input");
+        // require(amount > 0, "Amount must be greater than 0");
+        // require(verifySignatureRequirements(m, signers.length, v, r, s, cardNonces.length), "Invalid signature input");
         // verify that the verification key signed the recipient address
         require(verifyMultisigNonce(addresses[0], addresses[3], addresses[2], v[1], r[1], s[1]),  "Invalid nonce");
         require(verifyMultisigAccountSignature(signers, m, addresses[0], v[0], r[0], s[0]), "Invalid account");
@@ -98,7 +117,9 @@ contract ZippieMultisigWallet {
             that they all signed keccak256(amount, verificationKey) or keccak256(amount, receiver, nonce) (for cards)
             and that there are no duplicate signatures/addresses
      */
-    function verifySignatures(bytes32 signedHash, address[] signers, uint8[] m, uint8[] v, bytes32[] r, bytes32[] s, bytes32[] cardNonces) internal {
+    function verifySignatures(bytes32 signedHash, address[] signers, uint8[] m, uint8[] v, bytes32[] r, bytes32[] s, bytes32[] cardNonces, bool checkCardSignatures) internal {
+        require(verifySignatureRequirements(m, signers.length, v, r, s, cardNonces.length, checkCardSignatures), "Invalid signature input");
+
         // make a memory mapping of (addresses => used this address?) to check for duplicates
         address[] memory usedAddresses = new address[](m[1] + m[3]);
 
@@ -108,6 +129,9 @@ contract ZippieMultisigWallet {
         for (uint8 i = 2; i < m[1] + m[3] + 2; i++) {
 
             if (i > m[1] + 1) {
+                if (checkCardSignatures == false) {
+                    return;
+                }
                 // verify card nonces
                 bytes32 signedNonce = cardNonces[i - m[0] - 2];
                 require(usedCardNonces[signers[i - 2]][signedNonce] == false, "Card nonce reused");
@@ -148,8 +172,13 @@ contract ZippieMultisigWallet {
         return multisigAddress == ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(abi.encodePacked(signers, m)))), v, r, s);
     }
 
-    function verifySignatureRequirements(uint8[] m, uint256 nrOfSigners, uint8[] v, bytes32[] r, bytes32[] s, uint256 nrOfCards) internal pure returns(bool successfulVerification) {
-        return 
+    function verifySignatureRequirements(uint8[] m, uint256 nrOfSigners, uint8[] v, bytes32[] r, bytes32[] s, uint256 nrOfCards, bool checkCardSignatures) internal pure returns(bool successfulVerification) {
+        uint8 minNrOfCards = 0;
+        if (checkCardSignatures) {
+            minNrOfCards = m[3];
+        }
+
+        return
             // require that m, signers are well formed (m <= nrOfSigners, m not zero, and m not MAX_UINT8)
             m[0] + m[2] == nrOfSigners &&
             m[1] + m[3] <= nrOfSigners && 
@@ -157,11 +186,11 @@ contract ZippieMultisigWallet {
             m[3] <= m[2] && 
             m[1] > 0 && 
             m[1] != 0xFF &&
-            // require that v/r/s.length are equal to (m + the original temp private key sig and/or the verification key)
-            r.length == m[1] + m[3] + 2 && 
-            s.length == m[1] + m[3] + 2 && 
-            v.length == m[1] + m[3] + 2 &&
-            nrOfCards == m[3];
+            // require that v/r/s.length are equal to (the original temp private key sig and the verification key + m)
+            r.length == 2 + m[1] + minNrOfCards && 
+            s.length == 2 + m[1] + minNrOfCards && 
+            v.length == 2 + m[1] + minNrOfCards &&
+            nrOfCards == minNrOfCards;
     }
 
     function verifyMultisigNonce(address multisigAddress, address nonceAddress, address addressSignedByNonce, uint8 v, bytes32 r, bytes32 s) internal returns(bool successfulVerification) {

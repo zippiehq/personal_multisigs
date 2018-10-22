@@ -38,9 +38,9 @@ export async function getDigestSignature(digestHash, card) {
 }
 
 export function getSignatureFrom3(multisigSignature, blankCheckSignature, recipientSignature) {
-	const v = [multisigSignature.v, blankCheckSignature.v, recipientSignature.v]
-	const r = [multisigSignature.r.valueOf(), blankCheckSignature.r.valueOf(), recipientSignature.r.valueOf()]
-	const s = [multisigSignature.s.valueOf(), blankCheckSignature.s.valueOf(), recipientSignature.s.valueOf()]
+	const v = [multisigSignature.v, recipientSignature.v, blankCheckSignature.v]
+	const r = [multisigSignature.r.valueOf(), recipientSignature.r.valueOf(), blankCheckSignature.r.valueOf()]
+	const s = [multisigSignature.s.valueOf(), recipientSignature.s.valueOf(), blankCheckSignature.s.valueOf()]
 
 	return {v:v, r:r, s:s}
 }
