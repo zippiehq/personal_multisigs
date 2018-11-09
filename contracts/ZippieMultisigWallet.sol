@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
 /**
     @title Zippie Multisig Wallet
@@ -50,7 +50,7 @@ contract ZippieMultisigWallet {
         verifySignatures(checkHash, signers, m, v, r, s, cardNonces, limitExceeded);
 
         // transfer tokens
-        require(ERC20(addresses[1]).transferFrom(addresses[0], addresses[2], amount), "Transfer failed");
+        require(IERC20(addresses[1]).transferFrom(addresses[0], addresses[2], amount), "Transfer failed");
     }
 
     /** @notice Redeems a blank check after verifying all required signers/cards
@@ -89,7 +89,7 @@ contract ZippieMultisigWallet {
         verifySignatures(blankCheckHash, signers, m, v, r, s, cardNonces, limitExceeded);
 
         // transfer tokens
-        require(ERC20(addresses[1]).transferFrom(addresses[0], addresses[2], amount), "Transfer failed");
+        require(IERC20(addresses[1]).transferFrom(addresses[0], addresses[2], amount), "Transfer failed");
     }
 
     function setLimit(address[] addresses, address[] signers, uint8[] m, uint8[] v, bytes32[] r, bytes32[] s, uint256 amount, bytes32[] cardNonces) public {
