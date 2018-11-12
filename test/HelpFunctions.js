@@ -53,6 +53,16 @@ export function getSignature(multisigSignature, blankCheckSignature, digestSigna
 	return {v:v, r:r, s:s}
 }
 
+export function getEmptyDigestSignature() {
+	return {
+		pubkey: "0x0000000000000000000000000000000000000000",
+		digestHash: "0x0000000000000000000000000000000000000000000000000000000000000000",
+		v: 0,
+		r: "0x0000000000000000000000000000000000000000000000000000000000000000",
+		s: "0x0000000000000000000000000000000000000000000000000000000000000000",
+	}
+}
+
 export function getHardcodedDigestSignature(cardNr, signatureNr) {
 	var pubkey, digestHash, v, r, s
 
