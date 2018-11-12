@@ -11,13 +11,13 @@ contract ZippieMultisig {
     function verifyMultisigParameters(uint256 nrOfAddresses, uint256 nrOfSigners, uint8[] m, uint256 nrOfVs, uint256 nrOfRs, uint256 nrOfSs, uint256 nrOfCardNonces) internal pure {
         require(m[1] <= m[0], "Required number of signers cannot be higher than number of possible signers");
         require(m[3] <= m[2], "Required number of cards cannot be higher than number of possible cards");
-        require(m[0] > 0, "");           
-        require(m[1] > 0, "");  
+        require(m[0] > 0, "Required number of signers cannot be 0");           
+        require(m[1] > 0, "Possible number of signers cannot be 0");  
         // TODO: Do we need this if we use SafeMath?
-        require(m[0] != 0xFF, ""); 
-        require(m[1] != 0xFF, ""); 
-        require(m[2] != 0xFF, ""); 
-        require(m[3] != 0xFF, ""); 
+        require(m[0] != 0xFF, "Cannot be MAX UINT8"); 
+        require(m[1] != 0xFF, "Cannot be MAX UINT8"); 
+        require(m[2] != 0xFF, "Cannot be MAX UINT8"); 
+        require(m[3] != 0xFF, "Cannot be MAX UINT8"); 
         // TODO: Move address check or have offset as input
         require(nrOfAddresses == 2 + 1 + 1, "Incorrect number of addresses"); 
         require(nrOfSigners == m[0] + m[2], "Incorrect number of signers"); 
