@@ -1,6 +1,9 @@
 pragma solidity ^0.4.24;
 
 import "./ZippieMultisig.sol";
+import "./ZippieNonce.sol";
+import "./ZippieCard.sol";
+
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
 
@@ -11,7 +14,7 @@ import "openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
     @dev NOTE: YOUR SIGNING APPLICATION MAY NOT PREPEND "\x19Ethereum Signed Message:\n32" TO THE OBJECT TO BE SIGNED. 
     FEEL FREE TO REMOVE IF NECESSARY
  */
-contract ZippieWallet is ZippieMultisig {
+contract ZippieWallet is ZippieMultisig, ZippieNonce, ZippieCard {
 
     mapping (address => uint256) public accountLimits;
 
