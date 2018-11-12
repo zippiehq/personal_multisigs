@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "./ZippieUtils.sol";
-import "openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
+import "./ZippieUtils.sol";
 
 contract ZippieMultisig {
 
@@ -29,7 +29,7 @@ contract ZippieMultisig {
         @return true if the multisig address signed this hash, else false 
      */
     function verifyMultisigAccountSignature(address[] signers, uint8[] m, address multisigAddress, uint8 v, bytes32 r, bytes32 s) internal pure {
-        require(multisigAddress == ecrecover(ECDSA.toEthSignedMessageHash(keccak256(abi.encodePacked(signers, m))), v, r, s), "Invalid account");
+        require(multisigAddress == ecrecover(ZippieUtils.toEthSignedMessageHash(keccak256(abi.encodePacked(signers, m))), v, r, s), "Invalid account");
     }
 
     /** @dev Verify that all signatures were addresses in signers, 

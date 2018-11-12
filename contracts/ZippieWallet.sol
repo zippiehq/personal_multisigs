@@ -3,9 +3,9 @@ pragma solidity ^0.4.24;
 import "./ZippieMultisig.sol";
 import "./ZippieNonce.sol";
 import "./ZippieCard.sol";
+import "./ZippieUtils.sol";
 
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
-import "openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
 
 /**
     @title Zippie Multisig Wallet
@@ -52,7 +52,7 @@ contract ZippieWallet is ZippieMultisig, ZippieNonce, ZippieCard {
 
         // get the check hash (amount, recipient, nonce) to verify signer signatures
         // verify that the signers signed that they want to transfer "amount" ERC20 token
-        bytes32 checkHash = ECDSA.toEthSignedMessageHash(keccak256(abi.encodePacked(amount, addresses[2], addresses[3])));
+        bytes32 checkHash = ZippieUtils.toEthSignedMessageHash(keccak256(abi.encodePacked(amount, addresses[2], addresses[3])));
         verifySignerSignatures(checkHash, 2, m, signers, v, r, s);
 
         // need to verify card signatures if limit is exceeded
@@ -98,7 +98,7 @@ contract ZippieWallet is ZippieMultisig, ZippieNonce, ZippieCard {
 
         // get the blank check hash (amount, verification key) to verify signer signatures
         // verify that the signers signed that they want to transfer "amount" ERC20 token
-        bytes32 blankCheckHash = ECDSA.toEthSignedMessageHash(keccak256(abi.encodePacked(amount, addresses[3])));
+        bytes32 blankCheckHash = ZippieUtils.toEthSignedMessageHash(keccak256(abi.encodePacked(amount, addresses[3])));
         verifySignerSignatures(blankCheckHash, 2, m, signers, v, r, s);
 
         // need to verify card signatures if limit is exceeded
@@ -120,7 +120,7 @@ contract ZippieWallet is ZippieMultisig, ZippieNonce, ZippieCard {
         // get the limit hash (amount, verification key) to verify signer signatures
         // verify that m signers signed that they want to set limit to ammount
         // TODO: Need to prepend function signature so hash for redeemBlankCheck don't get the same
-        bytes32 limitHash = ECDSA.toEthSignedMessageHash(keccak256(abi.encodePacked(amount, addresses[3])));
+        bytes32 limitHash = ZippieUtils.toEthSignedMessageHash(keccak256(abi.encodePacked(amount, addresses[3])));
         verifySignerSignatures(limitHash, 2, m, signers, v, r, s);
 
         // verify card signatures to change limit
