@@ -1,6 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
+import "openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
 
 /**
     @title Zippie Multisig Wallet
@@ -50,7 +51,7 @@ contract ZippieMultisigWallet {
 
         // get the check hash (amount, recipient, nonce) to verify signer signatures
         // verify that the signers signed that they want to transfer "amount" ERC20 token
-        bytes32 checkHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(abi.encodePacked(amount, addresses[2], addresses[3]))));
+        bytes32 checkHash = ECDSA.toEthSignedMessageHash(keccak256(abi.encodePacked(amount, addresses[2], addresses[3])));
         verifySignerSignatures(checkHash, 2, m, signers, v, r, s);
 
         // need to verify card signatures if limit is exceeded
@@ -96,7 +97,7 @@ contract ZippieMultisigWallet {
 
         // get the blank check hash (amount, verification key) to verify signer signatures
         // verify that the signers signed that they want to transfer "amount" ERC20 token
-        bytes32 blankCheckHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(abi.encodePacked(amount, addresses[3]))));
+        bytes32 blankCheckHash = ECDSA.toEthSignedMessageHash(keccak256(abi.encodePacked(amount, addresses[3])));
         verifySignerSignatures(blankCheckHash, 2, m, signers, v, r, s);
 
         // need to verify card signatures if limit is exceeded
@@ -116,10 +117,9 @@ contract ZippieMultisigWallet {
         verifyMultisigNonce(addresses[0], addresses[3], addresses[2], v[1], r[1], s[1]);
 
         // get the limit hash (amount, verification key) to verify signer signatures
-        // TODO: Need to prepend function signature so hash for redeemBlankCheck don't get the same
-        bytes32 limitHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(abi.encodePacked(amount, addresses[3]))));
-        
         // verify that m signers signed that they want to set limit to ammount
+        // TODO: Need to prepend function signature so hash for redeemBlankCheck don't get the same
+        bytes32 limitHash = ECDSA.toEthSignedMessageHash(keccak256(abi.encodePacked(amount, addresses[3])));
         verifySignerSignatures(limitHash, 2, m, signers, v, r, s);
 
         // verify card signatures to change limit
@@ -151,7 +151,7 @@ contract ZippieMultisigWallet {
 
     function verifyMultisigNonce(address multisigAddress, address nonceAddress, address addressSignedByNonce, uint8 v, bytes32 r, bytes32 s) internal {
         require(usedNonces[multisigAddress][nonceAddress] == false, "Nonce already used"); 
-        require(nonceAddress == ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(abi.encodePacked(addressSignedByNonce)))), v, r, s), "Invalid nonce");
+        require(nonceAddress == ecrecover(ECDSA.toEthSignedMessageHash(keccak256(abi.encodePacked(addressSignedByNonce))), v, r, s), "Invalid nonce");
         // flag nonce as used to prevent reuse
         usedNonces[multisigAddress][nonceAddress] = true;   
     }
@@ -161,7 +161,7 @@ contract ZippieMultisigWallet {
         @return true if the multisig address signed this hash, else false 
      */
     function verifyMultisigAccountSignature(address[] signers, uint8[] m, address multisigAddress, uint8 v, bytes32 r, bytes32 s) internal pure {
-        require(multisigAddress == ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(abi.encodePacked(signers, m)))), v, r, s), "Invalid account");
+        require(multisigAddress == ecrecover(ECDSA.toEthSignedMessageHash(keccak256(abi.encodePacked(signers, m))), v, r, s), "Invalid account");
     }
 
     /** @dev Verify that all signatures were addresses in signers, 
