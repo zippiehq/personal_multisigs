@@ -123,6 +123,18 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		assert(parseInt(newLimit, 10).toString() === amount, "limit was not set");
 	});
 
+	it("should allow to decrease limit without card signatures", async () => {
+		// TODO
+	});
+
+	it("should not allow to increase limit without card signatures", async () => {
+		// TODO
+	});
+
+	it("should allow to increase limit with card signatures", async () => {
+		// TODO
+	});
+
 	it("should allow a blank check to be cashed once from a 1 of 1 multisig with 2FA, without checking 2FA because under account limit", async () => {
 		const digestSignature = await getHardcodedDigestSignature(0, 0)
 		card = digestSignature.pubkey

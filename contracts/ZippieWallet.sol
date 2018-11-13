@@ -113,7 +113,8 @@ contract ZippieWallet is ZippieMultisig, ZippieNonce, ZippieCard {
     }
 
     function setLimit(address[] addresses, address[] signers, uint8[] m, uint8[] v, bytes32[] r, bytes32[] s, uint256 amount, bytes32[] cardNonces) public {
-        verifyMultisigParameters(addresses.length, signers.length, m, v.length, r.length, s.length, cardNonces.length, true);
+        bool limitExceeded = isLimitExceeded(amount, addresses[0]);
+        verifyMultisigParameters(addresses.length, signers.length, m, v.length, r.length, s.length, cardNonces.length, limitExceeded);
         verifyMultisigAccountSignature(signers, m, addresses[0], v[0], r[0], s[0]);
 
         // verify nonce
@@ -125,9 +126,10 @@ contract ZippieWallet is ZippieMultisig, ZippieNonce, ZippieCard {
         bytes32 limitHash = ZippieUtils.toEthSignedMessageHash(keccak256(abi.encodePacked(amount, addresses[3])));
         verifySignerSignatures(limitHash, 2, m, signers, v, r, s);
 
-        // verify card signatures to change limit
-        // TODO: only to decrease limit?
-        verifyCardSignatures(cardNonces, 2, m, signers, v, r, s);
+        // need to verify card signatures to increase account limit
+        if (limitExceeded) {
+            verifyCardSignatures(cardNonces, 2, m, signers, v, r, s);
+        }
 
         // set limit
         accountLimits[addresses[0]] = amount;
