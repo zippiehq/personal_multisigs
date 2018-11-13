@@ -1,7 +1,6 @@
 pragma solidity ^0.4.24;
 
 import "./ZippieUtils.sol";
-import "./ZippieUtils.sol";
 
 contract ZippieMultisig {
 
