@@ -132,6 +132,7 @@ contract ZippieWallet is ZippieMultisig, ZippieNonce, ZippieCard {
     }
 
     function verifyMultisigParameters(uint256 nrOfAddresses, uint256 nrOfSigners, uint8[] m, uint256 nrOfVs, uint256 nrOfRs, uint256 nrOfSs, uint256 nrOfCardNonces) private pure {
+        require(m.length == 4, "Invalid m[]"); 
         require(m[1] <= m[0], "Required number of signers cannot be higher than number of possible signers");
         require(m[3] <= m[2], "Required number of cards cannot be higher than number of possible cards");
         require(m[0] > 0, "Required number of signers cannot be 0");           
