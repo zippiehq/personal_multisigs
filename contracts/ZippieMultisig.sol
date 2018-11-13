@@ -5,25 +5,6 @@ import "./ZippieUtils.sol";
 
 contract ZippieMultisig {
 
-    function verifyMultisigParameters(uint256 nrOfAddresses, uint256 nrOfSigners, uint8[] m, uint256 nrOfVs, uint256 nrOfRs, uint256 nrOfSs, uint256 nrOfCardNonces) internal pure {
-        require(m[1] <= m[0], "Required number of signers cannot be higher than number of possible signers");
-        require(m[3] <= m[2], "Required number of cards cannot be higher than number of possible cards");
-        require(m[0] > 0, "Required number of signers cannot be 0");           
-        require(m[1] > 0, "Possible number of signers cannot be 0");  
-        // TODO: Do we need this if we use SafeMath?
-        require(m[0] != 0xFF, "Cannot be MAX UINT8"); 
-        require(m[1] != 0xFF, "Cannot be MAX UINT8"); 
-        require(m[2] != 0xFF, "Cannot be MAX UINT8"); 
-        require(m[3] != 0xFF, "Cannot be MAX UINT8"); 
-        // TODO: Move address check or have offset as input
-        require(nrOfAddresses == 2 + 1 + 1, "Incorrect number of addresses"); 
-        require(nrOfSigners == m[0] + m[2], "Incorrect number of signers"); 
-        require(nrOfVs == 2 + m[1] + m[3], "Incorrect number of signatures (v)"); 
-        require(nrOfRs == 2 + m[1] + m[3], "Incorrect number of signatures (r)"); 
-        require(nrOfSs == 2 + m[1] + m[3], "Incorrect number of signatures (s)"); 
-        require(nrOfCardNonces == m[3], "Incorrect number of card nonces"); 
-    }
-
     /** @dev verify that the multisig account (temp priv key) signed to allow this array of addresses to access the account's funds.
         the temporary private key will keccak256 this array and m, to allow m of signers.length = n signatures in that array to transfer from the wallet
         @return true if the multisig address signed this hash, else false 
