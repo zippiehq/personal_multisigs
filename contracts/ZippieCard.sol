@@ -1,10 +1,15 @@
 pragma solidity ^0.4.24;
 
+import "./nonce/IHashNonce.sol";
 import "./ZippieUtils.sol";
 
 contract ZippieCard {
 
-    mapping (address => mapping(bytes32 => bool)) public usedCardNonces;
+    address private _zippieCardNonce;
+
+    constructor(address zippieCardNonce) public {
+        _zippieCardNonce = zippieCardNonce;
+    }
 
     function verifyCardSignatures(bytes32[] cardNonces, uint8 offset, uint8[] m, address[] cardAddresses, uint8[] v, bytes32[] r, bytes32[] s) internal {
         // destruct m array
@@ -20,13 +25,8 @@ contract ZippieCard {
         address cardAddress;
 
         for (uint8 i = 0; i < mSign; i++) {
-            // verify card digests
-            require(usedCardNonces[cardAddresses[addrOffset+i]][cardNonces[i]] == false, "Card nonce reused");
 
-            // store the card digest to prevent future reuse
-            usedCardNonces[cardAddresses[addrOffset+i]][cardNonces[i]] = true;
-
-            // get address from ec_recover
+            // recover card 
             cardAddress = ecrecover(cardNonces[i], v[signOffset+i], r[signOffset+i], s[signOffset+i]);
 
             // check that address is a valid address 
@@ -37,6 +37,9 @@ contract ZippieCard {
 
             // push this address to the usedAddresses array
             usedCardAddresses[i] = cardAddress;
+
+            // flag card nonce as used
+            require(IHashNonce(_zippieCardNonce).useNonce(cardAddress ,cardNonces[i], v[signOffset+i], r[signOffset+i], s[signOffset+i]));
         }
     }
 }

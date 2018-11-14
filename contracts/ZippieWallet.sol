@@ -18,6 +18,7 @@ contract ZippieWallet is ZippieMultisig, ZippieNonce, ZippieCard {
 
     mapping (address => uint256) public accountLimits;
 
+    constructor(address zippieCardNonces) ZippieCard(zippieCardNonces) public {}
     /** @notice Redeems a check after verifying all required signers/cards
         @dev Upon successful verification of the signatures, it's necessary to verify that the signers signed keccak256(recipient, amount, nonce)
         @param addresses multisig address, erc20 contract address, recipient

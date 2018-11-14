@@ -1,12 +1,14 @@
 var TestFunctions = artifacts.require("./TestFunctions.sol");
 var BasicERC20Mock = artifacts.require("./BasicERC20Mock.sol");
 var ZippieWallet = artifacts.require("./ZippieWallet.sol");
+var ZippieCardNonces = artifacts.require("./ZippieCardNonces.sol");
 var test;
 import { getMultisigSignature, getBlankCheckSignature, getRecipientSignature, getHardcodedDigestSignature, getSignature, getSignatureFrom3, getEmptyDigestSignature, log } from './HelpFunctions';
 
 contract("Test Zippie Multisig Check Cashing With Cards Functionality", (accounts) => {
 
 	var basicToken;
+	var zippieCardNonces;
 	var zipperWallet;
 
 	const signer = accounts[0] // multisig signer (1of1)
@@ -17,16 +19,18 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 	const sponsor = accounts[6] // Zippie PMG server
 
 	beforeEach(() => {
-			return TestFunctions.new().then(instance => {
-					test = instance;
-    			return BasicERC20Mock.new(accounts[5]).then(instance => {
-						basicToken = instance;
-						return ZippieWallet.new();
-     			}).then(instance => {
-     				zipperWallet = instance;
-						return basicToken.approve(instance.address, web3.utils.toWei("100", "ether"), {from: accounts[5]});
+	return TestFunctions.new().then(instance => {
+			test = instance;
+		return BasicERC20Mock.new(accounts[5]).then(instance => {
+			basicToken = instance
+			return ZippieCardNonces.new().then(instance => {
+				zippieCardNonces = instance
+				return ZippieWallet.new(zippieCardNonces.address)}).then(instance => {
+					zipperWallet = instance;
+					return basicToken.approve(zipperWallet.address, web3.utils.toWei("100", "ether"), {from: accounts[5]});
 				});
 			});
+		});
 	});
 
 	it("should allow a blank check to be cashed once from a 1 of 1 multisig with 2FA, and fail the second time", async () => {
