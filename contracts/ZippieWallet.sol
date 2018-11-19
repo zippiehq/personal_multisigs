@@ -165,7 +165,7 @@ contract ZippieWallet is ZippieMultisig, ZippieNonce, ZippieCard {
         }
     }
 
-    function isLimitExceeded(uint256 amount, address account) private returns(bool){
+    function isLimitExceeded(uint256 amount, address account) private view returns(bool){
         return amount > accountLimits[account];
     }
 }
