@@ -9,7 +9,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 
 	var basicToken;
 	var zippieCardNonces;
-	var zipperWallet;
+	var zippieWallet;
 
 	const signer = accounts[0] // multisig signer (1of1)
 	const recipient = accounts[2]
@@ -26,8 +26,8 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 			return ZippieCardNonces.new().then(instance => {
 				zippieCardNonces = instance
 				return ZippieWallet.new(zippieCardNonces.address)}).then(instance => {
-					zipperWallet = instance;
-					return basicToken.approve(zipperWallet.address, web3.utils.toWei("100", "ether"), {from: accounts[5]});
+					zippieWallet = instance;
+					return basicToken.approve(zippieWallet.address, web3.utils.toWei("100", "ether"), {from: accounts[5]});
 				});
 			});
 		});
@@ -49,20 +49,20 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 
 		const initialBalanceSender = await basicToken.balanceOf(multisig)
 		const initialBalanceRecipient = await basicToken.balanceOf(recipient)
-		assert(await zipperWallet.usedNonces(multisig, verificationKey) === false, "check already marked as cashed before transfer");
+		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check already marked as cashed before transfer");
 		
 		const amount = web3.utils.toWei("1", "ether")
-		await zipperWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [digestSignature.digestHash], {from: sponsor});
+		await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [digestSignature.digestHash], {from: sponsor});
 
 		var newBalanceSender = await basicToken.balanceOf(multisig)
 		var newBalanceRecipient = await basicToken.balanceOf(recipient)	
 		assert((initialBalanceSender - newBalanceSender).toString() === amount, "amount did not transfer from sender");
 		assert((newBalanceRecipient - initialBalanceRecipient).toString() === amount, "amount did not transfer to recipient");
-		assert(await zipperWallet.usedNonces(multisig, verificationKey) === true, "check has not been marked as cashed after transfer");
+		assert(await zippieWallet.usedNonces(multisig, verificationKey) === true, "check has not been marked as cashed after transfer");
 
 		try {
 			// try the same exact transfer
-			await zipperWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [digestSignature.digestHash], {from: sponsor});
+			await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [digestSignature.digestHash], {from: sponsor});
 			assert(false, "duplicate transfer went through, but should have failed!")
 		} catch(error) {
 			assert(error.reason == 'Nonce already used', error.reason)
@@ -94,16 +94,16 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 
 		const initialBalanceSender = await basicToken.balanceOf(multisig)
 		const initialBalanceRecipient = await basicToken.balanceOf(recipient)
-		assert(await zipperWallet.usedNonces(multisig, verificationKey) === false, "check already marked as cashed before transfer");
+		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check already marked as cashed before transfer");
 		
 		const amount = web3.utils.toWei("1", "ether")
-		await zipperWallet.redeemBlankCheck(addresses, signers, m, v, r, s, amount, digestHashes, {from: sponsor});
+		await zippieWallet.redeemBlankCheck(addresses, signers, m, v, r, s, amount, digestHashes, {from: sponsor});
 
 		var newBalanceSender = await basicToken.balanceOf(multisig)
 		var newBalanceRecipient = await basicToken.balanceOf(recipient)	
 		assert((initialBalanceSender - newBalanceSender).toString() === amount, "amount did not transfer from sender");
 		assert((newBalanceRecipient - initialBalanceRecipient).toString() === amount, "amount did not transfer to recipient");
-		assert(await zipperWallet.usedNonces(multisig, verificationKey) === true, "check has not been marked as cashed after transfer");
+		assert(await zippieWallet.usedNonces(multisig, verificationKey) === true, "check has not been marked as cashed after transfer");
 	});
 
 	it("should set limit to 5 ether", async () => {
@@ -121,9 +121,9 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		
 		const signature = getSignature(multisigSignature, blankCheckSignature, digestSignature, recipientSignature)
 		const amount = web3.utils.toWei(limit, "ether")
-		await zipperWallet.setLimit(addresses, signers, m, signature.v, signature.r, signature.s, amount, [digestSignature.digestHash], {from: sponsor});
+		await zippieWallet.setLimit(addresses, signers, m, signature.v, signature.r, signature.s, amount, [digestSignature.digestHash], {from: sponsor});
 		
-		var newLimit = await zipperWallet.accountLimits(addresses[0])
+		var newLimit = await zippieWallet.accountLimits(addresses[0])
 		assert(parseInt(newLimit, 10).toString() === amount, "limit was not set");
 	});
 
@@ -154,14 +154,14 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		var recipientSignature = await getRecipientSignature(recipient, verificationKey)
 		
 		const signatureForLimit = getSignature(multisigSignature, limitSignature, digestSignature, recipientSignature)
-		assert(await zipperWallet.usedNonces(multisig, verificationKey) === false, "check already marked as cashed before transfer");
+		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check already marked as cashed before transfer");
 		
 		const initialBalanceSender = await basicToken.balanceOf(multisig)
 		const initialBalanceRecipient = await basicToken.balanceOf(recipient)
 		
 		const limit = web3.utils.toWei(limitValue, "ether")
-		await zipperWallet.setLimit(addresses, signers, m, signatureForLimit.v, signatureForLimit.r, signatureForLimit.s, limit, [digestSignature.digestHash], {from: sponsor});
-		const accountLimit = await zipperWallet.accountLimits(multisig)
+		await zippieWallet.setLimit(addresses, signers, m, signatureForLimit.v, signatureForLimit.r, signatureForLimit.s, limit, [digestSignature.digestHash], {from: sponsor});
+		const accountLimit = await zippieWallet.accountLimits(multisig)
 		assert(accountLimit.toString() === limit.toString(), "limit was not set correctly")
 		
 		const verificationKey2 = accounts[11] // random verification key		
@@ -171,13 +171,13 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		const signature = getSignatureFrom3(multisigSignature, blankCheckSignature, recipientSignature)
 		const amount = web3.utils.toWei(amountValue, "ether")
 		// Skipping card signatures, since it should work without because we are under account limit
-		await zipperWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
+		await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
 
 		var newBalanceSender = await basicToken.balanceOf(multisig)
 		var newBalanceRecipient = await basicToken.balanceOf(recipient)	
 		assert((initialBalanceSender - newBalanceSender).toString() === amount, "amount did not transfer from sender");
 		assert((newBalanceRecipient - initialBalanceRecipient).toString() === amount, "amount did not transfer to recipient");
-		assert(await zipperWallet.usedNonces(multisig, verificationKey2) === true, "check has not been marked as cashed after transfer");
+		assert(await zippieWallet.usedNonces(multisig, verificationKey2) === true, "check has not been marked as cashed after transfer");
 	});
 
 	it("should prevent a blank check to be cashed once from a 1 of 1 multisig with 2FA, when amount is over account limit but card signatures is incorrect", async () => {
@@ -195,11 +195,11 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		var recipientSignature = await getRecipientSignature(recipient, verificationKey)
 		
 		const signatureForLimit = getSignature(multisigSignature, limitSignature, digestSignature, recipientSignature)
-		assert(await zipperWallet.usedNonces(multisig, verificationKey) === false, "check already marked as cashed before transfer");
+		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check already marked as cashed before transfer");
 		
 		const limit = web3.utils.toWei(limitValue, "ether")
-		await zipperWallet.setLimit(addresses, signers, m, signatureForLimit.v, signatureForLimit.r, signatureForLimit.s, limit, [digestSignature.digestHash], {from: sponsor});
-		const accountLimit = await zipperWallet.accountLimits(multisig)
+		await zippieWallet.setLimit(addresses, signers, m, signatureForLimit.v, signatureForLimit.r, signatureForLimit.s, limit, [digestSignature.digestHash], {from: sponsor});
+		const accountLimit = await zippieWallet.accountLimits(multisig)
 		assert(accountLimit.toString() === limit.toString(), "limit was not set correctly")
 		
 		const verificationKey2 = accounts[11] // random verification key		
@@ -212,7 +212,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		
 		try {
 			// Skipping card signatures, which should fail
-			await zipperWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [emptyDigestSignature.digestHash], {from: sponsor});
+			await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [emptyDigestSignature.digestHash], {from: sponsor});
 			assert(false, "Transfer went through even though card signatures are missing")
 		} catch (error) {
 			assert(error.reason == 'Invalid address found when verifying card signatures', error.reason)
@@ -234,11 +234,11 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		var recipientSignature = await getRecipientSignature(recipient, verificationKey)
 		
 		const signatureForLimit = getSignature(multisigSignature, limitSignature, digestSignature, recipientSignature)
-		assert(await zipperWallet.usedNonces(multisig, verificationKey) === false, "check already marked as cashed before transfer");
+		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check already marked as cashed before transfer");
 		
 		const limit = web3.utils.toWei(limitValue, "ether")
-		await zipperWallet.setLimit(addresses, signers, m, signatureForLimit.v, signatureForLimit.r, signatureForLimit.s, limit, [digestSignature.digestHash], {from: sponsor});
-		const accountLimit = await zipperWallet.accountLimits(multisig)
+		await zippieWallet.setLimit(addresses, signers, m, signatureForLimit.v, signatureForLimit.r, signatureForLimit.s, limit, [digestSignature.digestHash], {from: sponsor});
+		const accountLimit = await zippieWallet.accountLimits(multisig)
 		assert(accountLimit.toString() === limit.toString(), "limit was not set correctly")
 		
 		const verificationKey2 = accounts[11] // random verification key		
@@ -250,7 +250,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		
 		try {
 			// Skipping card signatures, which should fail
-			await zipperWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
+			await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
 			assert(false, "Transfer went through even though card signatures are missing")
 		} catch (error) {
 			assert(error.reason == 'Incorrect number of signatures (v)', error.reason)
@@ -275,10 +275,10 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		
 		const initialBalanceSender = await basicToken.balanceOf(multisig)
 		const initialBalanceRecipient = await basicToken.balanceOf(recipient)
-		assert(await zipperWallet.usedNonces(multisig, verificationKey) === false, "check already marked as cashed before transfer");
+		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check already marked as cashed before transfer");
 		
 		const limit = web3.utils.toWei(limitValue, "ether")
-		await zipperWallet.setLimit(addresses, signers, m, signatureForLimit.v, signatureForLimit.r, signatureForLimit.s, limit, [digestSignature.digestHash], {from: sponsor});
+		await zippieWallet.setLimit(addresses, signers, m, signatureForLimit.v, signatureForLimit.r, signatureForLimit.s, limit, [digestSignature.digestHash], {from: sponsor});
 		
 		const digestSignature2 = await getHardcodedDigestSignature(1, 0)
 		const card2 = digestSignature2.pubkey
@@ -290,12 +290,12 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		recipientSignature = await getRecipientSignature(recipient, verificationKey2)
 		const signature = getSignature(multisigSignature, blankCheckSignature, digestSignature2, recipientSignature)
 		const amount = web3.utils.toWei(amountValue, "ether")
-		await zipperWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [digestSignature2.digestHash], {from: sponsor});
+		await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [digestSignature2.digestHash], {from: sponsor});
 
 		var newBalanceSender = await basicToken.balanceOf(multisig)
 		var newBalanceRecipient = await basicToken.balanceOf(recipient)	
 		assert((initialBalanceSender - newBalanceSender).toString() === amount, "amount did not transfer from sender");
 		assert((newBalanceRecipient - initialBalanceRecipient).toString() === amount, "amount did not transfer to recipient");
-		assert(await zipperWallet.usedNonces(multisig, verificationKey2) === true, "check has not been marked as cashed after transfer");
+		assert(await zippieWallet.usedNonces(multisig, verificationKey2) === true, "check has not been marked as cashed after transfer");
 	});
 });
