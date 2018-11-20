@@ -1,13 +1,15 @@
 var TestFunctions = artifacts.require("./TestFunctions.sol");
 var BasicERC20Mock = artifacts.require("./BasicERC20Mock.sol");
-var ZippieMultisigWallet = artifacts.require("./ZippieMultisigWallet.sol");
+var ZippieWallet = artifacts.require("./ZippieWallet.sol");
+var ZippieCardNonces = artifacts.require("./ZippieCardNonces.sol");
 import { getMultisigSignature, getBlankCheckSignature, getRecipientSignature, getSignature, getSignatureFrom3, log } from './HelpFunctions';
 
 contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 
 	var test;
 	var basicToken;
-	var zipperMS;
+	var zippieCardNonces;
+	var zippieWallet;
 
 	const signer = accounts[0] // multisig signer (1of1)
 	const signer2 = accounts[2] // multisig signer (2of2)
@@ -21,10 +23,12 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 					test = instance;
     			return BasicERC20Mock.new(accounts[5]).then(instance => {
 						basicToken = instance;
-						return ZippieMultisigWallet.new();
-     			}).then(instance => {
-     				zipperMS = instance;
-						return basicToken.approve(instance.address, web3.utils.toWei("100", "ether"), {from: accounts[5]});
+						return ZippieCardNonces.new().then(instance => {
+							zippieCardNonces = instance
+							return ZippieWallet.new(zippieCardNonces.address)}).then(instance => {
+     						zippieWallet = instance;
+								return basicToken.approve(instance.address, web3.utils.toWei("100", "ether"), {from: accounts[5]});
+					});
 				});
 			});
 	});
@@ -44,24 +48,24 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 		
 		var initialBalanceSender = await basicToken.balanceOf(multisig)
 		var initialBalanceRecipient = await basicToken.balanceOf(recipient)
-		assert(await zipperMS.checkCashed(multisig, verificationKey) === false, "check already marked as cashed before transfer");
+		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check already marked as cashed before transfer");
 		
 		const amount = web3.utils.toWei("1", "ether")
 		try {			
 			// redeem using incorrect signer
-			await zipperMS.redeemBlankCheck(addresses, incorrectSigners, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
+			await zippieWallet.redeemBlankCheck(addresses, incorrectSigners, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
 			assert(false, "transfer went through even though incorrect signer")
 		} catch(error) {
-			assert(error.reason == 'Invalid address', error.reason)
+			assert(error.reason == 'Invalid account', error.reason)
 		}
 
-		await zipperMS.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
+		await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
 		
 		var newBalanceSender = await basicToken.balanceOf(multisig)
 		var newBalanceRecipient = await basicToken.balanceOf(recipient)	
 		assert((initialBalanceSender - newBalanceSender).toString() === amount, "balance did not transfer from sender");
 		assert((newBalanceRecipient - initialBalanceRecipient).toString() === amount, "balance did not transfer to recipient");
-		assert(await zipperMS.checkCashed(multisig, verificationKey) === true, "check has not been marked as cashed after transfer");
+		assert(await zippieWallet.usedNonces(multisig, verificationKey) === true, "check has not been marked as cashed after transfer");
 	});
 
 	it("should fail a blank check transfer (from a 1 of 1 multisig) if data is signed by incorrect signer", async () => {
@@ -79,21 +83,21 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 		
 		var initialBalanceSender = await basicToken.balanceOf(multisig)
 		var initialBalanceRecipient = await basicToken.balanceOf(recipient)
-		assert(await zipperMS.checkCashed(multisig, verificationKey) === false, "check already marked as cashed before transfer");
+		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check already marked as cashed before transfer");
 		
 		const amount = web3.utils.toWei("1", "ether")
 		try {
-			await zipperMS.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
+			await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
 			assert(false, "transfer went through even though incorrect data was signed")
 		} catch(error) {
-			assert(error.reason == 'Invalid address found when verifying signatures', error.reason)
+			assert(error.reason == 'Invalid address found when verifying signer signatures', error.reason)
 		}
 		
 		var newBalanceSender = await basicToken.balanceOf(multisig)
 		var newBalanceRecipient = await basicToken.balanceOf(recipient)
 		assert(initialBalanceSender.toString() === newBalanceSender.toString(), "sender balance changed even though no transfer happened");
 		assert(initialBalanceRecipient.toString() === newBalanceRecipient.toString(), "recipient balance changed even though no transfer happened");
-		assert(await zipperMS.checkCashed(multisig, verificationKey) === false, "check marked as cashed even though no transfer happened");
+		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check marked as cashed even though no transfer happened");
 	});
 
 	it("should fail a blank check transfer (from a 2 of 2 multisig) if 1 incorrect signer", async () => {
@@ -111,17 +115,17 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 
 		const signature = getSignature(multisigSignature, blankCheckSignature, blankCheckSignature2, recipientSignature)
 
-		assert(await zipperMS.checkCashed(multisig, verificationKey) === false, "check already marked as cashed before transfer");
+		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check already marked as cashed before transfer");
 		
 		const amount = web3.utils.toWei(blankCheckAmount, "ether")
 		try {
-			await zipperMS.redeemBlankCheck(addresses, incorrectSigners, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
+			await zippieWallet.redeemBlankCheck(addresses, incorrectSigners, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
 			assert(false, "transfer went through even though incorrect signer")
 		} catch(error) {
-			assert(error.reason == 'Invalid address', error.reason)
+			assert(error.reason == 'Invalid account', error.reason)
 		}
 		
-		assert(await zipperMS.checkCashed(multisig, verificationKey) === false, "check marked as cashed even though no transfer happened")
+		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check marked as cashed even though no transfer happened")
 	});
 
 	it("should fail a blank check transfer (from a 2 of 2 multisig) if data is signed by incorrect signer", async () => {
@@ -138,17 +142,17 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 
 		const signature = getSignature(multisigSignature, blankCheckSignature, blankCheckSignature2, recipientSignature)
 
-		assert(await zipperMS.checkCashed(multisig, verificationKey) === false, "check already marked as cashed before transfer");
+		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check already marked as cashed before transfer");
 		
 		const amount = web3.utils.toWei(blankCheckAmount, "ether")
 		try {
-			await zipperMS.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
+			await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
 			assert(false, "transfer went through even though incorrect data was signed")
 		} catch(error) {
-			assert(error.reason == 'Invalid address found when verifying signatures', error.reason)
+			assert(error.reason == 'Invalid address found when verifying signer signatures', error.reason)
 		}
 		
-		assert(await zipperMS.checkCashed(multisig, verificationKey) === false, "check marked as cashed even though no transfer happened")
+		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check marked as cashed even though no transfer happened")
 	});
 
 	it("should fail a blank check transfer (from a 2 of 2 multisig) if signers are the same", async () => {
@@ -164,17 +168,17 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 
 		const signature = getSignature(multisigSignature, blankCheckSignature, blankCheckSignature2, recipientSignature)
 
-		assert(await zipperMS.checkCashed(multisig, verificationKey) === false, "check already marked as cashed before transfer");
+		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check already marked as cashed before transfer");
 		
 		const amount = web3.utils.toWei(blankCheckAmount, "ether")
 		try {
-			await zipperMS.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
+			await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
 			assert(false, "transfer went through even though signers were the same")
 		} catch(error) {
-			assert(error.reason == 'Invalid address found when verifying signatures', error.reason)
+			assert(error.reason == 'Invalid address found when verifying signer signatures', error.reason)
 		}
 		
-		assert(await zipperMS.checkCashed(multisig, verificationKey) === false, "check marked as cashed even though no transfer happened")
+		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check marked as cashed even though no transfer happened")
 	});
 
 	it("should fail a blank check transfer when the verificationKey is wrong", async () => {
@@ -191,28 +195,28 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 
 		var initialBalanceSender = await basicToken.balanceOf(multisig)
 		var initialBalanceRecipient = await basicToken.balanceOf(recipient)
-		assert(await zipperMS.checkCashed(multisig, verificationKey) === false, "check already marked as cashed before transfer");
+		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check already marked as cashed before transfer");
 		const addresses2 = [multisig, basicToken.address, recipient, wrongVerificationKey]
 		
 		const amount = web3.utils.toWei("1", "ether")
 		try {
-			await zipperMS.redeemBlankCheck(addresses2, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
+			await zippieWallet.redeemBlankCheck(addresses2, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
 			assert(false, "Verification Key was incorrect, but transfer went through!")
 		} catch(error) {
-			assert(error.reason === 'Invalid address found when verifying signatures', error.reason)
+			assert(error.reason === 'Invalid address found when verifying signer signatures', error.reason)
 		}
 
 		try {
-			await zipperMS.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
+			await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
 			assert(false, "Verification Key was correct, transfer still failed!")
 		} catch(error) {
-			assert(error.reason === 'Incorrect address', error.reason)
+			assert(error.reason === 'Invalid nonce', error.reason)
 		}
 
 		var newBalanceSender = await basicToken.balanceOf(multisig)
 		var newBalanceRecipient = await basicToken.balanceOf(recipient)	
 		assert((initialBalanceSender - newBalanceSender).toString() === web3.utils.toWei("0", "ether"), "balance transfer from sender even if transaction didn't went through");
 		assert((newBalanceRecipient - initialBalanceRecipient).toString() === web3.utils.toWei("0", "ether"), "balance transfer to recipient even if transaction didn't went through");
-		assert(await zipperMS.checkCashed(multisig, verificationKey) === false, "check has been marked as cashed even if transaction didn't went through");
+		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check has been marked as cashed even if transaction didn't went through");
 	});
 });
