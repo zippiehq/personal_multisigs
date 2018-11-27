@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity >=0.5.0 <0.6.0;
 
 import "./ZippieMultisig.sol";
 import "./ZippieNonce.sol";
@@ -34,7 +34,7 @@ contract ZippieWalletNoCards is ZippieMultisig, ZippieNonce {
       * @param s s values of all signatures (structured as v)
       * @param amount amount to transfer
       */
-    function redeemCheck(address[] addresses, address[] signers, uint8[] m, uint8[] v, bytes32[] r, bytes32[] s, uint256 amount) public {
+    function redeemCheck(address[] memory addresses, address[] memory signers, uint8[] memory m, uint8[] memory v, bytes32[] memory r, bytes32[] memory s, uint256 amount) public {
         verifyMultisigParameters(addresses.length, signers.length, m, v.length, r.length, s.length);
         verifyMultisigAccountSignature(signers, m, addresses[0], v[0], r[0], s[0]);
 
@@ -71,7 +71,7 @@ contract ZippieWalletNoCards is ZippieMultisig, ZippieNonce {
       * @param s s values of all signatures (structured as v)
       * @param amount amount to transfer
       */
-    function redeemBlankCheck(address[] addresses, address[] signers, uint8[] m, uint8[] v, bytes32[] r, bytes32[] s, uint256 amount) public {
+    function redeemBlankCheck(address[] memory addresses, address[] memory signers, uint8[] memory m, uint8[] memory v, bytes32[] memory r, bytes32[] memory s, uint256 amount) public {
         verifyMultisigParameters(addresses.length, signers.length, m, v.length, r.length, s.length);
         verifyMultisigAccountSignature(signers, m, addresses[0], v[0], r[0], s[0]);
 
@@ -89,7 +89,7 @@ contract ZippieWalletNoCards is ZippieMultisig, ZippieNonce {
         require(IERC20(addresses[1]).transferFrom(addresses[0], addresses[2], amount), "Transfer failed");
     }
 
-    function verifyMultisigParameters(uint256 nrOfAddresses, uint256 nrOfSigners, uint8[] m, uint256 nrOfVs, uint256 nrOfRs, uint256 nrOfSs) private pure {
+    function verifyMultisigParameters(uint256 nrOfAddresses, uint256 nrOfSigners, uint8[] memory m, uint256 nrOfVs, uint256 nrOfRs, uint256 nrOfSs) private pure {
         require(m.length == 2, "Invalid m[]"); 
         require(m[1] <= m[0], "Required number of signers cannot be higher than number of possible signers");
         require(m[0] > 0, "Required number of signers cannot be 0");           

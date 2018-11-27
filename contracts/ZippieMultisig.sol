@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity >=0.5.0 <0.6.0;
 
 import "./ZippieUtils.sol";
 
@@ -8,7 +8,7 @@ contract ZippieMultisig {
         the temporary private key will keccak256 this array and m, to allow m of signers.length = n signatures in that array to transfer from the wallet
         @return true if the multisig address signed this hash, else false 
      */
-    function verifyMultisigAccountSignature(address[] signers, uint8[] m, address multisigAddress, uint8 v, bytes32 r, bytes32 s) internal pure {
+    function verifyMultisigAccountSignature(address[] memory signers, uint8[] memory m, address multisigAddress, uint8 v, bytes32 r, bytes32 s) internal pure {
         require(multisigAddress == ecrecover(ZippieUtils.toEthSignedMessageHash(keccak256(abi.encodePacked(signers, m))), v, r, s), "Invalid account");
     }
 
@@ -16,7 +16,7 @@ contract ZippieMultisig {
         that they all signed keccak256(amount, verificationKey) or keccak256(amount, receiver, nonce) (for cards)
         and that there are no duplicate signatures/addresses
      */
-    function verifySignerSignatures(bytes32 signedHash, uint8 offset, uint8[] m, address[] signerAddresses, uint8[] v, bytes32[] r, bytes32[] s) internal pure {     
+    function verifySignerSignatures(bytes32 signedHash, uint8 offset, uint8[] memory m, address[] memory signerAddresses, uint8[] memory v, bytes32[] memory r, bytes32[] memory s) internal pure {     
         // destruct m array
         // TODO: create function that returns instead of creating variables  (cheaper?)
         uint8 mSign = m[1];

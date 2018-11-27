@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity >=0.5.0 <0.6.0;
 
 import "./nonce/IHashNonce.sol";
 import "./ZippieUtils.sol";
@@ -11,7 +11,7 @@ contract ZippieCard {
         _zippieCardNonce = zippieCardNonce;
     }
 
-    function verifyCardSignatures(bytes32[] cardNonces, uint8 offset, uint8[] m, address[] cardAddresses, uint8[] v, bytes32[] r, bytes32[] s) internal {
+    function verifyCardSignatures(bytes32[] memory cardNonces, uint8 offset, uint8[] memory m, address[] memory cardAddresses, uint8[] memory v, bytes32[] memory r, bytes32[] memory s) internal {
         // destruct m array
         // TODO: create function that returns instead of creating variables  (cheaper?)
         uint8 mSign = m[3]; // nr of required card singatures

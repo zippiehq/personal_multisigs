@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity >=0.5.0 <0.6.0;
 
 interface IAddressNonce {
     function isNonceUsed(address signer, address nonce) external returns (bool);

@@ -1,11 +1,11 @@
-pragma solidity ^0.4.24;
+pragma solidity >=0.5.0 <0.6.0;
 
 contract TestFunctions {
 
     // these functions are simply for testing
     // since truffle/web3 hashes things in a different way, we can call these pure functions
     // and hash things inside the evm so we can be sure that things will hash the same
-    function soliditySha3_addresses_m(address[] validAddresses, uint8[] m) public pure returns(bytes32){
+    function soliditySha3_addresses_m(address[] memory validAddresses, uint8[] memory m) public pure returns(bytes32){
         return keccak256(abi.encodePacked(validAddresses, m));
     }
 
