@@ -11,35 +11,55 @@ contract ZippieCard {
         _zippieCardNonce = zippieCardNonce;
     }
 
-    function verifyCardSignatures(bytes32[] memory cardNonces, uint8 offset, uint8[] memory m, address[] memory cardAddresses, uint8[] memory v, bytes32[] memory r, bytes32[] memory s) internal {
-        // destruct m array
-        // TODO: create function that returns instead of creating variables  (cheaper?)
-        uint8 mSign = m[3]; // nr of required card singatures
-        uint8 addrOffset = m[0];  // Signer addresses
-        uint8 signOffset = offset+m[1]; // Offset (account+verification) + Signer signatures
+    /** 
+      * @dev Verify that all provided card signatures are valid and nonces has not been used yet
+      * @param cardNonces random values generated and signed by cards at every read
+      * @param cardOffset offset values to cardAddresses array 
+        [0] offset index to first card address
+        [1] number of card addresses    
+        @param cardAddresses card addresses (starting from offset index)
+      * @param signatureOffset offset values to signature arrays (v, r, s)
+        [0] offset index to first card signature
+        [1] number of card signatures   
+      * @param v v values of card signatures (starting from offset index)
+      * @param r r values of card signatures (starting from offset index)
+      * @param s s values of card signatures (starting from offset index)
+      */
+    function verifyCardSignatures(bytes32[] memory cardNonces, uint8[2] memory cardOffset, address[] memory cardAddresses, uint8[2] memory signatureOffset, uint8[] memory v, bytes32[] memory r, bytes32[] memory s) internal {
+        require(cardNonces.length == cardOffset[1], "Incorrect number of card nonces"); 
+        require(signatureOffset[1] <= cardOffset[1], "Required number of card signatures cannot be higher than number of possible cards");
+        require(cardOffset[0] != 0xFF, "Card offset cannot be MAX UINT8");
+        require(cardOffset[1] != 0xFF, "Nr of cards cannot be MAX UINT8");
+        require(signatureOffset[0] != 0xFF, "Signature offset cannot be MAX UINT8");
+        require(signatureOffset[1] != 0xFF, "Nr of signatures cannot be MAX UINT8");
+        require(cardAddresses.length >= cardOffset[0] + cardOffset[1], "Incorrect number of cardAddresses"); 
+        require(v.length >= signatureOffset[0] + signatureOffset[1], "Incorrect number of signatures (v)"); 
+        require(r.length >= signatureOffset[0] + signatureOffset[1], "Incorrect number of signatures (r)"); 
+        require(s.length >= signatureOffset[0] + signatureOffset[1], "Incorrect number of signatures (s)"); 
 
-        // make a memory mapping of (addresses => used this address?) to check for duplicates
-        address[] memory usedCardAddresses = new address[](mSign);
+        // remember used card addresses to check for duplicates
+        address[] memory usedCardAddresses = new address[](signatureOffset[1]);
        
-        // loop through and ec_recover each v[] r[] s[] and verify that a correct address came out, and it wasn't a duplicate
+        // recovered card address 
         address cardAddress;
 
-        for (uint8 i = 0; i < mSign; i++) {
+        // check all card signatures
+        for (uint8 i = 0; i < signatureOffset[1]; i++) {
 
-            // recover card 
-            cardAddress = ecrecover(cardNonces[i], v[signOffset+i], r[signOffset+i], s[signOffset+i]);
+            // recover card address
+            cardAddress = ecrecover(cardNonces[i], v[signatureOffset[0]+i], r[signatureOffset[0]+i], s[signatureOffset[0]+i]);
 
-            // check that address is a valid address 
-            require(ZippieUtils.isAddressInArray(mSign, addrOffset, cardAddresses, cardAddress), "Invalid address found when verifying card signatures");
+            // check that address is a valid card address
+            require(ZippieUtils.isAddressInArray(cardAddress, cardOffset[0], cardOffset[1], cardAddresses), "Invalid address found when verifying card signatures");
 
-            // check that this address has NOT been used before
-            require(!ZippieUtils.isAddressInArray(i, 0, usedCardAddresses, cardAddress), "Card address has been used already");
+            // check that this address is not a duplicate
+            require(!ZippieUtils.isAddressInArray(cardAddress, 0, i, usedCardAddresses), "Card address has been used already");
 
-            // push this address to the usedAddresses array
+            // add this card address to the used list
             usedCardAddresses[i] = cardAddress;
 
-            // flag card nonce as used
-            require(IHashNonce(_zippieCardNonce).useNonce(cardAddress ,cardNonces[i], v[signOffset+i], r[signOffset+i], s[signOffset+i]));
+            // flag card nonce as used in the card nonce contract, revert if used already
+            require(IHashNonce(_zippieCardNonce).useNonce(cardAddress, cardNonces[i], v[signatureOffset[0]+i], r[signatureOffset[0]+i], s[signatureOffset[0]+i]));
         }
     }
 }

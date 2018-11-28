@@ -15,7 +15,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
  */
 contract ZippieWalletNoCards is ZippieMultisig, ZippieNonce {
 
-    /** @notice Redeems a check after verifying all required signers/cards
+    /** @notice Redeems a check after verifying all required signers (recipient specified when check was created) 
         @dev Upon successful verification of the signatures, it's necessary to verify that the signers signed keccak256(recipient, amount, nonce)
         @param addresses multisig address, erc20 contract address, recipient
         [0] multisig account to withdraw ERC20 tokens from
@@ -24,8 +24,8 @@ contract ZippieWalletNoCards is ZippieMultisig, ZippieNonce {
         [3] nonce
       * @param signers possible signers 
       * @param m the amount of signatures required to transfer from the multisig account
-        [0] number of signers
-        [1] minimum number of signers
+        [0] possible number of signers
+        [1] required number of signers
       * @param v v values of all signatures
         [0] multisig account signature
         [1] verification key signature
@@ -35,24 +35,27 @@ contract ZippieWalletNoCards is ZippieMultisig, ZippieNonce {
       * @param amount amount to transfer
       */
     function redeemCheck(address[] memory addresses, address[] memory signers, uint8[] memory m, uint8[] memory v, bytes32[] memory r, bytes32[] memory s, uint256 amount) public {
-        verifyMultisigParameters(addresses.length, signers.length, m, v.length, r.length, s.length);
-        verifyMultisigAccountSignature(signers, m, addresses[0], v[0], r[0], s[0]);
-
+        require(addresses.length == 4, "Incorrect number of addresses");  
         require(amount > 0, "Amount must be greater than 0");
 
-        // verify nonce
+        // sanity check of signature parameters 
+        checkSignatureParameters(signers.length, m, v.length, r.length, s.length);
+
+        // verify that account signature is valid
+        verifyMultisigAccountSignature(signers, m, addresses[0], v[0], r[0], s[0]);
+
+        // verify nonce for replay protection
         verifyMultisigNonce(addresses[0], addresses[3], addresses[2], v[1], r[1], s[1]);
 
-        // get the check hash (amount, recipient, nonce) to verify signer signatures
-        // verify that the signers signed that they want to transfer "amount" ERC20 token
+        // get the check hash (amount, recipient, nonce) and verify that required number of signers signed it (recipient specified when check was created) 
         bytes32 checkHash = ZippieUtils.toEthSignedMessageHash(keccak256(abi.encodePacked(amount, addresses[2], addresses[3])));
-        verifySignerSignatures(checkHash, 2, m, signers, v, r, s);
+        verifySignerSignatures(checkHash, [0, m[0]], signers, [2, m[1]], v, r, s);
 
         // transfer tokens
         require(IERC20(addresses[1]).transferFrom(addresses[0], addresses[2], amount), "Transfer failed");
     }
 
-    /** @notice Redeems a blank check after verifying all required signers/cards
+    /** @notice Redeems a blank check after verifying all required signers (recipient specified when check was claimed) 
         @dev Upon successful verification of the signatures, it's necessary to verify that the signers signed keccak256(amount, verification key)
       * @param addresses multisig address, erc20 contract address, recipient, verification key
         [0] multisig account to withdraw ERC20 tokens from
@@ -61,8 +64,8 @@ contract ZippieWalletNoCards is ZippieMultisig, ZippieNonce {
         [3] nonce
       * @param signers signers followed by card signers
       * @param m the amount of signatures required to transfer from the multisig account
-        [0] number of signers
-        [1] minimum number of signers
+        [0] possible number of signers
+        [1] required number of signers
       * @param v v values of all signatures
         [0] multisig account signature
         [1] verification key signature
@@ -72,33 +75,33 @@ contract ZippieWalletNoCards is ZippieMultisig, ZippieNonce {
       * @param amount amount to transfer
       */
     function redeemBlankCheck(address[] memory addresses, address[] memory signers, uint8[] memory m, uint8[] memory v, bytes32[] memory r, bytes32[] memory s, uint256 amount) public {
-        verifyMultisigParameters(addresses.length, signers.length, m, v.length, r.length, s.length);
-        verifyMultisigAccountSignature(signers, m, addresses[0], v[0], r[0], s[0]);
-
+        require(addresses.length == 4, "Incorrect number of addresses"); 
         require(amount > 0, "Amount must be greater than 0");
 
-        // verify nonce
+        // sanity check of signature parameters 
+        checkSignatureParameters(signers.length, m, v.length, r.length, s.length);
+
+        // verify that account signature is valid
+        verifyMultisigAccountSignature(signers, m, addresses[0], v[0], r[0], s[0]);
+
+        // verify nonce for replay protection
         verifyMultisigNonce(addresses[0], addresses[3], addresses[2], v[1], r[1], s[1]);
 
-        // get the blank check hash (amount, verification key) to verify signer signatures
-        // verify that the signers signed that they want to transfer "amount" ERC20 token
+        // get the check hash (amount, nonce) and verify that required number of signers signed it (recipient specified when check was claimed) 
         bytes32 blankCheckHash = ZippieUtils.toEthSignedMessageHash(keccak256(abi.encodePacked(amount, addresses[3])));
-        verifySignerSignatures(blankCheckHash, 2, m, signers, v, r, s);
+        verifySignerSignatures(blankCheckHash, [0, m[0]], signers, [2, m[1]], v, r, s);
 
         // transfer tokens
         require(IERC20(addresses[1]).transferFrom(addresses[0], addresses[2], amount), "Transfer failed");
     }
 
-    function verifyMultisigParameters(uint256 nrOfAddresses, uint256 nrOfSigners, uint8[] memory m, uint256 nrOfVs, uint256 nrOfRs, uint256 nrOfSs) private pure {
-        require(m.length == 2, "Invalid m[]"); 
+    function checkSignatureParameters(uint256 nrOfSigners, uint8[] memory m, uint256 nrOfVs, uint256 nrOfRs, uint256 nrOfSs) private pure {
+        require(m.length == 2, "Invalid m[]");
         require(m[1] <= m[0], "Required number of signers cannot be higher than number of possible signers");
         require(m[0] > 0, "Required number of signers cannot be 0");           
         require(m[1] > 0, "Possible number of signers cannot be 0");  
-        // TODO: Do we need this if we use SafeMath?
         require(m[0] != 0xFF, "Cannot be MAX UINT8"); 
         require(m[1] != 0xFF, "Cannot be MAX UINT8"); 
-        // TODO: Move address check or have offset as input
-        require(nrOfAddresses == 2 + 1 + 1, "Incorrect number of addresses"); 
         require(nrOfSigners == m[0], "Incorrect number of signers"); 
         require(nrOfVs == 2 + m[1], "Incorrect number of signatures (v)"); 
         require(nrOfRs == 2 + m[1], "Incorrect number of signatures (r)"); 

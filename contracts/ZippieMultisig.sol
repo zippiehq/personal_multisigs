@@ -4,42 +4,63 @@ import "./ZippieUtils.sol";
 
 contract ZippieMultisig {
 
-    /** @dev verify that the multisig account (temp priv key) signed to allow this array of addresses to access the account's funds.
-        the temporary private key will keccak256 this array and m, to allow m of signers.length = n signatures in that array to transfer from the wallet
-        @return true if the multisig address signed this hash, else false 
-     */
+    /** 
+      * @dev Verify that the multisig account (temp priv key) signed the array of possible signer addresses and required number of signatures
+      * @param signers all possible signers for this multsig account
+      * @param m required number of signatures for this multisig account
+      * @param multisigAddress address of this multisig account
+      * @param v v values of the multisig account signatures
+      * @param r r values of the multisig account signatures
+      * @param s s values of the multisig account signatures
+      */
     function verifyMultisigAccountSignature(address[] memory signers, uint8[] memory m, address multisigAddress, uint8 v, bytes32 r, bytes32 s) internal pure {
         require(multisigAddress == ecrecover(ZippieUtils.toEthSignedMessageHash(keccak256(abi.encodePacked(signers, m))), v, r, s), "Invalid account");
     }
 
-    /** @dev Verify that all signatures were addresses in signers, 
-        that they all signed keccak256(amount, verificationKey) or keccak256(amount, receiver, nonce) (for cards)
-        and that there are no duplicate signatures/addresses
-     */
-    function verifySignerSignatures(bytes32 signedHash, uint8 offset, uint8[] memory m, address[] memory signerAddresses, uint8[] memory v, bytes32[] memory r, bytes32[] memory s) internal pure {     
-        // destruct m array
-        // TODO: create function that returns instead of creating variables  (cheaper?)
-        uint8 mSign = m[1];
-        uint8 addrOffset = 0;  // Signer addresses comes first
-        uint8 signOffset = offset; // Offset (account+verification)
+    /** 
+      * @dev Verify that all provided signer signatures are valid
+      * @param signedHash hash signed by all signers
+      * @param signerOffset offset values to signerAddresses array 
+        [0] offset index to first signer address
+        [1] number of signer addresses    
+        @param signerAddresses card addresses (starting from offset index)
+      * @param signatureOffset offset values to signature arrays (v, r, s)
+        [0] offset index to first signer signature
+        [1] number of signer signatures   
+      * @param v v values of card signatures (starting from offset index)
+      * @param r r values of card signatures (starting from offset index)
+      * @param s s values of card signatures (starting from offset index)
+      */
+    function verifySignerSignatures(bytes32 signedHash, uint8[2] memory signerOffset, address[] memory signerAddresses, uint8[2] memory signatureOffset, uint8[] memory v, bytes32[] memory r, bytes32[] memory s) internal pure {     
+        require(signatureOffset[1] <= signerOffset[1], "Required number of signer signatures cannot be higher than number of possible signers");
+        require(signerOffset[0] != 0xFF, "Signer offset cannot be MAX UINT8");
+        require(signerOffset[1] != 0xFF, "Nr of signers cannot be MAX UINT8");
+        require(signatureOffset[0] != 0xFF, "Signature offset cannot be MAX UINT8");
+        require(signatureOffset[1] != 0xFF, "Nr of signatures cannot be MAX UINT8");
+        require(signerAddresses.length >= signerOffset[0] + signerOffset[1], "Incorrect number of signerAddresses"); 
+        require(v.length >= signatureOffset[0] + signatureOffset[1], "Incorrect number of signatures (v)"); 
+        require(r.length >= signatureOffset[0] + signatureOffset[1], "Incorrect number of signatures (r)"); 
+        require(s.length >= signatureOffset[0] + signatureOffset[1], "Incorrect number of signatures (s)"); 
+        
+        // remember used signer addresses to check for duplicates
+        address[] memory usedSignerAddresses = new address[](signatureOffset[1]);
 
-        // make a memory mapping of (addresses => used this address?) to check for duplicates
-        address[] memory usedSignerAddresses = new address[](mSign);
-
-        // loop through and ec_recover each v[] r[] s[] and verify that a correct address came out, and it wasn't a duplicate
+        // recovered signer address 
         address signerAddress;
 
-        for (uint8 i = 0; i < mSign; i++) {
-            // get address from ec_recover
-            signerAddress = ecrecover(signedHash, v[signOffset+i], r[signOffset+i], s[signOffset+i]);
+        // check all signer signatures
+        for (uint8 i = 0; i < signatureOffset[1]; i++) {
 
-            // check that address is a valid address 
-            require(ZippieUtils.isAddressInArray(mSign, addrOffset, signerAddresses, signerAddress), "Invalid address found when verifying signer signatures");
+            // recover signer address
+            signerAddress = ecrecover(signedHash, v[signatureOffset[0]+i], r[signatureOffset[0]+i], s[signatureOffset[0]+i]);
 
-            // check that this address has NOT been used before
-            require(!ZippieUtils.isAddressInArray(i, 0, usedSignerAddresses, signerAddress), "Signer address has been used already");
+            // check that address is a valid signer address 
+            require(ZippieUtils.isAddressInArray(signerAddress, signerOffset[0], signerOffset[1], signerAddresses), "Invalid address found when verifying signer signatures");
 
-            // push this address to the usedAddresses array
+            // check that this address is not a duplicate
+            require(!ZippieUtils.isAddressInArray(signerAddress, 0, i, usedSignerAddresses), "Signer address has been used already");
+
+             // add this signer address to the used list
             usedSignerAddresses[i] = signerAddress;
         }
     }
