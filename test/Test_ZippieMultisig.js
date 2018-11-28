@@ -1,6 +1,6 @@
 var TestFunctions = artifacts.require("./TestFunctions.sol");
 var BasicERC20Mock = artifacts.require("./BasicERC20Mock.sol");
-var ZippieMultisigWallet = artifacts.require("./ZippieMultisigWallet.sol");
+var ZippieWallet = artifacts.require("./ZippieWallet.sol");
 
 contract("Test Zippie Multisig", (accounts) => {
 	// accounts[9] is the "temporary private key"
@@ -14,7 +14,7 @@ contract("Test Zippie Multisig", (accounts) => {
 					test = instance;
     			return BasicERC20Mock.new(accounts[9]).then(instance => {
 						basicToken = instance;
-						return ZippieMultisigWallet.new();
+						return ZippieWallet.new();
      			}).then(instance => {
      				zipperMS = instance;
 						return basicToken.approve(instance.address, web3.utils.toWei("100", "ether"), {from: accounts[9]});

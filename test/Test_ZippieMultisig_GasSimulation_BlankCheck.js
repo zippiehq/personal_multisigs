@@ -1,22 +1,26 @@
 var TestFunctions = artifacts.require("./TestFunctions.sol");
 var BasicERC20Mock = artifacts.require("./BasicERC20Mock.sol");
-var ZippieMultisigWallet = artifacts.require("./ZippieMultisigWallet.sol");
+var ZippieWallet = artifacts.require("./ZippieWallet.sol");
+var ZippieCardNonces = artifacts.require("./ZippieCardNonces.sol");
 
 contract("Zippie Multisig Gas Simulator", (accounts) => {
 
 	var test;
 	var basicToken;
-	var zipperMS;
+	var zippieCardNonces;
+	var zippieWallet;
 
 	beforeEach(() => {
-		return TestFunctions.new().then(instance => {
-				test = instance;
-			return BasicERC20Mock.new(accounts[100]).then(instance => {
-					basicToken = instance;
-					return ZippieMultisigWallet.new();
-			}).then(instance => {
-				zipperMS = instance;
-					return basicToken.approve(instance.address, web3.utils.toWei("100", "ether"), {from: accounts[100]});
+	return TestFunctions.new().then(instance => {
+			test = instance;
+		return BasicERC20Mock.new(accounts[100]).then(instance => {
+			basicToken = instance
+			return ZippieCardNonces.new().then(instance => {
+				zippieCardNonces = instance
+				return ZippieWallet.new(zippieCardNonces.address)}).then(instance => {
+					zippieWallet = instance;
+					return basicToken.approve(zippieWallet.address, web3.utils.toWei("100", "ether"), {from: accounts[100]});
+				});
 			});
 		});
 	});
