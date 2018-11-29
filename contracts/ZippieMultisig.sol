@@ -4,8 +4,28 @@ import "./ZippieUtils.sol";
 
 contract ZippieMultisig {
 
+    // nonces for replay protection
+    mapping (address => mapping(address => bool)) public usedNonces;
+
     /** 
-      * @dev Verify that the multisig account (temp priv key) signed the array of possible signer addresses and required number of signatures
+      * @dev Verify that a random nonce account (one time private key) signed an arbitrary hash and mark the nonce address as used for the specific multisig address
+      * @param multisigAddress address of this multisig account
+      * @param nonceAddress address of this nonce account
+      * @param signedHash hash signed by nonce account
+      * @param v v values of the nonce account signatures
+      * @param r r values of the nonce account signatures
+      * @param s s values of the nonce account signatures
+      */
+    function verifyMultisigNonce(address multisigAddress, address nonceAddress, bytes32 signedHash, uint8 v, bytes32 r, bytes32 s) internal {
+        require(usedNonces[multisigAddress][nonceAddress] == false, "Nonce already used"); 
+        require(nonceAddress == ecrecover(signedHash, v, r, s), "Invalid nonce");
+        
+        // flag nonce as used to prevent reuse
+        usedNonces[multisigAddress][nonceAddress] = true;   
+    }
+
+    /** 
+      * @dev Verify that the multisig account (temp private key) signed the array of possible signer addresses and required number of signatures
       * @param signers all possible signers for this multsig account
       * @param m required number of signatures for this multisig account
       * @param multisigAddress address of this multisig account

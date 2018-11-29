@@ -1,7 +1,6 @@
 pragma solidity >=0.5.0 <0.6.0;
 
 import "./ZippieMultisig.sol";
-import "./ZippieNonce.sol";
 import "./ZippieUtils.sol";
 
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
@@ -13,7 +12,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
     @dev NOTE: YOUR SIGNING APPLICATION MAY NOT PREPEND "\x19Ethereum Signed Message:\n32" TO THE OBJECT TO BE SIGNED. 
     FEEL FREE TO REMOVE IF NECESSARY
  */
-contract ZippieWalletNoCards is ZippieMultisig, ZippieNonce {
+contract ZippieWalletNoCards is ZippieMultisig {
 
     /** @notice Redeems a check after verifying all required signers (recipient specified when check was created) 
         @dev Upon successful verification of the signatures, it's necessary to verify that the signers signed keccak256(recipient, amount, nonce)
@@ -21,7 +20,7 @@ contract ZippieWalletNoCards is ZippieMultisig, ZippieNonce {
         [0] multisig account to withdraw ERC20 tokens from
         [1] ERC20 contract to use
         [2] recipient of the ERC20 tokens
-        [3] nonce
+        [3] verification key (nonce)
       * @param signers possible signers 
       * @param m the amount of signatures required to transfer from the multisig account
         [0] possible number of signers
@@ -44,8 +43,9 @@ contract ZippieWalletNoCards is ZippieMultisig, ZippieNonce {
         // verify that account signature is valid
         verifyMultisigAccountSignature(signers, m, addresses[0], v[0], r[0], s[0]);
 
-        // verify nonce for replay protection
-        verifyMultisigNonce(addresses[0], addresses[3], addresses[2], v[1], r[1], s[1]);
+        // verify nonce for replay protection (verification key signing recipient address)
+        bytes32 recipientHash = ZippieUtils.toEthSignedMessageHash(keccak256(abi.encodePacked(addresses[2])));
+        verifyMultisigNonce(addresses[0], addresses[3], recipientHash, v[1], r[1], s[1]);
 
         // get the check hash (amount, recipient, nonce) and verify that required number of signers signed it (recipient specified when check was created) 
         bytes32 checkHash = ZippieUtils.toEthSignedMessageHash(keccak256(abi.encodePacked(amount, addresses[2], addresses[3])));
@@ -61,7 +61,7 @@ contract ZippieWalletNoCards is ZippieMultisig, ZippieNonce {
         [0] multisig account to withdraw ERC20 tokens from
         [1] ERC20 contract to use
         [2] recipient of the ERC20 tokens
-        [3] nonce
+        [3] verification key (nonce)
       * @param signers signers followed by card signers
       * @param m the amount of signatures required to transfer from the multisig account
         [0] possible number of signers
@@ -84,8 +84,9 @@ contract ZippieWalletNoCards is ZippieMultisig, ZippieNonce {
         // verify that account signature is valid
         verifyMultisigAccountSignature(signers, m, addresses[0], v[0], r[0], s[0]);
 
-        // verify nonce for replay protection
-        verifyMultisigNonce(addresses[0], addresses[3], addresses[2], v[1], r[1], s[1]);
+        // verify nonce for replay protection (verification key signing recipient address)
+        bytes32 recipientHash = ZippieUtils.toEthSignedMessageHash(keccak256(abi.encodePacked(addresses[2])));
+        verifyMultisigNonce(addresses[0], addresses[3], recipientHash, v[1], r[1], s[1]);
 
         // get the check hash (amount, nonce) and verify that required number of signers signed it (recipient specified when check was claimed) 
         bytes32 blankCheckHash = ZippieUtils.toEthSignedMessageHash(keccak256(abi.encodePacked(amount, addresses[3])));
