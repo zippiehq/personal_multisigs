@@ -1,14 +1,14 @@
 pragma solidity >=0.5.0 <0.6.0;
 
-import "./nonce/IHashNonce.sol";
+import "./IZippieCardNonces.sol";
 import "./ZippieUtils.sol";
 
 contract ZippieCard {
 
-    address private _zippieCardNonce;
+    address private _zippieCardNonces;
 
-    constructor(address zippieCardNonce) public {
-        _zippieCardNonce = zippieCardNonce;
+    constructor(address zippieCardNonces) public {
+        _zippieCardNonces = zippieCardNonces;
     }
 
     /** 
@@ -59,7 +59,7 @@ contract ZippieCard {
             usedCardAddresses[i] = cardAddress;
 
             // flag card nonce as used in the card nonce contract, revert if used already
-            require(IHashNonce(_zippieCardNonce).useNonce(cardAddress, cardNonces[i], v[signatureOffset[0]+i], r[signatureOffset[0]+i], s[signatureOffset[0]+i]));
+            require(IZippieCardNonces(_zippieCardNonces).useNonce(cardAddress, cardNonces[i], v[signatureOffset[0]+i], r[signatureOffset[0]+i], s[signatureOffset[0]+i]));
         }
     }
 }
