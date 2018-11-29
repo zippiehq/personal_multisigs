@@ -2,9 +2,14 @@ pragma solidity >=0.5.0 <0.6.0;
 
 library ZippieUtils {
 
-    function isAddressInArray(uint8 m, uint8 offset, address[] memory validAddresses, address checkAddress) internal pure returns(bool) {
-        for (uint8 i = 0; i < m; i++) {
-            if (validAddresses[i+offset] == checkAddress) {
+    /** 
+      * isAddressInArray
+      * @dev check if an address is in part of an array of addresses (using offset and count)
+      */
+    function isAddressInArray(address item, uint8 offset, uint8 length, address[] memory items) internal pure returns(bool) {
+        require(items.length >= offset + length, "Not enough number of items");
+        for (uint8 i = 0; i < length; i++) {
+            if (items[offset+i] == item) {
                 return true;
             }
         }
