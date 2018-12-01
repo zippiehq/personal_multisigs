@@ -25,11 +25,25 @@ export async function getBlankCheckSignature(verificationKey, signer, amount) {
 	return getRSV(blankCheckSignature.slice(2))
 }
 
+export async function getSetLimitSignature(verificationKey, signer, amount) {
+	// sign by multisig signer
+	const limitHash = await test.soliditySha3_amount_address(web3.utils.toWei(amount, "ether"), verificationKey);
+	const limitSignature = await web3.eth.sign(limitHash, signer);
+	return getRSV(limitSignature.slice(2))
+}
+
 export async function getRecipientSignature(recipient, verificationKey) {
 	// sign by a random verification key
 	const recipientHash = await test.soliditySha3_address(recipient);
 	const recipientSignature = await web3.eth.sign(recipientHash, verificationKey);
 	return getRSV(recipientSignature.slice(2))
+}
+
+export async function getNonceSignature(nonce, verificationKey) {
+	// sign by a random verification key
+	const nonceHash = await test.soliditySha3_address(nonce);
+	const nonceSignature = await web3.eth.sign(nonceHash, verificationKey);
+	return getRSV(nonceSignature.slice(2))
 }
 
 export async function getDigestSignature(digestHash, card) {

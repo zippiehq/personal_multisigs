@@ -283,9 +283,7 @@ contract ZippieWallet is ZippieMultisig, ZippieCard {
       * only if increased
       * @param addresses required addresses
       * [0] multisig account to withdraw ERC20 tokens from
-      * [1] ERC20 contract to use
-      * [2] recipient of the ERC20 tokens
-      * [3] nonce address
+      * [1] verification key (nonce)
       * @param signers all possible signers and cards
       * [0..i] signer addresses
       * [i+1..j] card addresses
@@ -319,7 +317,7 @@ contract ZippieWallet is ZippieMultisig, ZippieCard {
         returns (bool)
     {
         require(
-            addresses.length == 4, 
+            addresses.length == 2, 
             "Incorrect number of addresses"
         );
         
@@ -346,13 +344,13 @@ contract ZippieWallet is ZippieMultisig, ZippieCard {
         );
 
         // verify that account nonce is valid (for replay protection)
-        // (nonce signing recipient address)
+        // (nonce signing this multisig account address)
         bytes32 recipientHash = ZippieUtils.toEthSignedMessageHash(
-            keccak256(abi.encodePacked(addresses[2]))
+            keccak256(abi.encodePacked(addresses[0]))
         );
         verifyMultisigNonce(
             addresses[0], 
-            addresses[3], 
+            addresses[1], 
             recipientHash, 
             v[1], 
             r[1], 
@@ -363,7 +361,7 @@ contract ZippieWallet is ZippieMultisig, ZippieCard {
         // and verify that required number of signers signed it
         // TODO: Need to prepend function signature so hash for redeemBlankCheck don't get the same
         bytes32 limitHash = ZippieUtils.toEthSignedMessageHash(
-            keccak256(abi.encodePacked(amount, addresses[3]))
+            keccak256(abi.encodePacked(amount, addresses[1]))
         );
         verifyMultisigSignerSignatures(
             limitHash, 
