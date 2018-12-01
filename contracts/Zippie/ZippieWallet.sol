@@ -106,9 +106,12 @@ contract ZippieWallet is ZippieMultisig, ZippieCard {
 
         // get the check hash (amount, recipient, nonce) 
         // and verify that required number of signers signed it 
-        // (recipient is specified when check is created) 
+        // (recipient is specified when check is created)
+        // prepend with function name "redeemCheck"
+        // so a hash for another function with same parameter 
+        // layout don't get the same hash
         bytes32 checkHash = ZippieUtils.toEthSignedMessageHash(
-            keccak256(abi.encodePacked(amount, addresses[2], addresses[3]))
+            keccak256(abi.encodePacked("redeemCheck", amount, addresses[2], addresses[3]))
         );
         verifyMultisigSignerSignatures(
             checkHash, 
@@ -235,8 +238,11 @@ contract ZippieWallet is ZippieMultisig, ZippieCard {
         // get the check hash (amount, nonce) 
         // and verify that required number of signers signed it 
         // (recipient is specified when check is claimed)
+        // prepend with function name "redeemBlankCheck"
+        // so a hash for another function with same parameter 
+        // layout don't get the same hash
         bytes32 blankCheckHash = ZippieUtils.toEthSignedMessageHash(
-            keccak256(abi.encodePacked(amount, addresses[3]))
+            keccak256(abi.encodePacked("redeemBlankCheck", amount, addresses[3]))
         );
         verifyMultisigSignerSignatures(
             blankCheckHash, 
@@ -359,9 +365,11 @@ contract ZippieWallet is ZippieMultisig, ZippieCard {
 
         // get the limit hash (amount, nonce) 
         // and verify that required number of signers signed it
-        // TODO: Need to prepend function signature so hash for redeemBlankCheck don't get the same
+        // prepend with function name "setLimit"
+        // so a hash for another function with same parameter 
+        // layout don't get the same hash
         bytes32 limitHash = ZippieUtils.toEthSignedMessageHash(
-            keccak256(abi.encodePacked(amount, addresses[1]))
+            keccak256(abi.encodePacked("setLimit", amount, addresses[1]))
         );
         verifyMultisigSignerSignatures(
             limitHash, 

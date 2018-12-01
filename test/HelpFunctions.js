@@ -20,14 +20,14 @@ export async function getMultisigSignature(signers, m, multisig) {
 
 export async function getBlankCheckSignature(verificationKey, signer, amount) {
 	// sign by multisig signer
-	const blankCheckHash = await test.soliditySha3_amount_address(web3.utils.toWei(amount, "ether"), verificationKey);
+	const blankCheckHash = await test.soliditySha3_name_amount_address("redeemBlankCheck", web3.utils.toWei(amount, "ether"), verificationKey);
 	const blankCheckSignature = await web3.eth.sign(blankCheckHash, signer);
 	return getRSV(blankCheckSignature.slice(2))
 }
 
 export async function getSetLimitSignature(verificationKey, signer, amount) {
 	// sign by multisig signer
-	const limitHash = await test.soliditySha3_amount_address(web3.utils.toWei(amount, "ether"), verificationKey);
+	const limitHash = await test.soliditySha3_name_amount_address("setLimit", web3.utils.toWei(amount, "ether"), verificationKey);
 	const limitSignature = await web3.eth.sign(limitHash, signer);
 	return getRSV(limitSignature.slice(2))
 }

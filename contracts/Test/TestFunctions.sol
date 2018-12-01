@@ -17,6 +17,10 @@ contract TestFunctions {
         return keccak256(abi.encodePacked(amount, key));
     }
 
+    function soliditySha3_name_amount_address(string memory name, uint256 amount, address key) public pure returns(bytes32){
+        return keccak256(abi.encodePacked(name, amount, key));
+    }
+
     function soliditySha3_address(address addr) public pure returns(bytes32){
         return keccak256(abi.encodePacked(addr));
     }
