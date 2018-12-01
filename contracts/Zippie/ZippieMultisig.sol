@@ -5,9 +5,10 @@ import "./ZippieUtils.sol";
 /**
   * @title Zippie Multisig
   * @dev Multi signature and nonce verification for multisig accounts 
-  * it's enough if nonces are unique for a single contract
+  * it's enough if nonces are unique for a specific multisig contract
   * since a multsig account must always be created with a temp private key 
-  * and will therefor only be useful in the contract that was used during the setup
+  * and will therefor only be useful in the contract that was used 
+  * and sepcified during the setup of a new multisig account
  */
 contract ZippieMultisig {
 
