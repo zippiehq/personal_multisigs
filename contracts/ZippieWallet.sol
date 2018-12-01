@@ -108,7 +108,7 @@ contract ZippieWallet is ZippieMultisig, ZippieCard {
         bytes32 checkHash = ZippieUtils.toEthSignedMessageHash(
             keccak256(abi.encodePacked(amount, addresses[2], addresses[3]))
         );
-        verifySignerSignatures(
+        verifyMultisigSignerSignatures(
             checkHash, 
             [0, m[0]], 
             signers, 
@@ -233,7 +233,7 @@ contract ZippieWallet is ZippieMultisig, ZippieCard {
         bytes32 blankCheckHash = ZippieUtils.toEthSignedMessageHash(
             keccak256(abi.encodePacked(amount, addresses[3]))
         );
-        verifySignerSignatures(
+        verifyMultisigSignerSignatures(
             blankCheckHash, 
             [0, m[0]], 
             signers, 
@@ -357,7 +357,7 @@ contract ZippieWallet is ZippieMultisig, ZippieCard {
         bytes32 limitHash = ZippieUtils.toEthSignedMessageHash(
             keccak256(abi.encodePacked(amount, addresses[3]))
         );
-        verifySignerSignatures(
+        verifyMultisigSignerSignatures(
             limitHash, 
             [0, m[0]], 
             signers, 

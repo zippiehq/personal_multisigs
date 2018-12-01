@@ -98,7 +98,7 @@ contract ZippieMultisig {
       * @param r r values of card signatures (starting from offset index)
       * @param s s values of card signatures (starting from offset index)
       */
-    function verifySignerSignatures(
+    function verifyMultisigSignerSignatures(
         bytes32 signedHash, 
         uint8[2] memory signerOffset, 
         address[] memory signerAddresses, 
