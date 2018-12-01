@@ -32,6 +32,7 @@ contract ZippieWalletBasic is ZippieMultisig {
       * @param r r values of all signatures (structured as v)
       * @param s s values of all signatures (structured as v)
       * @param amount amount to transfer
+      * @return true if transfer successful 
       */
     function redeemCheck(
         address[] memory addresses, 
@@ -42,7 +43,8 @@ contract ZippieWalletBasic is ZippieMultisig {
         bytes32[] memory s, 
         uint256 amount
     ) 
-        public 
+        public
+        returns (bool)
     {
         require(
             addresses.length == 4, 
@@ -106,6 +108,7 @@ contract ZippieWalletBasic is ZippieMultisig {
             IERC20(addresses[1]).transferFrom(addresses[0], addresses[2], amount), 
             "Transfer failed"
         );
+        return true;
     }
 
     /** @notice Redeems a blank check after verifying required signers
@@ -129,6 +132,7 @@ contract ZippieWalletBasic is ZippieMultisig {
       * @param r r values of all signatures (structured as v)
       * @param s s values of all signatures (structured as v)
       * @param amount amount to transfer
+      * @return true if transfer successful 
       */
     function redeemBlankCheck(
         address[] memory addresses, 
@@ -137,8 +141,10 @@ contract ZippieWalletBasic is ZippieMultisig {
         uint8[] memory v, 
         bytes32[] memory r, 
         bytes32[] memory s, 
-        uint256 amount    ) 
+        uint256 amount    
+    ) 
         public 
+        returns (bool)
     {
         require(
             addresses.length == 4, 
@@ -203,6 +209,7 @@ contract ZippieWalletBasic is ZippieMultisig {
             IERC20(addresses[1]).transferFrom(addresses[0], addresses[2], amount), 
             "Transfer failed"
         );
+        return true;
     }
 
     /** 
@@ -217,6 +224,8 @@ contract ZippieWalletBasic is ZippieMultisig {
     ) 
         private 
         pure 
+        returns (bool)
+    {
         require(
             m.length == 2, 
             "Invalid m[]"
@@ -256,6 +265,7 @@ contract ZippieWalletBasic is ZippieMultisig {
         require(
             nrOfSs == 2 + m[1], 
             "Incorrect number of signatures (s)"
-        ); 
+        );
+        return true; 
     }
 }

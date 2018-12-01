@@ -34,6 +34,7 @@ contract ZippieMultisig {
         bytes32 s
     ) 
         internal 
+        returns (bool)
     {
         require(
             usedNonces[multisigAddress][nonceAddress] == false, 
@@ -45,7 +46,8 @@ contract ZippieMultisig {
         );
         
         // flag nonce as used to prevent reuse
-        usedNonces[multisigAddress][nonceAddress] = true;   
+        usedNonces[multisigAddress][nonceAddress] = true; 
+        return true;  
     }
 
     /** 
@@ -69,6 +71,7 @@ contract ZippieMultisig {
     ) 
         internal 
         pure 
+        returns (bool)
     {
         require(
             multisigAddress == ecrecover(
@@ -81,6 +84,7 @@ contract ZippieMultisig {
             ), 
             "Invalid account"
         );
+        return true; 
     }
 
     /** 
@@ -109,6 +113,7 @@ contract ZippieMultisig {
     ) 
         internal 
         pure 
+        returns (bool)
     {     
         require(
             signatureOffset[1] <= signerOffset[1], 
@@ -189,5 +194,6 @@ contract ZippieMultisig {
              // add this signer address to the used list
             usedSignerAddresses[i] = signerAddress;
         }
+        return true; 
     }
 }

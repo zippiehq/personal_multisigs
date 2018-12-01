@@ -48,6 +48,7 @@ contract ZippieCard {
         bytes32[] memory s
     ) 
         internal 
+        returns (bool)
     {
         require(
             cardNonces.length == cardOffset[1], 
@@ -144,5 +145,6 @@ contract ZippieCard {
                 )
             );
         }
+        return true;
     }
 }
