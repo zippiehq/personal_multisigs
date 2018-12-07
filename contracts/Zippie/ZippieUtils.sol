@@ -3,7 +3,8 @@ pragma solidity ^0.5.0;
 library ZippieUtils {
 
     /** 
-      * @dev check if an address is in part of an array of addresses (using offset and count)
+      * @dev check if an address is included in an array of addresses 
+      * possible to use use offset and length to just search in a part of the array
       */
     function isAddressInArray(
         address item, 
