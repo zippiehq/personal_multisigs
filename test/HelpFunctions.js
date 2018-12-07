@@ -5,6 +5,7 @@ TestFunctions.new().then(instance => {
 })
 
 module.exports = {
+	createBlankCheck_1of1Signer_1of1Card,
 	getMultisigSignature,
 	getRecipientSignature,
 	getSignature,
@@ -17,6 +18,38 @@ module.exports = {
 	getHardcodedDigestSignature,
 	getRSV,
 	log,
+}
+
+async function createBlankCheck_1of1Signer_1of1Card(
+	multisigAccount,
+	tokenAddress,
+	recipientAccount,
+	nonceAccount,
+	signerAccount,
+	cardNumber,
+	m,
+	amount,
+	cardNonceNumber
+) 
+{
+	const cardSignature = await getHardcodedDigestSignature(cardNumber, cardNonceNumber)
+	const signers = [signerAccount, cardSignature.pubkey]
+	const multisigSignature = await getMultisigSignature(signers, m, multisigAccount)
+	const blankCheckSignature = await getBlankCheckSignature2(nonceAccount, signerAccount, amount)
+	const recipientSignature = await getRecipientSignature(recipientAccount, nonceAccount)	
+	
+	const addresses = [multisigAccount, tokenAddress, recipientAccount, nonceAccount]
+	const signatures = getSignature(multisigSignature, blankCheckSignature, cardSignature, recipientSignature)
+	const cardNonces = [cardSignature.digestHash]
+
+	return { addresses: addresses, signers: signers, m: m, signatures: signatures, amount: amount, cardNonces: cardNonces }
+}
+	
+async function getBlankCheckSignature2(verificationKey, signer, amount) {
+	// sign by multisig signer
+	const blankCheckHash = await test.soliditySha3_name_amount_address("redeemBlankCheck", amount, verificationKey);
+	const blankCheckSignature = await web3.eth.sign(blankCheckHash, signer);
+	return getRSV(blankCheckSignature.slice(2))
 }
 
 async function getMultisigSignature(signers, m, multisig) {
