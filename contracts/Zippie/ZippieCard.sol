@@ -142,7 +142,8 @@ contract ZippieCard {
                     v[signatureOffset[0]+i], 
                     r[signatureOffset[0]+i], 
                     s[signatureOffset[0]+i]
-                )
+                ), 
+                "Use card nonce failed"
             );
         }
         return true;

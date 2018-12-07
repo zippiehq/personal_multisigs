@@ -50,11 +50,11 @@ contract ZippieCardNonces is IZippieCardNonces {
     {
         require(
             _usedNonces[signer][nonce] == false, 
-            "Nonce already used"
+            "Card nonce already used"
         );
         require(
             signer == ecrecover(nonce, v, r, s), 
-            "Invalid signature"
+            "Invalid card nonce signature"
         );
         _usedNonces[signer][nonce] = true;
         return true;
