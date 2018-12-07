@@ -1,42 +1,44 @@
 {
-  "name": "zippiemultisig",
+  "name": "zippie-multisig-wallet",
   "version": "1.0.0",
-  "description": "Lightweight multisig wallet for Zipper Global",
+  "description": "Zippie multisig wallet",
   "main": "truffle-config.js",
-  "directories": {
-    "test": "test"
-  },
+  "files": [
+    "build",
+    "contracts",
+    "test"
+  ],
   "scripts": {
-    "node": "testrpc -m 'zipper' -l 8000000 -a 101",
+    "node": "ganache-cli -a 101 -m zippie",
     "test": "truffle test",
-    "flatten": "truffle-flattener contracts/ZippieMultisigWallet.sol > ZippieMultisigWallet-flat.sol"
+    "flatten": "truffle-flattener contracts/zippie/ZippieWallet.sol > ZippieWallet-flat.sol"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://alexwagg@github.com/alexwagg/ZipperMultiSig.git"
+    "url": "https://github.com/zippiehq/personal_multisigs.git"
   },
   "keywords": [
-    "ethereum",
     "solidity",
+    "ethereum",
     "web3",
-    "zipper",
-    "global",
-    "zipperglobal",
     "multisig",
-    "ether",
+    "wallet",
     "eth",
     "erc20",
-    "weth"
+    "weth",
+    "zippie"
   ],
   "author": "Zippie",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/alexwagg/ZipperMultiSig/issues"
+    "url": "https://github.com/zippiehq/personal_multisigs/issues"
   },
-  "homepage": "https://github.com/alexwagg/ZipperMultiSig#readme",
+  "homepage": "https://github.com/zippiehq/personal_multisigs",
   "devDependencies": {
-    "openzeppelin-solidity": "2.0.0"
+    "ganache-cli": "^6.2.3",
+    "openzeppelin-solidity": "2.0.0",
+    "truffle": "^5.0.0-beta.2",
+    "truffle-flattener": "^1.2.10"
   },
-  "dependencies": {
-  }
+  "dependencies": {}
 }
