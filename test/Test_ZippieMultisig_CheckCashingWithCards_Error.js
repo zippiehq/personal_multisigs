@@ -3,8 +3,22 @@ var BasicERC20Mock = artifacts.require("./BasicERC20Mock.sol");
 var ZippieWallet = artifacts.require("./ZippieWallet.sol");
 var ZippieCardNonces = artifacts.require("./ZippieCardNonces.sol");
 var test;
-import { getMultisigSignature, getBlankCheckSignature, getRecipientSignature, getDigestSignature, getSignature, getHardcodedDigestSignature, log } from './HelpFunctions';
 
+const {
+	getMultisigSignature,
+	getRecipientSignature,
+	getSignature,
+	getBlankCheckSignature,
+	getNonceSignature,
+	getSetLimitSignature,
+	getDigestSignature,
+	getSignatureFrom3,
+	getEmptyDigestSignature,
+	getHardcodedDigestSignature,
+	getRSV,
+	log,
+ } = require('./HelpFunctions');
+ 
 contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts) => {
 
 	var basicToken;

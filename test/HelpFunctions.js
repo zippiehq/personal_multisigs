@@ -4,54 +4,68 @@ TestFunctions.new().then(instance => {
 	test = instance
 })
 
-export function log(msg) {
-	console.log(msg)
+module.exports = {
+	getMultisigSignature,
+	getRecipientSignature,
+	getSignature,
+	getBlankCheckSignature,
+	getNonceSignature,
+	getSetLimitSignature,
+	getDigestSignature,
+	getSignatureFrom3,
+	getEmptyDigestSignature,
+	getHardcodedDigestSignature,
+	getRSV,
+	log,
 }
 
-export function getRSV(str) {
-	return {r:'0x' + str.slice(0,64), s: '0x' + str.slice(64,128), v: web3.utils.hexToNumber(str.slice(128,130)) + 27 };
-}
-
-export async function getMultisigSignature(signers, m, multisig) {
+async function getMultisigSignature(signers, m, multisig) {
 	const multisigHash = await test.soliditySha3_addresses_m(signers, m);
 	const multisigSignature = await web3.eth.sign(multisigHash, multisig);
 	return getRSV(multisigSignature.slice(2))
 }
 
-export async function getBlankCheckSignature(verificationKey, signer, amount) {
-	// sign by multisig signer
-	const blankCheckHash = await test.soliditySha3_name_amount_address("redeemBlankCheck", web3.utils.toWei(amount, "ether"), verificationKey);
-	const blankCheckSignature = await web3.eth.sign(blankCheckHash, signer);
-	return getRSV(blankCheckSignature.slice(2))
-}
-
-export async function getSetLimitSignature(verificationKey, signer, amount) {
-	// sign by multisig signer
-	const limitHash = await test.soliditySha3_name_amount_address("setLimit", web3.utils.toWei(amount, "ether"), verificationKey);
-	const limitSignature = await web3.eth.sign(limitHash, signer);
-	return getRSV(limitSignature.slice(2))
-}
-
-export async function getRecipientSignature(recipient, verificationKey) {
+async function getRecipientSignature(recipient, verificationKey) {
 	// sign by a random verification key
 	const recipientHash = await test.soliditySha3_address(recipient);
 	const recipientSignature = await web3.eth.sign(recipientHash, verificationKey);
 	return getRSV(recipientSignature.slice(2))
 }
 
-export async function getNonceSignature(nonce, verificationKey) {
+function getSignature(multisigSignature, blankCheckSignature, digestSignature, recipientSignature) {
+	const v = [multisigSignature.v, recipientSignature.v, blankCheckSignature.v, digestSignature.v]
+	const r = [multisigSignature.r.valueOf(), recipientSignature.r.valueOf(), blankCheckSignature.r.valueOf(), digestSignature.r.valueOf()]
+	const s = [multisigSignature.s.valueOf(), recipientSignature.s.valueOf(), blankCheckSignature.s.valueOf(), digestSignature.s.valueOf()]
+
+	return {v:v, r:r, s:s}
+}
+ async function getBlankCheckSignature(verificationKey, signer, amount) {
+	// sign by multisig signer
+	const blankCheckHash = await test.soliditySha3_name_amount_address("redeemBlankCheck", web3.utils.toWei(amount, "ether"), verificationKey);
+	const blankCheckSignature = await web3.eth.sign(blankCheckHash, signer);
+	return getRSV(blankCheckSignature.slice(2))
+}
+
+async function getNonceSignature(nonce, verificationKey) {
 	// sign by a random verification key
 	const nonceHash = await test.soliditySha3_address(nonce);
 	const nonceSignature = await web3.eth.sign(nonceHash, verificationKey);
 	return getRSV(nonceSignature.slice(2))
 }
 
-export async function getDigestSignature(digestHash, card) {
+async function getSetLimitSignature(verificationKey, signer, amount) {
+	// sign by multisig signer
+	const limitHash = await test.soliditySha3_name_amount_address("setLimit", web3.utils.toWei(amount, "ether"), verificationKey);
+	const limitSignature = await web3.eth.sign(limitHash, signer);
+	return getRSV(limitSignature.slice(2))
+}
+
+async function getDigestSignature(digestHash, card) {
 	const digestSignature = await web3.eth.sign(digestHash, card);
 	return getRSV(digestSignature.slice(2))
 }
 
-export function getSignatureFrom3(multisigSignature, blankCheckSignature, recipientSignature) {
+function getSignatureFrom3(multisigSignature, blankCheckSignature, recipientSignature) {
 	const v = [multisigSignature.v, recipientSignature.v, blankCheckSignature.v]
 	const r = [multisigSignature.r.valueOf(), recipientSignature.r.valueOf(), blankCheckSignature.r.valueOf()]
 	const s = [multisigSignature.s.valueOf(), recipientSignature.s.valueOf(), blankCheckSignature.s.valueOf()]
@@ -59,15 +73,7 @@ export function getSignatureFrom3(multisigSignature, blankCheckSignature, recipi
 	return {v:v, r:r, s:s}
 }
 
-export function getSignature(multisigSignature, blankCheckSignature, digestSignature, recipientSignature) {
-	const v = [multisigSignature.v, recipientSignature.v, blankCheckSignature.v, digestSignature.v]
-	const r = [multisigSignature.r.valueOf(), recipientSignature.r.valueOf(), blankCheckSignature.r.valueOf(), digestSignature.r.valueOf()]
-	const s = [multisigSignature.s.valueOf(), recipientSignature.s.valueOf(), blankCheckSignature.s.valueOf(), digestSignature.s.valueOf()]
-
-	return {v:v, r:r, s:s}
-}
-
-export function getEmptyDigestSignature() {
+function getEmptyDigestSignature() {
 	return {
 		pubkey: "0x0000000000000000000000000000000000000000",
 		digestHash: "0x0000000000000000000000000000000000000000000000000000000000000000",
@@ -77,7 +83,7 @@ export function getEmptyDigestSignature() {
 	}
 }
 
-export function getHardcodedDigestSignature(cardNr, signatureNr) {
+function getHardcodedDigestSignature(cardNr, signatureNr) {
 	var pubkey, digestHash, v, r, s
 
 	switch (cardNr) {
@@ -127,4 +133,12 @@ export function getHardcodedDigestSignature(cardNr, signatureNr) {
 	}
 
 	return {pubkey:pubkey, digestHash:digestHash, v:v, r:r, s:s}
+}
+
+function getRSV(str) {
+	return {r:'0x' + str.slice(0,64), s: '0x' + str.slice(64,128), v: web3.utils.hexToNumber(str.slice(128,130)) + 27 };
+}
+
+function log(msg) {
+	console.log(msg)
 }
