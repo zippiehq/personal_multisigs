@@ -5,7 +5,9 @@ TestFunctions.new().then(instance => {
 })
 
 module.exports = {
+	createBlankCheck,
 	createBlankCheck_1of1Signer_1of1Card,
+	createSetLimit_1of1Signer_1of1Card,
 	getMultisigSignature,
 	getRecipientSignature,
 	getSignature,
@@ -18,6 +20,65 @@ module.exports = {
 	getHardcodedDigestSignature,
 	getRSV,
 	log,
+}
+
+async function createBlankCheck(
+	multisigAccount,
+	tokenAddress,
+	recipientAccount,
+	verifcationKey,
+	possibleSignerAccounts,
+	usedSignerAccounts,
+	possibleCardNumbers,
+	usedCardNumbers,
+	m,
+	amount,
+	cardNonceNumbers
+) 
+{
+	// m = [1,1,1,1]
+	// m = [1,1,0,0]
+	// m = [2,2,1,1]
+	// m = [2,2,0,0]
+	// m = [2,1,0,0]
+
+	const addresses = [multisigAccount, tokenAddress, recipientAccount, verifcationKey]
+
+	// Verification key signature
+	const verifcationKeySignature = await getNonceSignature2(recipientAccount, verifcationKey)	
+	
+	// Signer signatures
+	const signerSignatures = []
+	for(i = 0; i < usedSignerAccounts.length; i++) {
+		const signerSignature = await getBlankCheckSignature2(verifcationKey, usedSignerAccounts[i], amount)
+		signerSignatures.push(signerSignature)
+	}
+
+	// Possible card addresses
+	const cardAddresses = []
+	for(j = 0; j < possibleCardNumbers.length; j++) {
+		const cardData = await getHardcodedDigestSignature(usedCardNumbers[j], 0)
+		cardAddresses.push(cardData.pubkey)
+	}
+	
+	// Card signatures and nonces
+	const cardNonces = []
+	const cardSignatures = []
+	for(k = 0; k < usedCardNumbers.length; k++) {
+		const cardData = await getHardcodedDigestSignature(usedCardNumbers[k], cardNonceNumbers[k])
+		cardNonces.push(cardData.digestHash)
+		cardSignatures.push(cardData)
+	}	
+
+	// Signers
+	let signers = []
+	signers = signers.concat(possibleSignerAccounts)
+	signers = signers.concat(cardAddresses)
+	
+	const multisigSignature = await getMultisigSignature2(signers, m, multisigAccount)
+	const signatures = getSignature3(multisigSignature, verifcationKeySignature, signerSignatures, cardSignatures)
+
+	return { addresses: addresses, signers: signers, m: m, signatures: signatures, amount: amount, cardNonces: cardNonces }
 }
 
 async function createBlankCheck_1of1Signer_1of1Card(
@@ -34,22 +95,93 @@ async function createBlankCheck_1of1Signer_1of1Card(
 {
 	const cardSignature = await getHardcodedDigestSignature(cardNumber, cardNonceNumber)
 	const signers = [signerAccount, cardSignature.pubkey]
-	const multisigSignature = await getMultisigSignature(signers, m, multisigAccount)
-	const blankCheckSignature = await getBlankCheckSignature2(nonceAccount, signerAccount, amount)
-	const recipientSignature = await getRecipientSignature(recipientAccount, nonceAccount)	
+	const multisigSignature = await getMultisigSignature2(signers, m, multisigAccount)
+	const signerSignature = await getBlankCheckSignature2(nonceAccount, signerAccount, amount)
+	const nonceSignature = await getNonceSignature2(recipientAccount, nonceAccount)	
 	
 	const addresses = [multisigAccount, tokenAddress, recipientAccount, nonceAccount]
-	const signatures = getSignature(multisigSignature, blankCheckSignature, cardSignature, recipientSignature)
+	const signatures = getSignature2(multisigSignature, nonceSignature, signerSignature, cardSignature)
 	const cardNonces = [cardSignature.digestHash]
 
 	return { addresses: addresses, signers: signers, m: m, signatures: signatures, amount: amount, cardNonces: cardNonces }
 }
+
+async function createSetLimit_1of1Signer_1of1Card(
+	multisigAccount,
+	nonceAccount,
+	signerAccount,
+	cardNumber,
+	m,
+	amount,
+	cardNonceNumber
+) 
+{
+	const cardSignature = await getHardcodedDigestSignature(cardNumber, cardNonceNumber)
+	const signers = [signerAccount, cardSignature.pubkey]
+	const multisigSignature = await getMultisigSignature2(signers, m, multisigAccount)
+	const signerSignature = await getSetLimitSignature2(nonceAccount, signerAccount, amount)
+	const nonceSignature = await getNonceSignature2(multisigAccount, nonceAccount)	
 	
+	const addresses = [multisigAccount, nonceAccount]
+	const signatures = getSignature2(multisigSignature, nonceSignature, signerSignature, cardSignature)
+	const cardNonces = [cardSignature.digestHash]
+
+	return { addresses: addresses, signers: signers, m: m, signatures: signatures, amount: amount, cardNonces: cardNonces }
+}
+
+async function getMultisigSignature2(signers, m, multisig) {
+	const multisigHash = await test.soliditySha3_addresses_m(signers, m);
+	const multisigSignature = await web3.eth.sign(multisigHash, multisig);
+	return getRSV(multisigSignature.slice(2))
+}
+	
+async function getNonceSignature2(nonce, verificationKey) {
+	// sign by a random verification key
+	const nonceHash = await test.soliditySha3_address(nonce);
+	const nonceSignature = await web3.eth.sign(nonceHash, verificationKey);
+	return getRSV(nonceSignature.slice(2))
+}
+
 async function getBlankCheckSignature2(verificationKey, signer, amount) {
 	// sign by multisig signer
 	const blankCheckHash = await test.soliditySha3_name_amount_address("redeemBlankCheck", amount, verificationKey);
 	const blankCheckSignature = await web3.eth.sign(blankCheckHash, signer);
 	return getRSV(blankCheckSignature.slice(2))
+}
+
+async function getSetLimitSignature2(verificationKey, signer, amount) {
+	// sign by multisig signer
+	const setLimitHash = await test.soliditySha3_name_amount_address("setLimit", amount, verificationKey);
+	const setLimitSignature = await web3.eth.sign(setLimitHash, signer);
+	return getRSV(setLimitSignature.slice(2))
+}
+
+function getSignature2(multisigSignature, nonceSignature, signerSignature, cardSignature) {
+	const v = [multisigSignature.v, nonceSignature.v, signerSignature.v, cardSignature.v]
+	const r = [multisigSignature.r.valueOf(), nonceSignature.r.valueOf(), signerSignature.r.valueOf(), cardSignature.r.valueOf()]
+	const s = [multisigSignature.s.valueOf(), nonceSignature.s.valueOf(), signerSignature.s.valueOf(), cardSignature.s.valueOf()]
+
+	return {v:v, r:r, s:s}
+}
+
+function getSignature3(multisigSignature, verificationKeySignature, signerSignatures, cardSignatures) {
+	const v = [multisigSignature.v, verificationKeySignature.v]
+	const r = [multisigSignature.r.valueOf(), verificationKeySignature.r.valueOf()]
+	const s = [multisigSignature.s.valueOf(), verificationKeySignature.s.valueOf()]
+
+	for(i = 0; i < signerSignatures.length; i++) {
+		v.push(signerSignatures[i].v)
+		r.push(signerSignatures[i].r)
+		s.push(signerSignatures[i].s)
+	}
+
+	for(j = 0; j < cardSignatures.length; j++) {
+		v.push(cardSignatures[j].v)
+		r.push(cardSignatures[j].r)
+		s.push(cardSignatures[j].s)
+	}
+
+	return {v:v, r:r, s:s}
 }
 
 async function getMultisigSignature(signers, m, multisig) {
