@@ -6,8 +6,8 @@ WORKDIR /app
 # https://github.com/npm/npm/issues/20861
 RUN npm config set unsafe-perm true
 
-RUN npm install -g ganache-cli
+RUN npm install -g ganache-cli@beta
 
 EXPOSE 8545/tcp
 
-CMD ganache-cli -m zippie -a 101 -v -h 0.0.0.0
+CMD ganache-cli -m zippie -a 101 -v -h 0.0.0.0 --hardfork constantinople
