@@ -22,3 +22,5 @@ RUN npm install
 RUN npm config set unsafe-perm true
 
 RUN npm install -g truffle
+
+RUN truffle build
