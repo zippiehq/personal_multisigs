@@ -199,9 +199,15 @@ contract ZippieWallet is ZippieAccount, ZippieMultisig, ZippieCard {
             amount > 0, 
             "Amount must be greater than 0"
         );
+
+        // get account address
+        address accountAddress = getAccountAddress(
+            addresses[1], 
+            keccak256(abi.encodePacked(signers, m))
+        );
        
         // sanity check of signature parameters 
-        bool limitExceeded = isLimitExceeded(amount, addresses[0]);
+        bool limitExceeded = isLimitExceeded(amount, accountAddress);
         checkSignatureParameters(
             m, 
             signers.length, 
@@ -211,21 +217,11 @@ contract ZippieWallet is ZippieAccount, ZippieMultisig, ZippieCard {
             cardNonces.length, 
             limitExceeded
         );
-        
-        // verify that account signature is valid
-        verifyMultisigAccountSignature(
-            signers, 
-            m, 
-            addresses[0], 
-            v[0], 
-            r[0], 
-            s[0]
-        );
 
         // verify that account nonce is valid (for replay protection)
         // (verification key signing recipient address)
         verifyMultisigNonce(
-            addresses[0], 
+            accountAddress, 
             addresses[3], 
             ZippieUtils.toEthSignedMessageHash(
                 keccak256(abi.encodePacked(addresses[2]))
@@ -270,9 +266,17 @@ contract ZippieWallet is ZippieAccount, ZippieMultisig, ZippieCard {
             );
         }
 
+        // check if account needs to be "created" (ERC20 approve)
+        if(IERC20(addresses[1]).allowance(accountAddress, address(this)) == 0) {
+            require(
+                createAccount(addresses[1], keccak256(abi.encodePacked(signers, m))) == accountAddress, 
+                "Account creation failed"
+            );
+        }
+        
         // transfer tokens from multisig account to recipient address
         require(
-            IERC20(addresses[1]).transferFrom(addresses[0], addresses[2], amount), 
+            IERC20(addresses[1]).transferFrom(accountAddress, addresses[2], amount), 
             "Transfer failed"
         );
         return true;
