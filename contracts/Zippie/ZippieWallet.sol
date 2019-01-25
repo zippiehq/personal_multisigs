@@ -12,27 +12,11 @@ import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
   * @notice Transfer ERC20 tokens using multiple signatures
   * @dev Zippie smart cards can be used for 2FA
  */
-contract ZippieWallet is ZippieMultisig, ZippieCard {
+contract ZippieWallet is ZippieAccount, ZippieMultisig, ZippieCard {
 
     mapping (address => uint256) public accountLimits;
 
     constructor(address zippieCardNonces) ZippieCard(zippieCardNonces) public {}
-
-    event AccountCreated(address addr, uint256 salt);
-
-    function createAccount(bytes memory code, uint256 salt) public returns(address) {
-        address payable addr;
-        assembly {
-            addr := create2(0, add(code, 0x20), mload(code), salt)
-            if iszero(extcodesize(addr)) {
-                revert(0, 0)
-            }
-        }
-
-        ZippieAccount(addr).destroy(msg.sender);
-        emit AccountCreated(addr, salt);
-        return addr;
-    }
     
     /** @notice Redeems a check after verifying required signers/cards 
       * (recipient is specified when check is created) 
