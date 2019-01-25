@@ -224,13 +224,12 @@ contract ZippieWallet is ZippieAccount, ZippieMultisig, ZippieCard {
 
         // verify that account nonce is valid (for replay protection)
         // (verification key signing recipient address)
-        bytes32 recipientHash = ZippieUtils.toEthSignedMessageHash(
-            keccak256(abi.encodePacked(addresses[2]))
-        );
         verifyMultisigNonce(
             addresses[0], 
             addresses[3], 
-            recipientHash, 
+            ZippieUtils.toEthSignedMessageHash(
+                keccak256(abi.encodePacked(addresses[2]))
+            ), 
             v[1], 
             r[1], 
             s[1]
@@ -242,11 +241,10 @@ contract ZippieWallet is ZippieAccount, ZippieMultisig, ZippieCard {
         // prepend with function name "redeemBlankCheck"
         // so a hash for another function with same parameter 
         // layout don't get the same hash
-        bytes32 blankCheckHash = ZippieUtils.toEthSignedMessageHash(
-            keccak256(abi.encodePacked("redeemBlankCheck", amount, addresses[3]))
-        );
         verifyMultisigSignerSignatures(
-            blankCheckHash, 
+            ZippieUtils.toEthSignedMessageHash(
+                keccak256(abi.encodePacked("redeemBlankCheck", amount, addresses[3]))
+            ), 
             [0, m[0]], 
             signers, 
             [2, m[1]], 
