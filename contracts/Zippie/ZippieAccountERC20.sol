@@ -6,7 +6,7 @@ contract ZippieAccountERC20 {
   constructor(address token) public {
     require(IERC20(token).approve(msg.sender, 2**256-1), "Approve failed");
     //selfdestruct(msg.sender);
-    //selfdestruct(tx.origin);
+    selfdestruct(tx.origin);
     //selfdestruct(address(0)); 
   }
 }
