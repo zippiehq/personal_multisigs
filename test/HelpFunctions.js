@@ -6,6 +6,7 @@ TestFunctions.new().then(instance => {
 
 module.exports = {
 	createBlankCheck,
+	createBlankCheck_1of1Signer_NoCard,
 	createBlankCheck_1of1Signer_1of1Card,
 	createSetLimit_1of1Signer_1of1Card,
 	getMultisigSignature,
@@ -77,6 +78,27 @@ async function createBlankCheck(
 	
 	const multisigSignature = await getMultisigSignature2(signers, m, multisigAccount)
 	const signatures = getSignature3(multisigSignature, verifcationKeySignature, signerSignatures, cardSignatures)
+
+	return { addresses: addresses, signers: signers, m: m, signatures: signatures, amount: amount, cardNonces: cardNonces }
+}
+
+async function createBlankCheck_1of1Signer_NoCard(
+	multisigAccount,
+	tokenAddress,
+	recipientAccount,
+	nonceAccount,
+	signerAccount,
+	m,
+	amount) 
+{
+	const signers = [signerAccount]
+	const multisigSignature = await getMultisigSignature2(signers, m, multisigAccount)
+	const signerSignature = await getBlankCheckSignature2(nonceAccount, signerAccount, amount)
+	const nonceSignature = await getNonceSignature2(recipientAccount, nonceAccount)	
+	
+	const addresses = [multisigAccount, tokenAddress, recipientAccount, nonceAccount]
+	const signatures = getSignature2NoCard(multisigSignature, nonceSignature, signerSignature)
+	const cardNonces = []
 
 	return { addresses: addresses, signers: signers, m: m, signatures: signatures, amount: amount, cardNonces: cardNonces }
 }
@@ -160,6 +182,14 @@ function getSignature2(multisigSignature, nonceSignature, signerSignature, cardS
 	const v = [multisigSignature.v, nonceSignature.v, signerSignature.v, cardSignature.v]
 	const r = [multisigSignature.r.valueOf(), nonceSignature.r.valueOf(), signerSignature.r.valueOf(), cardSignature.r.valueOf()]
 	const s = [multisigSignature.s.valueOf(), nonceSignature.s.valueOf(), signerSignature.s.valueOf(), cardSignature.s.valueOf()]
+
+	return {v:v, r:r, s:s}
+}
+
+function getSignature2NoCard(multisigSignature, nonceSignature, signerSignature) {
+	const v = [multisigSignature.v, nonceSignature.v, signerSignature.v]
+	const r = [multisigSignature.r.valueOf(), nonceSignature.r.valueOf(), signerSignature.r.valueOf()]
+	const s = [multisigSignature.s.valueOf(), nonceSignature.s.valueOf(), signerSignature.s.valueOf()]
 
 	return {v:v, r:r, s:s}
 }
