@@ -79,7 +79,7 @@ contract("ZippieWallet", (accounts) => {
 				0
 			)
 			
-			const bytecode = accountBytecode + web3.eth.abi.encodeParameters(['address', 'address'], [basicToken.address, zippieWallet.address]).slice(2)
+			const bytecode = accountBytecode + web3.eth.abi.encodeParameters(['address'], [basicToken.address]).slice(2)
 			const bytecodeHash = web3.utils.sha3(bytecode)
 			const salt = await test.soliditySha3_addresses_m(bc1.signers, bc1.m);
 			//const salt = web3.utils.sha3(web3.eth.abi.encodeParameters(['address[]', 'uint8[]'], [bc1.signers, bc1.m]))
@@ -137,7 +137,7 @@ contract("ZippieWallet", (accounts) => {
 			console.log('zippieWallet')
 			console.log(zippieWallet.address)
 
-			const bytecode = accountBytecode + web3.eth.abi.encodeParameters(['address', 'address'], [basicToken.address, zippieWallet.address]).slice(2)
+			const bytecode = accountBytecode + web3.eth.abi.encodeParameters(['address'], [basicToken.address]).slice(2)
 			//console.log('bytecode')
 			//console.log(bytecode)
 
