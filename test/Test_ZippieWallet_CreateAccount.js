@@ -109,7 +109,8 @@ contract("ZippieWallet", (accounts) => {
 			console.log(allowanceBefore)
 
 			// Redeem blank check and create account
-			await zippieWallet.redeemBlankCheck(bc1.addresses, bc1.signers, bc1.m, bc1.signatures.v, bc1.signatures.r, bc1.signatures.s, bc1.amount, bc1.cardNonces, {from: sponsorAccounts[0]})
+			const receipt = await zippieWallet.redeemBlankCheck(bc1.addresses, bc1.signers, bc1.m, bc1.signatures.v, bc1.signatures.r, bc1.signatures.s, bc1.amount, bc1.cardNonces, {from: sponsorAccounts[0]})
+			console.log(`Gas used for redeemBlankCheck m[1,1,1,1]: ${receipt.receipt.gasUsed}`)
 
 			balanceOfSender = await basicToken.balanceOf(multisigAccounts[0])
 			balanceOfRecipient = await basicToken.balanceOf(recipientAccounts[0])
@@ -167,7 +168,8 @@ contract("ZippieWallet", (accounts) => {
 			console.log(allowanceBefore)
 			
 			// Create account
-			await zippieWallet.createAccount(basicToken.address, salt, {from: sponsorAccounts[0]})
+			const receipt = await zippieWallet.createAccount(basicToken.address, salt, {from: sponsorAccounts[0]})
+			console.log(`Gas used for createAccount: ${receipt.receipt.gasUsed}`)
 
 			const allowanceAfter = await basicToken.allowance(accountAddress, zippieWallet.address)
 			console.log('allowanceAfter')
