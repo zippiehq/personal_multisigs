@@ -63,7 +63,22 @@ contract("ZippieWallet", (accounts) => {
 		});
 	});
 
-	describe("test create2", function() {			
+	describe("test create2", function() {
+		it("Gase used 1) transfer, 2) approve + transferFrom", async () => {
+			const receiptTranfer =await basicToken.transfer(recipientAccounts[0], web3.utils.toWei("1", "ether"), {from: multisigAccounts[0], gasPrice: 1});
+			console.log(`Gas used for ERC20 tranfer: ${receiptTranfer.receipt.gasUsed}`)			
+			const receiptApprove = await basicToken.approve(sponsorAccounts[0], '115792089237316195423570985008687907853269984665640564039457584007913129639935', {from: multisigAccounts[0], gasPrice: 1});
+			console.log(`Gas used for ERC20 approve: ${receiptApprove.receipt.gasUsed}`)
+			const allowance = await basicToken.allowance(multisigAccounts[0], sponsorAccounts[0])
+			console.log('allowance')
+			console.log(allowance)
+			const receiptTranferFrom = await basicToken.transferFrom(multisigAccounts[0], recipientAccounts[0], web3.utils.toWei("1", "ether"), {from: sponsorAccounts[0], gasPrice: 1});
+			console.log(`Gas used for ERC20 tranferFrom: ${receiptTranferFrom.receipt.gasUsed}`)	
+			const receiptApprove2 = await basicToken.approve(sponsorAccounts[0], '115792089237316195423570985008687907853269984665640564039457584007913129639935', {from: multisigAccounts[0], gasPrice: 1});
+			console.log(`Gas used for ERC20 approve: ${receiptApprove2.receipt.gasUsed}`)
+			const receiptTranferFrom2 = await basicToken.transferFrom(multisigAccounts[0], recipientAccounts[0], web3.utils.toWei("1", "ether"), {from: sponsorAccounts[0], gasPrice: 1});
+			console.log(`Gas used for ERC20 tranferFrom: ${receiptTranferFrom2.receipt.gasUsed}`)	
+		});			
 		it("redeemBlankCheck m[1,1,0,0]", async () => {
 			const bc1 = await createBlankCheck_1of1Signer_NoCard(
 				multisigAccounts[0],
