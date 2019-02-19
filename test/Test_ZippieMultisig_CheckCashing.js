@@ -20,7 +20,6 @@ const {
  
 contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 
-	var test;
 	var basicToken;
 	var zippieCardNonces;
 	var zippieWallet;
@@ -28,14 +27,12 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 	const signer = accounts[0] // multisig signer (1of1)
 	const signer2 = accounts[2] // multisig signer (2of2)
 	const recipient = accounts[2]
-	const card = accounts[3]
 	const verificationKey = accounts[4] // random verification key
 	const multisig = accounts[5] // multisig wallet (sender, don't sign with this account since the private key should be forgotten at creation)
 	const sponsor = accounts[6] // Zippie PMG server
 
 	beforeEach(() => {
-		return TestFunctions.new().then(instance => {
-				test = instance;
+		return TestFunctions.new().then(_ => {
 				return BasicERC20Mock.new(accounts[5]).then(instance => {
 					basicToken = instance;
 					return ZippieCardNonces.new().then(instance => {
@@ -77,7 +74,7 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 			await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
 			assert(false, "duplicate transfer went through, but should have failed!")
 		} catch(error) {
-			assert(error.reason == "Nonce already used", error.reason)
+			assert(error.reason === "Nonce already used", error.reason)
 		}
 	});
 
