@@ -17,7 +17,7 @@ const {
 	getHardcodedDigestSignature,
 	getRSV,
 	log,
- } = require('./HelpFunctions');
+ } = require("./HelpFunctions");
  
 contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts) => {
 
@@ -57,7 +57,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1")
 		const recipientSignature = await getRecipientSignature(recipient, verificationKey)
 
-		const digest = '0xABCDEF'
+		const digest = "0xABCDEF"
 		const digestHash = await test.soliditySha3_sign(digest)
 		const digestSignature = await getDigestSignature(digestHash, incorrectCard)
 		
@@ -70,7 +70,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 			await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [digestHash], {from: sponsor});
 			assert(false, "Transfer went through even though card signatures are missing")
 		} catch(error) {
-			assert(error.reason === 'Invalid address found when verifying card signatures', error.reason)
+			assert(error.reason === "Invalid address found when verifying card signatures", error.reason)
 		}
 		
 		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check marked as cashed even though no transfer happened");
@@ -99,7 +99,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 			await zippieWallet.redeemBlankCheck(addresses, signersWithIncorrectCard, m, signature.v, signature.r, signature.s, amount, [digestSignature.digestHash], {from: sponsor});
 			assert(false, "transfer went through even though incorrect card")
 		} catch(error) {
-			assert(error.reason == 'Invalid account', error.reason)
+			assert(error.reason == "Invalid account", error.reason)
 		}
 		
 		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check marked as cashed even though no transfer happened");
@@ -135,7 +135,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 			await zippieWallet.redeemBlankCheck(addresses, signers, m, v, r, s, amount, digestHashes, {from: sponsor});
 			assert(false, "transfer went through even though incorrect card!")
 		} catch(error) {
-			assert(error.reason === 'Invalid address found when verifying card signatures', error.reason)
+			assert(error.reason === "Invalid address found when verifying card signatures", error.reason)
 		}
 	});
 
@@ -172,7 +172,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 			await zippieWallet.redeemBlankCheck(addresses, signersWithIncorrectCard, m, v, r, s, amount, digestHashes, {from: sponsor});
 			assert(false, "transfer went through even though incorrect card!")
 		} catch(error) {
-			assert(error.reason === 'Invalid account', error.reason)
+			assert(error.reason === "Invalid account", error.reason)
 		}
 	});
 
@@ -217,7 +217,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 			await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [digestSignature.digestHash], {from: sponsor});
 			assert(false, "Redeeming blank check should have failed because card nonce was reused!")
 		} catch (error) {
-			assert(error.reason == 'Nonce already used', error.reason)
+			assert(error.reason == "Nonce already used", error.reason)
 		}
 
 		// Redeem with new card nonce
@@ -299,7 +299,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 			await zippieWallet.redeemBlankCheck(addresses, signers, m, v, r, s, amount, digestHashes, {from: sponsor});
 			assert(false, "Redeeming blank check should have failed because card nonce was reused!")
 		} catch (error) {
-			assert(error.reason == 'Nonce already used', error.reason)
+			assert(error.reason == "Nonce already used", error.reason)
 		}
 	});
 
