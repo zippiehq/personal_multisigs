@@ -27,7 +27,6 @@ contract("Test Zippie Multisig Balance or Allowance Too Low", (accounts) => {
 
 	const signer = accounts[0] // multisig signer (1of1)
 	const recipient = accounts[2]
-	const card = accounts[3]
 	const verificationKey = accounts[4] // random verification key
 	const multisig = accounts[5] // multisig wallet (sender, don't sign with this account since the private key should be forgotten at creation)
 	const sponsor = accounts[6] // Zippie PMG server

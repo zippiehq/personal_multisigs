@@ -20,7 +20,6 @@ const {
  
 contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 
-	var test;
 	var basicToken;
 	var zippieCardNonces;
 	var zippieWallet;
@@ -33,8 +32,7 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 	const sponsor = accounts[6] // Zippie PMG server
 
 	beforeEach(() => {
-			return TestFunctions.new().then(instance => {
-					test = instance;
+			return TestFunctions.new().then(_ => {
     			return BasicERC20Mock.new(accounts[5]).then(instance => {
 						basicToken = instance;
 						return ZippieCardNonces.new().then(instance => {
@@ -70,7 +68,7 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 			await zippieWallet.redeemBlankCheck(addresses, incorrectSigners, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
 			assert(false, "transfer went through even though incorrect signer")
 		} catch(error) {
-			assert(error.reason == "Invalid account", error.reason)
+			assert(error.reason === "Invalid account", error.reason)
 		}
 
 		await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
@@ -104,7 +102,7 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 			await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
 			assert(false, "transfer went through even though incorrect data was signed")
 		} catch(error) {
-			assert(error.reason == "Invalid address found when verifying signer signatures", error.reason)
+			assert(error.reason === "Invalid address found when verifying signer signatures", error.reason)
 		}
 		
 		var newBalanceSender = await basicToken.balanceOf(multisig)
@@ -136,7 +134,7 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 			await zippieWallet.redeemBlankCheck(addresses, incorrectSigners, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
 			assert(false, "transfer went through even though incorrect signer")
 		} catch(error) {
-			assert(error.reason == "Invalid account", error.reason)
+			assert(error.reason === "Invalid account", error.reason)
 		}
 		
 		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check marked as cashed even though no transfer happened")
@@ -163,7 +161,7 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 			await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
 			assert(false, "transfer went through even though incorrect data was signed")
 		} catch(error) {
-			assert(error.reason == "Invalid address found when verifying signer signatures", error.reason)
+			assert(error.reason === "Invalid address found when verifying signer signatures", error.reason)
 		}
 		
 		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check marked as cashed even though no transfer happened")
@@ -189,7 +187,7 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 			await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
 			assert(false, "transfer went through even though signers were the same")
 		} catch(error) {
-			assert(error.reason == "Invalid address found when verifying signer signatures", error.reason)
+			assert(error.reason === "Invalid address found when verifying signer signatures", error.reason)
 		}
 		
 		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check marked as cashed even though no transfer happened")

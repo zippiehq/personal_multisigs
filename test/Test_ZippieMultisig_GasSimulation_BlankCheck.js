@@ -33,7 +33,7 @@ contract("Zippie Multisig Gas Simulator", (accounts) => {
         console.log("Gas usage when first using the multisig (blank check)");
         console.log("---------------------------------------");
 
-        var initialBalance = await web3.eth.getBalance(accounts[10]);
+        const initialBalance = await web3.eth.getBalance(accounts[10]);
 
 		const m = [1, 1, 0, 0]
 
@@ -76,7 +76,7 @@ contract("Zippie Multisig Gas Simulator", (accounts) => {
         console.log("Gas usage on subsequent use of the multisig (blank check)");
         console.log("---------------------------------------");
 
-        var initialBalance = await web3.eth.getBalance(accounts[10]);
+        const initialBalance2 = await web3.eth.getBalance(accounts[10]);
         
 		// accounts[98] is new random verification key
 		// sign by multisig signer
@@ -101,7 +101,7 @@ contract("Zippie Multisig Gas Simulator", (accounts) => {
         // account[10] is sponsor (e.g Zippie PMG server)
 		await zippieWallet.redeemBlankCheck([accounts[100], basicToken.address, accounts[2], accounts[98]], [accounts[0]], m, [v0, v2, v1], [r0.valueOf(), r2.valueOf(), r1.valueOf()], [s0.valueOf(), s2.valueOf(), s1.valueOf()], web3.utils.toWei("1", "ether"), [], {from: accounts[10], gasPrice: 1});
         
-        console.log(initialBalance - (await web3.eth.getBalance(accounts[10])).toString() + " gas was used.");
+        console.log(initialBalance2 - (await web3.eth.getBalance(accounts[10])).toString() + " gas was used.");
     });
 
     it("should run a 2of2 multisig (blank check) through the general function", async () => {
@@ -112,7 +112,7 @@ contract("Zippie Multisig Gas Simulator", (accounts) => {
         console.log("Gas usage when first using the multisig (blank check)");
         console.log("---------------------------------------");
 
-        var initialBalance = await web3.eth.getBalance(accounts[10]);
+        const initialBalance = await web3.eth.getBalance(accounts[10]);
 
 		const m = [2, 2, 0, 0]
 
@@ -165,7 +165,7 @@ contract("Zippie Multisig Gas Simulator", (accounts) => {
         console.log("Gas usage on subsequent use of the multisig (blank check)");
         console.log("---------------------------------------");
 
-        var initialBalance = await web3.eth.getBalance(accounts[10]);
+        const initialBalance2 = await web3.eth.getBalance(accounts[10]);
         
 		// accounts[98] is new random verification key
 		// sign by multisig signer 1
@@ -200,6 +200,6 @@ contract("Zippie Multisig Gas Simulator", (accounts) => {
         // account[10] is sponsor (e.g Zippie PMG server)
 		await zippieWallet.redeemBlankCheck([accounts[100], basicToken.address, accounts[2], accounts[98]], [accounts[0], accounts[1]], m, [v0, v3, v1, v2], [r0.valueOf(), r3.valueOf(), r1.valueOf(), r2.valueOf()], [s0.valueOf(), s3.valueOf(), s1.valueOf(), s2.valueOf()], web3.utils.toWei("1", "ether"), [], {from: accounts[10], gasPrice: 1});
                 
-        console.log(initialBalance - (await web3.eth.getBalance(accounts[10])).toString() + " gas was used.");
+        console.log(initialBalance2 - (await web3.eth.getBalance(accounts[10])).toString() + " gas was used.");
     });
 })
