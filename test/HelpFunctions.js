@@ -136,7 +136,7 @@ function getHardcodedDigestSignature(cardNr, signatureNr) {
 }
 
 function getRSV(str) {
-	return {r:'0x' + str.slice(0,64), s: '0x' + str.slice(64,128), v: web3.utils.hexToNumber(str.slice(128,130)) + 27 };
+	return {r:"0x" + str.slice(0,64), s: "0x" + str.slice(64,128), v: web3.utils.hexToNumber(str.slice(128,130)) + 27 };
 }
 
 function log(msg) {

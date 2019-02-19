@@ -16,7 +16,7 @@ const {
 	getHardcodedDigestSignature,
 	getRSV,
 	log,
- } = require('./HelpFunctions');
+ } = require("./HelpFunctions");
  
 contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 
@@ -70,7 +70,7 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 			await zippieWallet.redeemBlankCheck(addresses, incorrectSigners, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
 			assert(false, "transfer went through even though incorrect signer")
 		} catch(error) {
-			assert(error.reason == 'Invalid account', error.reason)
+			assert(error.reason == "Invalid account", error.reason)
 		}
 
 		await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
@@ -104,7 +104,7 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 			await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
 			assert(false, "transfer went through even though incorrect data was signed")
 		} catch(error) {
-			assert(error.reason == 'Invalid address found when verifying signer signatures', error.reason)
+			assert(error.reason == "Invalid address found when verifying signer signatures", error.reason)
 		}
 		
 		var newBalanceSender = await basicToken.balanceOf(multisig)
@@ -136,7 +136,7 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 			await zippieWallet.redeemBlankCheck(addresses, incorrectSigners, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
 			assert(false, "transfer went through even though incorrect signer")
 		} catch(error) {
-			assert(error.reason == 'Invalid account', error.reason)
+			assert(error.reason == "Invalid account", error.reason)
 		}
 		
 		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check marked as cashed even though no transfer happened")
@@ -163,7 +163,7 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 			await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
 			assert(false, "transfer went through even though incorrect data was signed")
 		} catch(error) {
-			assert(error.reason == 'Invalid address found when verifying signer signatures', error.reason)
+			assert(error.reason == "Invalid address found when verifying signer signatures", error.reason)
 		}
 		
 		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check marked as cashed even though no transfer happened")
@@ -189,7 +189,7 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 			await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
 			assert(false, "transfer went through even though signers were the same")
 		} catch(error) {
-			assert(error.reason == 'Invalid address found when verifying signer signatures', error.reason)
+			assert(error.reason == "Invalid address found when verifying signer signatures", error.reason)
 		}
 		
 		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check marked as cashed even though no transfer happened")
@@ -217,14 +217,14 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 			await zippieWallet.redeemBlankCheck(addresses2, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
 			assert(false, "Verification Key was incorrect, but transfer went through!")
 		} catch(error) {
-			assert(error.reason === 'Invalid address found when verifying signer signatures', error.reason)
+			assert(error.reason === "Invalid address found when verifying signer signatures", error.reason)
 		}
 
 		try {
 			await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
 			assert(false, "Verification Key was correct, transfer still failed!")
 		} catch(error) {
-			assert(error.reason === 'Invalid nonce', error.reason)
+			assert(error.reason === "Invalid nonce", error.reason)
 		}
 
 		var newBalanceSender = await basicToken.balanceOf(multisig)

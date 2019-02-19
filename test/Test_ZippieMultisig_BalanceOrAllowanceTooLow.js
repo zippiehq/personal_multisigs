@@ -17,7 +17,7 @@ const {
 	getHardcodedDigestSignature,
 	getRSV,
 	log,
- } = require('./HelpFunctions');
+ } = require("./HelpFunctions");
  
 contract("Test Zippie Multisig Balance or Allowance Too Low", (accounts) => {
 
@@ -73,7 +73,7 @@ contract("Test Zippie Multisig Balance or Allowance Too Low", (accounts) => {
 			assert(false, "transfer went through, but should have failed since contract's allowance is 0!")
 		} catch (error) {
 			// ERC20 will throw error here but there's no revert reason, otherwise it would have gotten propogated here
-			assert(error.message.includes('VM Exception'), error.message)
+			assert(error.message.includes("VM Exception"), error.message)
 		}
 
 		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check was incorrectly marked as cashed after failed transfer");
@@ -115,7 +115,7 @@ contract("Test Zippie Multisig Balance or Allowance Too Low", (accounts) => {
 			assert(false, "transfer went through, but should have failed since contract's balance < amount!")
 		} catch (error) {
 			// ERC20 will throw error here but there's no revert reason, otherwise it would have gotten propogated here
-			assert(error.message.includes('VM Exception'), error.message)
+			assert(error.message.includes("VM Exception"), error.message)
 		}
 
 		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check was incorrectly marked as cashed after failed transfer");

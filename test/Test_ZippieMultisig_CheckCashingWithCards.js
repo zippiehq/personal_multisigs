@@ -17,7 +17,7 @@ const {
 	getHardcodedDigestSignature,
 	getRSV,
 	log,
- } = require('./HelpFunctions');
+ } = require("./HelpFunctions");
 
 contract("Test Zippie Multisig Check Cashing With Cards Functionality", (accounts) => {
 
@@ -79,7 +79,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 			await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [digestSignature.digestHash], {from: sponsor});
 			assert(false, "duplicate transfer went through, but should have failed!")
 		} catch(error) {
-			assert(error.reason == 'Nonce already used', error.reason)
+			assert(error.reason == "Nonce already used", error.reason)
 		}
 	});
 
@@ -232,7 +232,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 			await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [emptyDigestSignature.digestHash], {from: sponsor});
 			assert(false, "Transfer went through even though card signatures are missing")
 		} catch (error) {
-			assert(error.reason == 'Invalid address found when verifying card signatures', error.reason)
+			assert(error.reason == "Invalid address found when verifying card signatures", error.reason)
 		}
 	});
 
@@ -271,7 +271,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 			await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
 			assert(false, "Transfer went through even though card signatures are missing")
 		} catch (error) {
-			assert(error.reason == 'Incorrect number of signatures (v)', error.reason)
+			assert(error.reason == "Incorrect number of signatures (v)", error.reason)
 		}
 	});
 

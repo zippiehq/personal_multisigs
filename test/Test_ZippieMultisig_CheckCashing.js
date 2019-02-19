@@ -16,7 +16,7 @@ const {
 	getHardcodedDigestSignature,
 	getRSV,
 	log,
- } = require('./HelpFunctions');
+ } = require("./HelpFunctions");
  
 contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 
@@ -77,7 +77,7 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 			await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
 			assert(false, "duplicate transfer went through, but should have failed!")
 		} catch(error) {
-			assert(error.reason == 'Nonce already used', error.reason)
+			assert(error.reason == "Nonce already used", error.reason)
 		}
 	});
 
