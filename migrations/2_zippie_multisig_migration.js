@@ -1,6 +1,6 @@
-var ZippieWallet = artifacts.require('./ZippieWallet.sol');
-var ZippieCardNonces = artifacts.require('./ZippieCardNonces.sol');
-var BasicERC20MockOwner = artifacts.require('./BasicERC20MockOwner.sol');
+const ZippieWallet = artifacts.require("./ZippieWallet.sol");
+const ZippieCardNonces = artifacts.require("./ZippieCardNonces.sol");
+const BasicERC20MockOwner = artifacts.require("./BasicERC20MockOwner.sol");
 
 module.exports = function(deployer) {
     var basicToken;

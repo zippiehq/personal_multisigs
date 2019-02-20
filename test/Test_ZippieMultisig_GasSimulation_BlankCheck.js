@@ -1,14 +1,14 @@
-var TestFunctions = artifacts.require("./TestFunctions.sol");
-var BasicERC20Mock = artifacts.require("./BasicERC20Mock.sol");
-var ZippieWallet = artifacts.require("./ZippieWallet.sol");
-var ZippieCardNonces = artifacts.require("./ZippieCardNonces.sol");
+const TestFunctions = artifacts.require("./TestFunctions.sol");
+const BasicERC20Mock = artifacts.require("./BasicERC20Mock.sol");
+const ZippieWallet = artifacts.require("./ZippieWallet.sol");
+const ZippieCardNonces = artifacts.require("./ZippieCardNonces.sol");
 
 contract("Zippie Multisig Gas Simulator", (accounts) => {
 
-	var test;
-	var basicToken;
-	var zippieCardNonces;
-	var zippieWallet;
+	let test;
+	let basicToken;
+	let zippieCardNonces;
+	let zippieWallet;
 
 	beforeEach(() => {
 	return TestFunctions.new().then(instance => {

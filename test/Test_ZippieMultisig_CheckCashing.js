@@ -1,28 +1,21 @@
-var TestFunctions = artifacts.require("./TestFunctions.sol");
-var BasicERC20Mock = artifacts.require("./BasicERC20Mock.sol");
-var ZippieWallet = artifacts.require("./ZippieWallet.sol");
-var ZippieCardNonces = artifacts.require("./ZippieCardNonces.sol");
+const TestFunctions = artifacts.require("./TestFunctions.sol");
+const BasicERC20Mock = artifacts.require("./BasicERC20Mock.sol");
+const ZippieWallet = artifacts.require("./ZippieWallet.sol");
+const ZippieCardNonces = artifacts.require("./ZippieCardNonces.sol");
 
 const {
 	getMultisigSignature,
 	getRecipientSignature,
 	getSignature,
 	getBlankCheckSignature,
-	getNonceSignature,
-	getSetLimitSignature,
-	getDigestSignature,
 	getSignatureFrom3,
-	getEmptyDigestSignature,
-	getHardcodedDigestSignature,
-	getRSV,
-	log,
  } = require("./HelpFunctions");
  
 contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 
-	var basicToken;
-	var zippieCardNonces;
-	var zippieWallet;
+	let basicToken;
+	let zippieCardNonces;
+	let zippieWallet;
 
 	const signer = accounts[0] // multisig signer (1of1)
 	const signer2 = accounts[2] // multisig signer (2of2)
@@ -56,15 +49,15 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 
 		const signature = getSignatureFrom3(multisigSignature, blankCheckSignature, recipientSignature)
 		
-		var initialBalanceSender = await basicToken.balanceOf(multisig)
-		var initialBalanceRecipient = await basicToken.balanceOf(recipient)
+		const initialBalanceSender = await basicToken.balanceOf(multisig)
+		const initialBalanceRecipient = await basicToken.balanceOf(recipient)
 		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check already marked as cashed before transfer");
 		
 		const amount = web3.utils.toWei("1", "ether")
 		await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
 		
-		var newBalanceSender = await basicToken.balanceOf(multisig)
-		var newBalanceRecipient = await basicToken.balanceOf(recipient)	
+		const newBalanceSender = await basicToken.balanceOf(multisig)
+		const newBalanceRecipient = await basicToken.balanceOf(recipient)	
 		assert((initialBalanceSender - newBalanceSender).toString() === amount, "balance did not transfer from sender");
 		assert((newBalanceRecipient - initialBalanceRecipient).toString() === amount, "balance did not transfer to recipient");
 		assert(await zippieWallet.usedNonces(multisig, verificationKey) === true, "check has not been marked as cashed after transfer");
@@ -91,15 +84,15 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 
 		const signature = getSignature(multisigSignature, blankCheckSignature, blankCheckSignature2, recipientSignature)
 
-		var initialBalanceSender = await basicToken.balanceOf(multisig)
-		var initialBalanceRecipient = await basicToken.balanceOf(recipient)
+		const initialBalanceSender = await basicToken.balanceOf(multisig)
+		const initialBalanceRecipient = await basicToken.balanceOf(recipient)
 		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check already marked as cashed before transfer");
 		
 		const amount = web3.utils.toWei(blankCheckAmount, "ether")
 		await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
 		
-		var newBalanceSender = await basicToken.balanceOf(multisig)
-		var newBalanceRecipient = await basicToken.balanceOf(recipient)
+		const newBalanceSender = await basicToken.balanceOf(multisig)
+		const newBalanceRecipient = await basicToken.balanceOf(recipient)
 		assert((initialBalanceSender - newBalanceSender).toString() === amount, "balance did not transfer from sender");
 		assert((newBalanceRecipient - initialBalanceRecipient).toString() === amount, "balance did not transfer to recipient");
 		assert(await zippieWallet.usedNonces(multisig, verificationKey) === true, "check has not been marked as cashed after transfer");
