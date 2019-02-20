@@ -152,7 +152,6 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		const digestSignature = await getHardcodedDigestSignature(0, 0)
 		const card = digestSignature.pubkey
 		
-		const addresses = [multisig, basicToken.address, recipient, verificationKey]
 		const addressesLimit = [multisig, verificationKey]
 		const signers = [signer, card]
 		const m = [1, 1, 1, 1]
@@ -194,7 +193,6 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		const digestSignature = await getHardcodedDigestSignature(0, 0)
 		const card = digestSignature.pubkey
 		
-		// const addresses = [multisig, basicToken.address, recipient, verificationKey]
 		const addressesLimit = [multisig, verificationKey]
 		const signers = [signer, card]
 		const m = [1, 1, 1, 1]
@@ -234,7 +232,6 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		const digestSignature = await getHardcodedDigestSignature(0, 0)
 		const card = digestSignature.pubkey
 		
-		const addresses = [multisig, basicToken.address, recipient, verificationKey]
 		const addressesLimit = [multisig, verificationKey]
 		const signers = [signer, card]
 		const m = [1, 1, 1, 1]
@@ -273,7 +270,6 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		const digestSignature = await getHardcodedDigestSignature(0, 0)
 		const card = digestSignature.pubkey
 		
-		const addresses = [multisig, basicToken.address, recipient, verificationKey]
 		const addressesLimit = [multisig, verificationKey]
 		const signers = [signer, card]
 		const m = [1, 1, 1, 1]
