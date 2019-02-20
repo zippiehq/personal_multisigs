@@ -1,33 +1,27 @@
-var TestFunctions = artifacts.require("./TestFunctions.sol");
-var BasicERC20Mock = artifacts.require("./BasicERC20Mock.sol");
-var ZippieWallet = artifacts.require("./ZippieWallet.sol");
-var ZippieCardNonces = artifacts.require("./ZippieCardNonces.sol");
-var test;
+const TestFunctions = artifacts.require("./TestFunctions.sol");
+const BasicERC20Mock = artifacts.require("./BasicERC20Mock.sol");
+const ZippieWallet = artifacts.require("./ZippieWallet.sol");
+const ZippieCardNonces = artifacts.require("./ZippieCardNonces.sol");
+let test;
 
 const {
 	getMultisigSignature,
 	getRecipientSignature,
 	getSignature,
 	getBlankCheckSignature,
-	getNonceSignature,
-	getSetLimitSignature,
 	getDigestSignature,
-	getSignatureFrom3,
-	getEmptyDigestSignature,
 	getHardcodedDigestSignature,
-	getRSV,
-	log,
  } = require("./HelpFunctions");
  
 contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts) => {
 
-	var basicToken;
-	var zippieCardNonces;
-	var zippieWallet;
+	let basicToken;
+	let zippieCardNonces;
+	let zippieWallet;
 
 	const signer = accounts[0] // multisig signer (1of1)
 	const recipient = accounts[2]
-	var card = accounts[3]
+	const card = accounts[3]
 	const verificationKey = accounts[4] // random verification key
 	const multisig = accounts[5] // multisig wallet (sender, don't sign with this account since the private key should be forgotten at creation)
 	const sponsor = accounts[6] // Zippie PMG server
@@ -78,7 +72,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 
 	it("should fail a blank check transfer (from a 1 of 1 multisig with 2FA) if incorrect card", async () => {
 		const digestSignature = await getHardcodedDigestSignature(0, 0)
-		card = digestSignature.pubkey
+		const card = digestSignature.pubkey
 
 		const addresses = [multisig, basicToken.address, recipient, verificationKey]
 		const signers = [signer, card]
@@ -108,7 +102,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 	it("should fail a blank check transfer (from a 2 of 2 multisig with 2FA) if nonce is signed by incorrect card", async () => {
 		// card 1
 		const digestSignature = await getHardcodedDigestSignature(0, 0)
-		card = digestSignature.pubkey
+		const card = digestSignature.pubkey
 		
 		// card 2
 		const digestSignature2 = await getHardcodedDigestSignature(1, 0)
@@ -142,7 +136,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 	it("should fail a blank check transfer (from a 2 of 2 multisig with 2FA) if incorrect card", async () => {
 		// card 1
 		const digestSignature = await getHardcodedDigestSignature(0, 0)
-		card = digestSignature.pubkey
+		const card = digestSignature.pubkey
 
 		// card 2
 		const digestSignature2 = await getHardcodedDigestSignature(1, 0)
@@ -179,42 +173,42 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 	it("should fail a blank check transfer (1 signer, 1 card) if card nonce is being reused", async () => {
 		// card 1
 		const digestSignature = await getHardcodedDigestSignature(0, 0)
-		card = digestSignature.pubkey
+		const card = digestSignature.pubkey
 
-		var addresses = [multisig, basicToken.address, recipient, verificationKey]
-		var signers = [signer, card]
+		const addresses = [multisig, basicToken.address, recipient, verificationKey]
+		const signers = [signer, card]
 		const m = [1, 1, 1, 1]
 
-		var multisigSignature = await getMultisigSignature(signers, m, multisig)
-		var blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1")
-		var recipientSignature = await getRecipientSignature(recipient, verificationKey)
+		let multisigSignature = await getMultisigSignature(signers, m, multisig)
+		let blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1")
+		let recipientSignature = await getRecipientSignature(recipient, verificationKey)
 
-		var signature = getSignature(multisigSignature, blankCheckSignature, digestSignature, recipientSignature)
+		const signature = getSignature(multisigSignature, blankCheckSignature, digestSignature, recipientSignature)
 
-		var initialBalanceSender = await basicToken.balanceOf(multisig)
-		var initialBalanceRecipient = await basicToken.balanceOf(recipient)
+		let initialBalanceSender = await basicToken.balanceOf(multisig)
+		let initialBalanceRecipient = await basicToken.balanceOf(recipient)
 		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check already marked as cashed before transfer");
 		
 		const amount = web3.utils.toWei("1", "ether")
 		await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [digestSignature.digestHash], {from: sponsor});
 
-		var newBalanceSender = await basicToken.balanceOf(multisig)
-		var newBalanceRecipient = await basicToken.balanceOf(recipient)	
+		let newBalanceSender = await basicToken.balanceOf(multisig)
+		let newBalanceRecipient = await basicToken.balanceOf(recipient)	
 		assert((initialBalanceSender - newBalanceSender).toString() === amount, "amount did not transfer from sender");
 		assert((newBalanceRecipient - initialBalanceRecipient).toString() === amount, "amount did not transfer to recipient");
 		assert(await zippieWallet.usedNonces(multisig, verificationKey) === true, "check has not been marked as cashed after transfer");
 
 		// Try redeeming with same card nonce
 		const verificationKey2 = accounts[7]
-		addresses = [multisig, basicToken.address, recipient, verificationKey2]
+		const addresses2 = [multisig, basicToken.address, recipient, verificationKey2]
 		
 		blankCheckSignature = await getBlankCheckSignature(verificationKey2, signer, "1")
 		recipientSignature = await getRecipientSignature(recipient, verificationKey2)
 
-		signature = getSignature(multisigSignature, blankCheckSignature, digestSignature, recipientSignature)
+		const signature2 = getSignature(multisigSignature, blankCheckSignature, digestSignature, recipientSignature)
 		
 		try {
-			await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [digestSignature.digestHash], {from: sponsor});
+			await zippieWallet.redeemBlankCheck(addresses2, signers, m, signature2.v, signature2.r, signature2.s, amount, [digestSignature.digestHash], {from: sponsor});
 			assert(false, "Redeeming blank check should have failed because card nonce was reused!")
 		} catch (error) {
 			assert(error.reason === "Nonce already used", error.reason)
@@ -227,20 +221,20 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 		const card2 = digestSignature2.pubkey
 		
 		const verificationKey3 = accounts[8]
-		addresses = [multisig, basicToken.address, recipient, verificationKey3]
-		signers = [signer, card2]
+		const addresses3 = [multisig, basicToken.address, recipient, verificationKey3]
+		const signers2 = [signer, card2]
 		
-		multisigSignature = await getMultisigSignature(signers, m, multisig)
+		multisigSignature = await getMultisigSignature(signers2, m, multisig)
 		blankCheckSignature = await getBlankCheckSignature(verificationKey3, signer, "1")
 		recipientSignature = await getRecipientSignature(recipient, verificationKey3)
 
-		signature = getSignature(multisigSignature, blankCheckSignature, digestSignature2, recipientSignature)
+		const signature3 = getSignature(multisigSignature, blankCheckSignature, digestSignature2, recipientSignature)
 
 		initialBalanceSender = await basicToken.balanceOf(multisig)
 		initialBalanceRecipient = await basicToken.balanceOf(recipient)
 		assert(await zippieWallet.usedNonces(multisig, verificationKey3) === false, "check already marked as cashed before transfer");
 		
-		await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [digestSignature2.digestHash], {from: sponsor});
+		await zippieWallet.redeemBlankCheck(addresses3, signers2, m, signature3.v, signature3.r, signature3.s, amount, [digestSignature2.digestHash], {from: sponsor});
 
 		newBalanceSender = await basicToken.balanceOf(multisig)
 		newBalanceRecipient = await basicToken.balanceOf(recipient)	
@@ -252,41 +246,41 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 	it("should fail a blank check transfer (1 signer, 2 cards) if card nonce is reused", async () => {
 		// card 1
 		const digestSignature = await getHardcodedDigestSignature(0, 0)
-		card = digestSignature.pubkey
+		const card = digestSignature.pubkey
 
 		// card 2
 		const digestSignature2 = await getHardcodedDigestSignature(1, 0)
 		const card2 = digestSignature2.pubkey
 		
-		var addresses = [multisig, basicToken.address, recipient, verificationKey]
+		const addresses = [multisig, basicToken.address, recipient, verificationKey]
 		const m = [1, 1, 2, 2]
 		const signers = [signer, card, card2]
 
-		var multisigSignature = await getMultisigSignature(signers, m, multisig)
-		var blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1")
-		var recipientSignature = await getRecipientSignature(recipient, verificationKey)
+		let multisigSignature = await getMultisigSignature(signers, m, multisig)
+		let blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1")
+		let recipientSignature = await getRecipientSignature(recipient, verificationKey)
 
-		var v = [multisigSignature.v, recipientSignature.v, blankCheckSignature.v, digestSignature.v, digestSignature2.v]
-		var r = [multisigSignature.r.valueOf(), recipientSignature.r.valueOf(), blankCheckSignature.r.valueOf(), digestSignature.r.valueOf(), digestSignature2.r.valueOf()]
-		var s = [multisigSignature.s.valueOf(), recipientSignature.s.valueOf(), blankCheckSignature.s.valueOf(), digestSignature.s.valueOf(), digestSignature2.s.valueOf()]
+		let v = [multisigSignature.v, recipientSignature.v, blankCheckSignature.v, digestSignature.v, digestSignature2.v]
+		let r = [multisigSignature.r.valueOf(), recipientSignature.r.valueOf(), blankCheckSignature.r.valueOf(), digestSignature.r.valueOf(), digestSignature2.r.valueOf()]
+		let s = [multisigSignature.s.valueOf(), recipientSignature.s.valueOf(), blankCheckSignature.s.valueOf(), digestSignature.s.valueOf(), digestSignature2.s.valueOf()]
 
-		var initialBalanceSender = await basicToken.balanceOf(multisig)
-		var initialBalanceRecipient = await basicToken.balanceOf(recipient)
+		const initialBalanceSender = await basicToken.balanceOf(multisig)
+		const initialBalanceRecipient = await basicToken.balanceOf(recipient)
 		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check already marked as cashed before transfer");
 		
 		const amount = web3.utils.toWei("1", "ether")
 		const digestHashes = [digestSignature.digestHash, digestSignature2.digestHash]
 		await zippieWallet.redeemBlankCheck(addresses, signers, m, v, r, s, amount, digestHashes, {from: sponsor});
 
-		var newBalanceSender = await basicToken.balanceOf(multisig)
-		var newBalanceRecipient = await basicToken.balanceOf(recipient)	
+		let newBalanceSender = await basicToken.balanceOf(multisig)
+		let newBalanceRecipient = await basicToken.balanceOf(recipient)	
 		assert((initialBalanceSender - newBalanceSender).toString() === amount, "amount did not transfer from sender");
 		assert((newBalanceRecipient - initialBalanceRecipient).toString() === amount, "amount did not transfer to recipient");
 		assert(await zippieWallet.usedNonces(multisig, verificationKey) === true, "check has not been marked as cashed after transfer");
 
 		// Try redeeming with same card nonce
 		const verificationKey2 = accounts[7]
-		addresses = [multisig, basicToken.address, recipient, verificationKey2]
+		const addresses2 = [multisig, basicToken.address, recipient, verificationKey2]
 		
 		blankCheckSignature = await getBlankCheckSignature(verificationKey2, signer, "1")
 		recipientSignature = await getRecipientSignature(recipient, verificationKey2)
@@ -296,7 +290,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 		s = [multisigSignature.s.valueOf(), recipientSignature.s.valueOf(), blankCheckSignature.s.valueOf(), digestSignature.s.valueOf(), digestSignature2.s.valueOf()]
 		
 		try {
-			await zippieWallet.redeemBlankCheck(addresses, signers, m, v, r, s, amount, digestHashes, {from: sponsor});
+			await zippieWallet.redeemBlankCheck(addresses2, signers, m, v, r, s, amount, digestHashes, {from: sponsor});
 			assert(false, "Redeeming blank check should have failed because card nonce was reused!")
 		} catch (error) {
 			assert(error.reason === "Nonce already used", error.reason)
@@ -305,7 +299,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 
 	it("should fail a blank check transfer (1 signer, 2 cards) if duplicated card is used", async () => {
 		const digestSignature = await getHardcodedDigestSignature(0, 0)
-		card = digestSignature.pubkey
+		const card = digestSignature.pubkey
 
 		const addresses = [multisig, basicToken.address, recipient, verificationKey]
 		const m = [1, 1, 2, 2]
