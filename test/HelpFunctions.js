@@ -1,5 +1,5 @@
-var TestFunctions = artifacts.require("./TestFunctions.sol");
-var test
+const TestFunctions = artifacts.require("./TestFunctions.sol");
+let test
 TestFunctions.new().then(instance => {
 	test = instance
 })
@@ -84,7 +84,7 @@ function getEmptyDigestSignature() {
 }
 
 function getHardcodedDigestSignature(cardNr, signatureNr) {
-	var pubkey, digestHash, v, r, s
+	let pubkey, digestHash, v, r, s
 
 	switch (cardNr) {
 		case 0:
