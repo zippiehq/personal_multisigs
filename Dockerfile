@@ -8,10 +8,8 @@ ADD migrations /app/migrations
 ADD test /app/test
 
 # Files
-ADD .babelrc /app/.babelrc
 ADD .solcover.js /app/.solcover.js
 ADD package.json /app/package.json
-ADD truffle.js /app/truffle.js
 ADD truffle-config.js /app/truffle-config.js
 
 # Dependencies
@@ -23,4 +21,6 @@ RUN npm install
 # https://github.com/npm/npm/issues/20861
 RUN npm config set unsafe-perm true
 
-RUN npm install -g truffle@beta
+RUN npm install -g truffle
+
+RUN truffle build
