@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.5.6;
 /**
  * @title ZippieCardNonce interface
  * @dev check if nonce has been used or mark nonce as used
