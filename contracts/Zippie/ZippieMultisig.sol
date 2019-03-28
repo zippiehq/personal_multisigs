@@ -52,43 +52,6 @@ contract ZippieMultisig {
     }
 
     /** 
-      * @dev Verify that the multisig account (temp private key)
-      *  signed the array of possible signer addresses 
-      *  and required number of signatures
-      * @param signers all possible signers for this multsig account
-      * @param m required number of signatures for this multisig account
-      * @param multisigAddress address of this multisig account
-      * @param v v values of the multisig account signatures
-      * @param r r values of the multisig account signatures
-      * @param s s values of the multisig account signatures
-      */
-    function verifyMultisigAccountSignature(
-        address[] memory signers, 
-        uint8[] memory m, 
-        address multisigAddress, 
-        uint8 v, 
-        bytes32 r, 
-        bytes32 s
-    ) 
-        internal 
-        pure 
-        returns (bool)
-    {
-        require(
-            multisigAddress == ecrecover(
-                ZippieUtils.toEthSignedMessageHash(
-                    keccak256(abi.encodePacked(signers, m))
-                ), 
-                v, 
-                r, 
-                s
-            ), 
-            "Invalid account"
-        );
-        return true; 
-    }
-
-    /** 
       * @dev Verify that all provided signer signatures are valid
       * and that they all signed the same hash
       * @param signedHash hash signed by all signers

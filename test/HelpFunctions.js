@@ -4,7 +4,12 @@ TestFunctions.new().then(instance => {
 	test = instance
 })
 
+const { bytecode:accountBytecode } = require('../build/contracts/ZippieAccountERC20.json')
+
 module.exports = {
+	createBlankCheck_1of1Signer_NoCard,
+	createBlankCheck_1of1Signer_1of1Card,
+	getAccountAddress,
 	getMultisigSignature,
 	getRecipientSignature,
 	getSignature,
@@ -12,11 +17,63 @@ module.exports = {
 	getNonceSignature,
 	getSetLimitSignature,
 	getDigestSignature,
-	getSignatureFrom3,
+	getSignatureNoCard,
 	getEmptyDigestSignature,
 	getHardcodedDigestSignature,
 	getRSV,
 	log,
+}
+
+async function createBlankCheck_1of1Signer_NoCard(
+	tokenAddress,
+	recipientAccount,
+	nonceAccount,
+	signerAccount,
+	m,
+	amount) 
+{
+	const signers = [signerAccount]
+	const signerSignature = await getBlankCheckSignature(nonceAccount, signerAccount, amount)
+	const nonceSignature = await getRecipientSignature(recipientAccount, nonceAccount)	
+	
+	const addresses = [tokenAddress, recipientAccount, nonceAccount]
+	const signatures = getSignatureNoCard(signerSignature, nonceSignature)
+	const cardNonces = []
+
+	return { addresses: addresses, signers: signers, m: m, signatures: signatures, amount: web3.utils.toWei(amount, "ether"), cardNonces: cardNonces }
+}
+
+async function createBlankCheck_1of1Signer_1of1Card(
+	tokenAddress,
+	recipientAccount,
+	nonceAccount,
+	signerAccount,
+	cardNumber,
+	m,
+	amount,
+	cardNonceNumber
+) 
+{
+	const cardSignature = await getHardcodedDigestSignature(cardNumber, cardNonceNumber)
+	const signers = [signerAccount, cardSignature.pubkey]
+	const signerSignature = await getBlankCheckSignature(nonceAccount, signerAccount, amount)
+	const nonceSignature = await getRecipientSignature(recipientAccount, nonceAccount)	
+	
+	const addresses = [tokenAddress, recipientAccount, nonceAccount]
+	const signatures = getSignature(signerSignature, cardSignature, nonceSignature)
+	const cardNonces = [cardSignature.digestHash]
+
+	return { addresses: addresses, signers: signers, m: m, signatures: signatures, amount: web3.utils.toWei(amount, "ether"), cardNonces: cardNonces }
+}
+
+async function getAccountAddress(signers, m, tokenAddress, walletAddress) {
+	const bytecode = accountBytecode + web3.eth.abi.encodeParameters(['address'], [tokenAddress]).slice(2)
+	const bytecodeHash = web3.utils.sha3(bytecode)
+	const salt = await test.soliditySha3_addresses_m(signers, m);
+	//const salt = web3.utils.sha3(web3.eth.abi.encodeParameters(['address[]', 'uint8[]'], [bc1.signers, bc1.m]))
+	const accountHash = web3.utils.sha3(`0x${'ff'}${walletAddress.slice(2)}${salt.slice(2)}${bytecodeHash.slice(2)}`)
+	const accountAddress = `0x${accountHash.slice(-40)}`.toLowerCase()
+	return accountAddress
 }
 
 async function getMultisigSignature(signers, m, multisig) {
@@ -32,10 +89,10 @@ async function getRecipientSignature(recipient, verificationKey) {
 	return getRSV(recipientSignature.slice(2))
 }
 
-function getSignature(multisigSignature, blankCheckSignature, digestSignature, recipientSignature) {
-	const v = [multisigSignature.v, recipientSignature.v, blankCheckSignature.v, digestSignature.v]
-	const r = [multisigSignature.r.valueOf(), recipientSignature.r.valueOf(), blankCheckSignature.r.valueOf(), digestSignature.r.valueOf()]
-	const s = [multisigSignature.s.valueOf(), recipientSignature.s.valueOf(), blankCheckSignature.s.valueOf(), digestSignature.s.valueOf()]
+function getSignature(blankCheckSignature, digestSignature, recipientSignature) {
+	const v = [recipientSignature.v, blankCheckSignature.v, digestSignature.v]
+	const r = [recipientSignature.r.valueOf(), blankCheckSignature.r.valueOf(), digestSignature.r.valueOf()]
+	const s = [recipientSignature.s.valueOf(), blankCheckSignature.s.valueOf(), digestSignature.s.valueOf()]
 
 	return {v:v, r:r, s:s}
 }
@@ -65,10 +122,10 @@ async function getDigestSignature(digestHash, card) {
 	return getRSV(digestSignature.slice(2))
 }
 
-function getSignatureFrom3(multisigSignature, blankCheckSignature, recipientSignature) {
-	const v = [multisigSignature.v, recipientSignature.v, blankCheckSignature.v]
-	const r = [multisigSignature.r.valueOf(), recipientSignature.r.valueOf(), blankCheckSignature.r.valueOf()]
-	const s = [multisigSignature.s.valueOf(), recipientSignature.s.valueOf(), blankCheckSignature.s.valueOf()]
+function getSignatureNoCard(blankCheckSignature, recipientSignature) {
+	const v = [recipientSignature.v, blankCheckSignature.v]
+	const r = [recipientSignature.r.valueOf(), blankCheckSignature.r.valueOf()]
+	const s = [recipientSignature.s.valueOf(), blankCheckSignature.s.valueOf()]
 
 	return {v:v, r:r, s:s}
 }
