@@ -216,7 +216,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 			await zippieWallet.redeemBlankCheck(addresses2, signers, m, signature2.v, signature2.r, signature2.s, amount, [digestSignature.digestHash], {from: sponsor});
 			assert(false, "Redeeming blank check should have failed because card nonce was reused!")
 		} catch (error) {
-			assert(error.reason === "Nonce already used", error.reason)
+			assert(error.reason === "Card nonce already used", error.reason)
 		}
 
 		// Redeem with new card nonce
@@ -298,7 +298,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 			await zippieWallet.redeemBlankCheck(addresses2, signers, m, v, r, s, amount, digestHashes, {from: sponsor});
 			assert(false, "Redeeming blank check should have failed because card nonce was reused!")
 		} catch (error) {
-			assert(error.reason === "Nonce already used", error.reason)
+			assert(error.reason === "Card nonce already used", error.reason)
 		}
 	});
 
