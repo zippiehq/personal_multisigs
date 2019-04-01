@@ -13,7 +13,7 @@ contract ZippieCardNonces is IZippieCardNonces {
     mapping (address => mapping(bytes32 => bool)) private _usedNonces;
 
     /**
-      * @dev Check if a card nonce has been used allready
+      * @dev Check if a card nonce has been used already
       * @param signer card address
       * @param nonce nonce value
       */
@@ -29,7 +29,7 @@ contract ZippieCardNonces is IZippieCardNonces {
     }
 
     /**
-      * @dev Mark a nonce a s used for a specific card
+      * @dev Mark a nonce as used for a specific card
       * a card need to sign the nonce to mark it as used 
       * this also means that no one else can mark it as used
       * @param signer card address that signed the nonce
@@ -50,11 +50,11 @@ contract ZippieCardNonces is IZippieCardNonces {
     {
         require(
             _usedNonces[signer][nonce] == false, 
-            "Nonce already used"
+            "Card nonce already used"
         );
         require(
             signer == ecrecover(nonce, v, r, s), 
-            "Invalid signature"
+            "Invalid card signature"
         );
         _usedNonces[signer][nonce] = true;
         return true;

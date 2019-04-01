@@ -3,6 +3,7 @@ pragma solidity ^0.5.6;
 import "./ZippieMultisig.sol";
 import "./ZippieCard.sol";
 import "./ZippieUtils.sol";
+import "./ZippieAccount.sol";
 
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
@@ -11,7 +12,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
   * @notice Transfer ERC20 tokens using multiple signatures
   * @dev Zippie smart cards can be used for 2FA
  */
-contract ZippieWallet is ZippieMultisig, ZippieCard {
+contract ZippieWallet is ZippieAccount, ZippieMultisig, ZippieCard {
 
     mapping (address => uint256) public accountLimits;
 
@@ -23,10 +24,9 @@ contract ZippieWallet is ZippieMultisig, ZippieCard {
       * enough signers has signed keccak256(amount, verification key)
       * card signatures are not required if amount doesn't exceeded the current limit
       * @param addresses required addresses
-      * [0] multisig account to withdraw ERC20 tokens from
-      * [1] ERC20 contract to use
-      * [2] recipient of the ERC20 tokens
-      * [3] verification key (nonce)
+      * [0] ERC20 token used by this account
+      * [1] recipient of the ERC20 tokens
+      * [2] verification key (nonce)
       * @param signers all possible signers and cards
       * [0..i] signer adresses
       * [i+1..j] card addresses
@@ -36,9 +36,8 @@ contract ZippieWallet is ZippieMultisig, ZippieCard {
       * [2] possible number of cards
       * [3] reqiuired number of cards
       * @param v v values of all signatures
-      * [0] multisig account signature
-      * [1] verification key signature
-      * [2..i] signer signatures of check hash
+      * [0] verification key signature
+      * [1..i] signer signatures of check hash
       * [i+1..j] card signatures of random card nonces
       * @param r r values of all signatures (structured as v)
       * @param s s values of all signatures (structured as v)
@@ -60,16 +59,22 @@ contract ZippieWallet is ZippieMultisig, ZippieCard {
         returns (bool)
     {
         require(
-            addresses.length == 4, 
+            addresses.length == 3, 
             "Incorrect number of addresses"
         ); 
         require(
             amount > 0, 
             "Amount must be greater than 0"
         );
-       
+
+        // get account address
+        address accountAddress = getAccountAddress(
+            addresses[0], 
+            keccak256(abi.encodePacked(signers, m))
+        );
+
         // sanity check of signature parameters 
-        bool limitExceeded = isLimitExceeded(amount, addresses[0]);
+        bool limitExceeded = isLimitExceeded(amount, accountAddress);
         checkSignatureParameters(
             m, 
             signers.length, 
@@ -79,29 +84,18 @@ contract ZippieWallet is ZippieMultisig, ZippieCard {
             cardNonces.length, 
             limitExceeded
         );
-        
-        // verify that account signature is valid
-        verifyMultisigAccountSignature(
-            signers, 
-            m, 
-            addresses[0], 
-            v[0], 
-            r[0], 
-            s[0]
-        );
 
         // verify that account nonce is valid (for replay protection)
         // (verification key signing recipient address)
-        bytes32 recipientHash = ZippieUtils.toEthSignedMessageHash(
-            keccak256(abi.encodePacked(addresses[2]))
-        );
         verifyMultisigNonce(
-            addresses[0], 
-            addresses[3], 
-            recipientHash, 
-            v[1], 
-            r[1], 
-            s[1]
+            accountAddress, 
+            addresses[2], 
+            ZippieUtils.toEthSignedMessageHash(
+                keccak256(abi.encodePacked(addresses[1]))
+            ), 
+            v[0], 
+            r[0], 
+            s[0]
         );
 
         // get the check hash (amount, nonce) 
@@ -110,14 +104,13 @@ contract ZippieWallet is ZippieMultisig, ZippieCard {
         // prepend with function name "redeemBlankCheck"
         // so a hash for another function with same parameter 
         // layout don't get the same hash
-        bytes32 blankCheckHash = ZippieUtils.toEthSignedMessageHash(
-            keccak256(abi.encodePacked("redeemBlankCheck", amount, addresses[3]))
-        );
         verifyMultisigSignerSignatures(
-            blankCheckHash, 
+            ZippieUtils.toEthSignedMessageHash(
+                keccak256(abi.encodePacked("redeemBlankCheck", amount, addresses[2]))
+            ), 
             [0, m[0]], 
             signers, 
-            [2, m[1]], 
+            [1, m[1]], 
             v, 
             r, 
             s
@@ -133,16 +126,24 @@ contract ZippieWallet is ZippieMultisig, ZippieCard {
                 cardNonces, 
                 [m[0], m[2]], 
                 signers, 
-                [2+m[1], m[3]], 
+                [1+m[1], m[3]], 
                 v, 
                 r, 
                 s
             );
         }
 
+        // check if account needs to be "created" (ERC20 approve)
+        if(IERC20(addresses[0]).allowance(accountAddress, address(this)) == 0) {
+            require(
+                createAccount(addresses[0], keccak256(abi.encodePacked(signers, m))) == accountAddress, 
+                "Account creation failed"
+            );
+        }
+
         // transfer tokens from multisig account to recipient address
         require(
-            IERC20(addresses[1]).transferFrom(addresses[0], addresses[2], amount), 
+            IERC20(addresses[0]).transferFrom(accountAddress, addresses[1], amount), 
             "Transfer failed"
         );
         return true;
@@ -157,7 +158,7 @@ contract ZippieWallet is ZippieMultisig, ZippieCard {
       * card signatures are not required if limit is decreased
       * only if increased
       * @param addresses required addresses
-      * [0] multisig account to withdraw ERC20 tokens from
+      * [0] ERC20 token used by this account
       * [1] verification key (nonce)
       * @param signers all possible signers and cards
       * [0..i] signer addresses
@@ -168,9 +169,8 @@ contract ZippieWallet is ZippieMultisig, ZippieCard {
       * [2] possible number of cards
       * [3] reqiuired number of cards
       * @param v v values of all signatures
-      * [0] multisig account signature
-      * [1] verification key signature
-      * [2..i] signer signatures of check hash
+      * [0] verification key signature
+      * [1..i] signer signatures of check hash
       * [i+1..j] card signatures of random card nonces
       * @param r r values of all signatures (structured as v)
       * @param s s values of all signatures (structured as v)
@@ -195,9 +195,15 @@ contract ZippieWallet is ZippieMultisig, ZippieCard {
             addresses.length == 2, 
             "Incorrect number of addresses"
         );
+
+        // get account address
+        address accountAddress = getAccountAddress(
+            addresses[0], 
+            keccak256(abi.encodePacked(signers, m))
+        );
         
         // sanity check of signature parameters 
-        bool limitExceeded = isLimitExceeded(amount, addresses[0]);
+        bool limitExceeded = isLimitExceeded(amount, accountAddress);
         checkSignatureParameters(
             m, 
             signers.length, 
@@ -207,29 +213,18 @@ contract ZippieWallet is ZippieMultisig, ZippieCard {
             cardNonces.length, 
             limitExceeded
         );
-        
-        // verify that account signature is valid
-        verifyMultisigAccountSignature(
-            signers, 
-            m, 
-            addresses[0], 
-            v[0], 
-            r[0], 
-            s[0]
-        );
 
         // verify that account nonce is valid (for replay protection)
         // (nonce signing this multisig account address)
-        bytes32 recipientHash = ZippieUtils.toEthSignedMessageHash(
-            keccak256(abi.encodePacked(addresses[0]))
-        );
         verifyMultisigNonce(
-            addresses[0], 
+            accountAddress, 
             addresses[1], 
-            recipientHash, 
-            v[1], 
-            r[1], 
-            s[1]
+            ZippieUtils.toEthSignedMessageHash(
+                keccak256(abi.encodePacked(accountAddress))
+            ), 
+            v[0], 
+            r[0], 
+            s[0]
         );
 
         // get the limit hash (amount, nonce) 
@@ -237,14 +232,13 @@ contract ZippieWallet is ZippieMultisig, ZippieCard {
         // prepend with function name "setLimit"
         // so a hash for another function with same parameter 
         // layout don't get the same hash
-        bytes32 limitHash = ZippieUtils.toEthSignedMessageHash(
-            keccak256(abi.encodePacked("setLimit", amount, addresses[1]))
-        );
         verifyMultisigSignerSignatures(
-            limitHash, 
+            ZippieUtils.toEthSignedMessageHash(
+                keccak256(abi.encodePacked("setLimit", amount, addresses[1]))
+            ), 
             [0, m[0]], 
             signers, 
-            [2, m[1]], 
+            [1, m[1]], 
             v, 
             r, 
             s
@@ -260,7 +254,7 @@ contract ZippieWallet is ZippieMultisig, ZippieCard {
                 cardNonces, 
                 [m[0], m[2]], 
                 signers, 
-                [2+m[1], m[3]], 
+                [1+m[1], m[3]], 
                 v, 
                 r, 
                 s
@@ -268,7 +262,7 @@ contract ZippieWallet is ZippieMultisig, ZippieCard {
         }
 
         // set the new limit fot this account
-        accountLimits[addresses[0]] = amount;
+        accountLimits[accountAddress] = amount;
         return true;
     }
 
@@ -332,15 +326,15 @@ contract ZippieWallet is ZippieMultisig, ZippieCard {
                 "Incorrect number of signers"
             ); 
             require(
-                nrOfVs == 2 + m[1] + m[3], 
+                nrOfVs == 1 + m[1] + m[3], 
                 "Incorrect number of signatures (v)"
             ); 
             require(
-                nrOfRs == 2 + m[1] + m[3], 
+                nrOfRs == 1 + m[1] + m[3], 
                 "Incorrect number of signatures (r)"
             ); 
             require(
-                nrOfSs == 2 + m[1] + m[3], 
+                nrOfSs == 1 + m[1] + m[3], 
                 "Incorrect number of signatures (s)"
             ); 
             require(
@@ -355,15 +349,15 @@ contract ZippieWallet is ZippieMultisig, ZippieCard {
                 "Incorrect number of signers"
             ); 
             require(
-                nrOfVs == 2 + m[1] || nrOfVs == 2 + m[1] + m[3], 
+                nrOfVs == 1 + m[1] || nrOfVs == 1 + m[1] + m[3], 
                 "Incorrect number of signatures (v)"
             ); 
             require(
-                nrOfRs == 2 + m[1] || nrOfRs == 2 + m[1] + m[3], 
+                nrOfRs == 1 + m[1] || nrOfRs == 1 + m[1] + m[3], 
                 "Incorrect number of signatures (r)"
             ); 
             require(
-                nrOfSs == 2 + m[1] || nrOfSs == 2 + m[1] + m[3], 
+                nrOfSs == 1 + m[1] || nrOfSs == 1 + m[1] + m[3], 
                 "Incorrect number of signatures (s)"
             ); 
             require(

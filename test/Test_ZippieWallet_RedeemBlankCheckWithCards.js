@@ -4,13 +4,13 @@ const ZippieWallet = artifacts.require("./ZippieWallet.sol");
 const ZippieCardNonces = artifacts.require("./ZippieCardNonces.sol");
 
 const {
-	getMultisigSignature,
+	getAccountAddress,
 	getRecipientSignature,
 	getSignature,
 	getBlankCheckSignature,
 	getNonceSignature,
 	getSetLimitSignature,
-	getSignatureFrom3,
+	getSignatureNoCard,
 	getEmptyDigestSignature,
 	getHardcodedDigestSignature,
  } = require("./HelpFunctions");
@@ -24,18 +24,16 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 	const signer = accounts[0] // multisig signer (1of1)
 	const recipient = accounts[2]
 	const verificationKey = accounts[4] // random verification key
-	const multisig = accounts[5] // multisig wallet (sender, don't sign with this account since the private key should be forgotten at creation)
 	const sponsor = accounts[6] // Zippie PMG server
 
 	beforeEach(() => {
 	return TestFunctions.new().then(_ => {
-		return BasicERC20Mock.new(accounts[5]).then(instance => {
+		return BasicERC20Mock.new(sponsor).then(instance => {
 			basicToken = instance
 			return ZippieCardNonces.new().then(instance => {
 				zippieCardNonces = instance
 				return ZippieWallet.new(zippieCardNonces.address)}).then(instance => {
 					zippieWallet = instance;
-					return basicToken.approve(zippieWallet.address, web3.utils.toWei("100", "ether"), {from: accounts[5]});
 				});
 			});
 		});
@@ -45,15 +43,16 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		const digestSignature = await getHardcodedDigestSignature(0, 0)
 		const card = digestSignature.pubkey
 
-		const addresses = [multisig, basicToken.address, recipient, verificationKey]
 		const signers = [signer, card]
 		const m = [1, 1, 1, 1]
+		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		await basicToken.transfer(multisig, web3.utils.toWei("100", "ether"), {from: sponsor});
+		const addresses = [basicToken.address, recipient, verificationKey]
 
-		const multisigSignature = await getMultisigSignature(signers, m, multisig)
 		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1")
 		const recipientSignature = await getRecipientSignature(recipient, verificationKey)
 		
-		const signature = getSignature(multisigSignature, blankCheckSignature, digestSignature, recipientSignature)
+		const signature = getSignature(blankCheckSignature, digestSignature, recipientSignature)
 
 		const initialBalanceSender = await basicToken.balanceOf(multisig)
 		const initialBalanceRecipient = await basicToken.balanceOf(recipient)
@@ -88,17 +87,18 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		const digestSignature2 = await getHardcodedDigestSignature(1, 0)
 		const card2 = digestSignature2.pubkey
 		
-		const addresses = [multisig, basicToken.address, recipient, verificationKey]
-		const m = [1, 1, 2, 2]
 		const signers = [signer, card, card2]
+		const m = [1, 1, 2, 2]
+		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		await basicToken.transfer(multisig, web3.utils.toWei("100", "ether"), {from: sponsor});
+		const addresses = [basicToken.address, recipient, verificationKey]
 
-		const multisigSignature = await getMultisigSignature(signers, m, multisig)
 		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1")
 		const recipientSignature = await getRecipientSignature(recipient, verificationKey)
 
-		const v = [multisigSignature.v, recipientSignature.v, blankCheckSignature.v, digestSignature.v, digestSignature2.v]
-		const r = [multisigSignature.r.valueOf(), recipientSignature.r.valueOf(), blankCheckSignature.r.valueOf(), digestSignature.r.valueOf(), digestSignature2.r.valueOf()]
-		const s = [multisigSignature.s.valueOf(), recipientSignature.s.valueOf(), blankCheckSignature.s.valueOf(), digestSignature.s.valueOf(), digestSignature2.s.valueOf()]
+		const v = [recipientSignature.v, blankCheckSignature.v, digestSignature.v, digestSignature2.v]
+		const r = [recipientSignature.r.valueOf(), blankCheckSignature.r.valueOf(), digestSignature.r.valueOf(), digestSignature2.r.valueOf()]
+		const s = [recipientSignature.s.valueOf(), blankCheckSignature.s.valueOf(), digestSignature.s.valueOf(), digestSignature2.s.valueOf()]
 
 		const digestHashes = [digestSignature.digestHash, digestSignature2.digestHash]
 
@@ -124,21 +124,22 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		const digestSignature = await getHardcodedDigestSignature(0, 0)
 		const card = digestSignature.pubkey
 		
-		const addresses = [multisig, basicToken.address, recipient, verificationKey]
 		const signers = [signer, card]
 		const m = [1, 1, 1, 1]
+		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		await basicToken.transfer(multisig, web3.utils.toWei("100", "ether"), {from: sponsor});
+
 		const limit = "5"
 		
-		const multisigSignature = await getMultisigSignature(signers, m, multisig)
-		const addressesLimit = [multisig, verificationKey]
+		const addressesLimit = [basicToken.address, verificationKey]
 		const limitSignature = await getSetLimitSignature(verificationKey, signer, limit)
 		const nonceSignature = await getNonceSignature(multisig, verificationKey)
 		
-		const signature = getSignature(multisigSignature, limitSignature, digestSignature, nonceSignature)
+		const signature = getSignature(limitSignature, digestSignature, nonceSignature)
 		const amount = web3.utils.toWei(limit, "ether")
 		await zippieWallet.setLimit(addressesLimit, signers, m, signature.v, signature.r, signature.s, amount, [digestSignature.digestHash], {from: sponsor});
 		
-		const newLimit = await zippieWallet.accountLimits(addresses[0])
+		const newLimit = await zippieWallet.accountLimits(multisig)
 		assert(parseInt(newLimit, 10).toString() === amount, "limit was not set");
 	});
 
@@ -146,17 +147,19 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		const digestSignature = await getHardcodedDigestSignature(0, 0)
 		const card = digestSignature.pubkey
 		
-		const addressesLimit = [multisig, verificationKey]
 		const signers = [signer, card]
 		const m = [1, 1, 1, 1]
+		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		await basicToken.transfer(multisig, web3.utils.toWei("100", "ether"), {from: sponsor});
+		const addressesLimit = [basicToken.address, verificationKey]
+
 		const limitValue = "2"
 		const amountValue = "1"
 		
-		const multisigSignature = await getMultisigSignature(signers, m, multisig)
 		const limitSignature = await getSetLimitSignature(verificationKey, signer, limitValue)
 		const nonceSignature = await getNonceSignature(multisig, verificationKey)
 		
-		const signatureForLimit = getSignature(multisigSignature, limitSignature, digestSignature, nonceSignature)
+		const signatureForLimit = getSignature(limitSignature, digestSignature, nonceSignature)
 		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check already marked as cashed before transfer");
 		
 		const initialBalanceSender = await basicToken.balanceOf(multisig)
@@ -168,10 +171,10 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		assert(accountLimit.toString() === limit.toString(), "limit was not set correctly")
 		
 		const verificationKey2 = accounts[11] // random verification key		
-		const addresses2 = [multisig, basicToken.address, recipient, verificationKey2]
+		const addresses2 = [basicToken.address, recipient, verificationKey2]
 		const blankCheckSignature = await getBlankCheckSignature(verificationKey2, signer, amountValue)
 		const recipientSignature = await getRecipientSignature(recipient, verificationKey2)
-		const signature = getSignatureFrom3(multisigSignature, blankCheckSignature, recipientSignature)
+		const signature = getSignatureNoCard(blankCheckSignature, recipientSignature)
 		const amount = web3.utils.toWei(amountValue, "ether")
 		// Skipping card signatures, since it should work without because we are under account limit
 		await zippieWallet.redeemBlankCheck(addresses2, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
@@ -187,17 +190,19 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		const digestSignature = await getHardcodedDigestSignature(0, 0)
 		const card = digestSignature.pubkey
 		
-		const addressesLimit = [multisig, verificationKey]
 		const signers = [signer, card]
 		const m = [1, 1, 1, 1]
+		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		await basicToken.transfer(multisig, web3.utils.toWei("100", "ether"), {from: sponsor});
+		const addressesLimit = [basicToken.address, verificationKey]
+
 		const limitValue = "1"
 		const amountValue = "2"
 		
-		const multisigSignature = await getMultisigSignature(signers, m, multisig)
 		const limitSignature = await getSetLimitSignature(verificationKey, signer, limitValue)
 		const nonceSignature = await getNonceSignature(multisig, verificationKey)
 		
-		const signatureForLimit = getSignature(multisigSignature, limitSignature, digestSignature, nonceSignature)
+		const signatureForLimit = getSignature(limitSignature, digestSignature, nonceSignature)
 		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check already marked as cashed before transfer");
 		
 		const limit = web3.utils.toWei(limitValue, "ether")
@@ -206,11 +211,11 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		assert(accountLimit.toString() === limit.toString(), "limit was not set correctly")
 		
 		const verificationKey2 = accounts[11] // random verification key		
-		const addresses = [multisig, basicToken.address, recipient, verificationKey2]
+		const addresses = [basicToken.address, recipient, verificationKey2]
 		const blankCheckSignature = await getBlankCheckSignature(verificationKey2, signer, amountValue)
 		const recipientSignature = await getRecipientSignature(recipient, verificationKey2)
 		const emptyDigestSignature = getEmptyDigestSignature()
-		const signature = getSignature(multisigSignature, blankCheckSignature, emptyDigestSignature, recipientSignature)
+		const signature = getSignature(blankCheckSignature, emptyDigestSignature, recipientSignature)
 		const amount = web3.utils.toWei(amountValue, "ether")
 		
 		try {
@@ -226,17 +231,19 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		const digestSignature = await getHardcodedDigestSignature(0, 0)
 		const card = digestSignature.pubkey
 		
-		const addressesLimit = [multisig, verificationKey]
 		const signers = [signer, card]
 		const m = [1, 1, 1, 1]
+		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		await basicToken.transfer(multisig, web3.utils.toWei("100", "ether"), {from: sponsor});
+		const addressesLimit = [basicToken.address, verificationKey]
+
 		const limitValue = "1"
 		const amountValue = "2"
 		
-		const multisigSignature = await getMultisigSignature(signers, m, multisig)
 		const limitSignature = await getSetLimitSignature(verificationKey, signer, limitValue)
 		const nonceSignature = await getNonceSignature(multisig, verificationKey)
 		
-		const signatureForLimit = getSignature(multisigSignature, limitSignature, digestSignature, nonceSignature)
+		const signatureForLimit = getSignature(limitSignature, digestSignature, nonceSignature)
 		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check already marked as cashed before transfer");
 		
 		const limit = web3.utils.toWei(limitValue, "ether")
@@ -245,10 +252,10 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		assert(accountLimit.toString() === limit.toString(), "limit was not set correctly")
 		
 		const verificationKey2 = accounts[11] // random verification key		
-		const addresses2 = [multisig, basicToken.address, recipient, verificationKey2]
+		const addresses2 = [basicToken.address, recipient, verificationKey2]
 		const blankCheckSignature = await getBlankCheckSignature(verificationKey2, signer, amountValue)
 		const recipientSignature = await getRecipientSignature(recipient, verificationKey2)
-		const signature = getSignatureFrom3(multisigSignature, blankCheckSignature, recipientSignature)
+		const signature = getSignatureNoCard(blankCheckSignature, recipientSignature)
 		const amount = web3.utils.toWei(amountValue, "ether")
 		
 		try {
@@ -261,20 +268,22 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 	});
 
 	it("should allow a blank check to be cashed once from a 1 of 1 multisig with 2FA, although amount is over account limit", async () => {
-		const digestSignature = await getHardcodedDigestSignature(0, 0)
+		const digestSignature = await getHardcodedDigestSignature(1, 0)
 		const card = digestSignature.pubkey
 		
-		const addressesLimit = [multisig, verificationKey]
 		const signers = [signer, card]
 		const m = [1, 1, 1, 1]
+		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		await basicToken.transfer(multisig, web3.utils.toWei("100", "ether"), {from: sponsor});
+		const addressesLimit = [basicToken.address, verificationKey]
+
 		const limitValue = "1"
 		const amountValue = "2"
 		
-		const multisigSignature = await getMultisigSignature(signers, m, multisig)
 		const limitSignature = await getSetLimitSignature(verificationKey, signer, limitValue)
 		const nonceSignature = await getNonceSignature(multisig, verificationKey)
 		
-		const signatureForLimit = getSignature(multisigSignature, limitSignature, digestSignature, nonceSignature)
+		const signatureForLimit = getSignature(limitSignature, digestSignature, nonceSignature)
 		
 		const initialBalanceSender = await basicToken.balanceOf(multisig)
 		const initialBalanceRecipient = await basicToken.balanceOf(recipient)
@@ -283,15 +292,14 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		const limit = web3.utils.toWei(limitValue, "ether")
 		await zippieWallet.setLimit(addressesLimit, signers, m, signatureForLimit.v, signatureForLimit.r, signatureForLimit.s, limit, [digestSignature.digestHash], {from: sponsor});
 		
-		const digestSignature2 = await getHardcodedDigestSignature(1, 0)
+		const digestSignature2 = await getHardcodedDigestSignature(1, 1)
 		const card2 = digestSignature2.pubkey
 		const verificationKey2 = accounts[11] // random verification key		
-		const addresses2 = [multisig, basicToken.address, recipient, verificationKey2]
+		const addresses2 = [basicToken.address, recipient, verificationKey2]
 		const signers2 = [signer, card2]
-		const multisigSignature2 = await getMultisigSignature(signers2, m, multisig)
 		const blankCheckSignature = await getBlankCheckSignature(verificationKey2, signer, amountValue)
 		const recipientSignature = await getRecipientSignature(recipient, verificationKey2)
-		const signature = getSignature(multisigSignature2, blankCheckSignature, digestSignature2, recipientSignature)
+		const signature = getSignature(blankCheckSignature, digestSignature2, recipientSignature)
 		const amount = web3.utils.toWei(amountValue, "ether")
 		await zippieWallet.redeemBlankCheck(addresses2, signers2, m, signature.v, signature.r, signature.s, amount, [digestSignature2.digestHash], {from: sponsor});
 
