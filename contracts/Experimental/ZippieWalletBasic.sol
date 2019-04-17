@@ -56,7 +56,6 @@ contract ZippieWalletBasic is ZippieAccount, ZippieMultisig {
 
         // get account address
         address accountAddress = getAccountAddress(
-            addresses[0], 
             keccak256(abi.encodePacked(signers, m))
         );
        
@@ -100,8 +99,8 @@ contract ZippieWalletBasic is ZippieAccount, ZippieMultisig {
         // check if account needs to be "created" (ERC20 approve)
         if(IERC20(addresses[0]).allowance(accountAddress, address(this)) == 0) {
             require(
-                createAccount(addresses[0], keccak256(abi.encodePacked(signers, m))) == accountAddress, 
-                "Account creation failed"
+                approveToken(addresses[0], keccak256(abi.encodePacked(signers, m))) == accountAddress, 
+                "Token approval failed"
             );
         }
 

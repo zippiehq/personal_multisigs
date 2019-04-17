@@ -14,6 +14,7 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 
 	var test;
 	var basicToken;
+	var basicToken2;
 	var zippieCardNonces;
 	var zippieWallet;
 	const haveCards = true
@@ -52,10 +53,13 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 			test = instance;
 			return BasicERC20Mock.new(tokenAccounts[0]).then(instance => {
 				basicToken = instance
-				return ZippieCardNonces.new().then(instance => {
-					zippieCardNonces = instance
-					return ZippieWallet.new(zippieCardNonces.address).then(instance => {
-						zippieWallet = instance;
+				return BasicERC20Mock.new(tokenAccounts[0]).then(instance => {
+					basicToken2 = instance
+					return ZippieCardNonces.new().then(instance => {
+						zippieCardNonces = instance
+						return ZippieWallet.new(zippieCardNonces.address).then(instance => {
+							zippieWallet = instance;
+						});
 					});
 				});
 			});
@@ -82,7 +86,7 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 				"1",
 			)
 
-			const bytecode = accountBytecode + web3.eth.abi.encodeParameters(['address'], [basicToken.address]).slice(2)
+			const bytecode = accountBytecode //+ web3.eth.abi.encodeParameters(['address'], [zippieWallet.address]).slice(2)
 			const bytecodeHash = web3.utils.sha3(bytecode)
 			const salt = await test.soliditySha3_addresses_m(bc1.signers, bc1.m);
 			//const salt = web3.utils.sha3(web3.eth.abi.encodeParameters(['address[]', 'uint8[]'], [bc1.signers, bc1.m]))
@@ -155,7 +159,7 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 				1
 			)
 
-			const bytecode = accountBytecode + web3.eth.abi.encodeParameters(['address'], [basicToken.address]).slice(2)
+			const bytecode = accountBytecode //+ web3.eth.abi.encodeParameters(['address'], [zippieWallet.address]).slice(2)
 			const bytecodeHash = web3.utils.sha3(bytecode)
 			const salt = await test.soliditySha3_addresses_m(bc1.signers, bc1.m);
 			//const salt = web3.utils.sha3(web3.eth.abi.encodeParameters(['address[]', 'uint8[]'], [bc1.signers, bc1.m]))
@@ -207,21 +211,29 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 
 		it("create account and check allowance", async () => {
 			// Calculate account address
-			const bytecode = accountBytecode + web3.eth.abi.encodeParameters(['address'], [basicToken.address]).slice(2)
+			const bytecode = accountBytecode //+ web3.eth.abi.encodeParameters(['address'], [zippieWallet.address]).slice(2)
 			const bytecodeHash = web3.utils.sha3(bytecode)
 			const salt = web3.utils.sha3(web3.eth.abi.encodeParameters(['address[]', 'uint256[]'], [[signerAccounts[0]], [1, 1, 0, 0]]))
 			const accountHash = web3.utils.sha3(`0x${'ff'}${zippieWallet.address.slice(2)}${salt.slice(2)}${bytecodeHash.slice(2)}`)
 			const accountAddress = `0x${accountHash.slice(-40)}`.toLowerCase()
-			const accountAddressSolidity = await zippieWallet.getAccountAddress(basicToken.address, salt, {from: sponsorAccounts[0]})
+			const accountAddressSolidity = await zippieWallet.getAccountAddress(salt, {from: sponsorAccounts[0]})
 			assert(accountAddress === accountAddressSolidity.toLowerCase(), "account address calculation didn't match")
 
-			// Create account and check allowance 
+			// Approve a token and check allowance 
 			const allowanceBefore = await basicToken.allowance(accountAddress, zippieWallet.address)
 			assert(allowanceBefore.toString() === "0", "allowance set before approved")
-			const receipt = await zippieWallet.createAccount(basicToken.address, salt, {from: sponsorAccounts[0]})
-			console.log(`Gas used for createAccount: ${receipt.receipt.gasUsed}`)
+			const receipt2 = await zippieWallet.approveToken(basicToken.address, salt, {from: sponsorAccounts[0]})
+			console.log(`Gas used for approveToken 1: ${receipt2.receipt.gasUsed}`)
 			const allowanceAfter = await basicToken.allowance(accountAddress, zippieWallet.address)
 			assert(allowanceAfter > 0, "allowance not set")
+
+			// Approve a second token and check allowance 
+			const allowanceBefore2 = await basicToken2.allowance(accountAddress, zippieWallet.address)
+			assert(allowanceBefore2.toString() === "0", "allowance set before approved")
+			const receipt3 = await zippieWallet.approveToken(basicToken2.address, salt, {from: sponsorAccounts[0]})
+			console.log(`Gas used for approveToken 2: ${receipt3.receipt.gasUsed}`)
+			const allowanceAfter2 = await basicToken2.allowance(accountAddress, zippieWallet.address)
+			assert(allowanceAfter2 > 0, "allowance not set")
 		});	
 		it("gas used for normal ERC20 transfer and approve + transferFrom", async () => {
 			const receiptTranfer = await basicToken.transfer(recipientAccounts[0], web3.utils.toWei("1", "ether"), {from: tokenAccounts[0], gasPrice: 1});
