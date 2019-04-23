@@ -17,7 +17,6 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 	var basicToken2;
 	var zippieCardNonces;
 	var zippieWallet;
-	const haveCards = true
 
 	// pay my gas server 
 	const sponsorAccounts = [
@@ -34,9 +33,6 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 	const signerAccounts = [
 		accounts[0]
 	]
-
-	// card (2FA)
-	//var card = accounts[3]
 
 	// random verification key
 	const verificationKeys = [
@@ -69,6 +65,7 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 
 	describe("test account creation with CREATE2", function() {		
 		it("redeemBlankCheck m[1,1,0,0]", async () => {
+			// Blank Check 1
 			const bc1 = await createBlankCheck_1of1Signer_NoCard(
 				basicToken.address,
 				recipientAccounts[0],
@@ -78,6 +75,7 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 				"1",
 			)
 			
+			// Blank Check 2
 			const bc2 = await createBlankCheck_1of1Signer_NoCard(
 				basicToken.address,
 				recipientAccounts[0],
@@ -87,13 +85,14 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 				"1",
 			)
 
-			const bytecode = accountBytecode //+ web3.eth.abi.encodeParameters(['address'], [zippieWallet.address]).slice(2)
+			// Calculate account address
+			const bytecode = accountBytecode
 			const bytecodeHash = web3.utils.sha3(bytecode)
 			const salt = await test.soliditySha3_addresses_m(bc1.signers, bc1.m);
-			//const salt = web3.utils.sha3(web3.eth.abi.encodeParameters(['address[]', 'uint8[]'], [bc1.signers, bc1.m]))
 			const accountHash = web3.utils.sha3(`0x${'ff'}${zippieWallet.address.slice(2)}${salt.slice(2)}${bytecodeHash.slice(2)}`)
 			const accountAddress = `0x${accountHash.slice(-40)}`.toLowerCase()			
 
+			// Send tokens to account
 			await basicToken.transfer(accountAddress, web3.utils.toWei("100", "ether"), {from: tokenAccounts[0]});
 
 			let balanceOfSender = await basicToken.balanceOf(accountAddress)
@@ -138,6 +137,7 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 		});
 
 		it("redeemBlankCheck m[1,1,1,1]", async () => {
+			// Blank Check 1
 			const bc1 = await createBlankCheck_1of1Signer_1of1Card(
 				basicToken.address,
 				recipientAccounts[0],
@@ -149,6 +149,7 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 				0
 			)
 			
+			// Blank Check 2
 			const bc2 = await createBlankCheck_1of1Signer_1of1Card(
 				basicToken.address,
 				recipientAccounts[0],
@@ -160,13 +161,14 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 				1
 			)
 
-			const bytecode = accountBytecode //+ web3.eth.abi.encodeParameters(['address'], [zippieWallet.address]).slice(2)
+			// Calculate account address
+			const bytecode = accountBytecode
 			const bytecodeHash = web3.utils.sha3(bytecode)
 			const salt = await test.soliditySha3_addresses_m(bc1.signers, bc1.m);
-			//const salt = web3.utils.sha3(web3.eth.abi.encodeParameters(['address[]', 'uint8[]'], [bc1.signers, bc1.m]))
 			const accountHash = web3.utils.sha3(`0x${'ff'}${zippieWallet.address.slice(2)}${salt.slice(2)}${bytecodeHash.slice(2)}`)
 			const accountAddress = `0x${accountHash.slice(-40)}`.toLowerCase()
 
+			// Send tokens to account
 			await basicToken.transfer(accountAddress, web3.utils.toWei("100", "ether"), {from: tokenAccounts[0]});
 
 			let balanceOfSender = await basicToken.balanceOf(accountAddress)

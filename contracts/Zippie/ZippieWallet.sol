@@ -24,7 +24,7 @@ contract ZippieWallet is ZippieAccount, ZippieMultisig, ZippieCard {
       * enough signers has signed keccak256(amount, verification key)
       * card signatures are not required if amount doesn't exceeded the current limit
       * @param addresses required addresses
-      * [0] ERC20 token to tranfer
+      * [0] ERC20 token to transfer
       * [1] recipient of the ERC20 tokens
       * [2] verification key (nonce)
       * @param signers all possible signers and cards
