@@ -21,7 +21,8 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 
 	// pay my gas server 
 	const sponsorAccounts = [
-		accounts[0]
+		accounts[0],
+		accounts[99]
 	] 
 	
 	// token account
@@ -243,5 +244,39 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 			const receiptTranferFrom = await basicToken.transferFrom(tokenAccounts[0], recipientAccounts[0], web3.utils.toWei("1", "ether"), {from: sponsorAccounts[0], gasPrice: 1});
 			console.log(`Gas used for ERC20 tranferFrom: ${receiptTranferFrom.receipt.gasUsed}`)	
 		});		
+		it("send ether to account and kill contract with an approve to get the ether to the sponsor", async () => {
+			// Calculate account address
+			const bytecode = accountBytecode //+ web3.eth.abi.encodeParameters(['address'], [zippieWallet.address]).slice(2)
+			const bytecodeHash = web3.utils.sha3(bytecode)
+			const salt = web3.utils.sha3(web3.eth.abi.encodeParameters(['address[]', 'uint256[]'], [[signerAccounts[0]], [1, 1, 0, 0]]))
+			const accountHash = web3.utils.sha3(`0x${'ff'}${zippieWallet.address.slice(2)}${salt.slice(2)}${bytecodeHash.slice(2)}`)
+			const accountAddress = `0x${accountHash.slice(-40)}`.toLowerCase()
+			const accountAddressSolidity = await zippieWallet.getAccountAddress(salt, {from: sponsorAccounts[0]})
+			assert(accountAddress === accountAddressSolidity.toLowerCase(), "account address calculation didn't match")
+
+			// Send ETH to account
+			const balanceBefore = await web3.eth.getBalance(accountAddress)
+			assert(balanceBefore.toString() === "0", "incorrect account balance before")
+			const receiptTranfer = await web3.eth.sendTransaction({from: sponsorAccounts[0], to: accountAddress, value: web3.utils.toWei("1", "ether")})
+			console.log(`Gas used for ETH transfer: ${receiptTranfer.gasUsed}`)
+			const balanceAfter = await await web3.eth.getBalance(accountAddress)
+			assert(balanceAfter === web3.utils.toWei("1", "ether"), "incorrect account balance after")
+			
+			// Approve a token and check allowance 
+			const sponsorBalanceBefore = await web3.eth.getBalance(sponsorAccounts[1])
+			const allowanceBefore = await basicToken.allowance(accountAddress, zippieWallet.address)
+			assert(allowanceBefore.toString() === "0", "allowance set before approved")
+			const receiptApprove = await zippieWallet.approveToken(basicToken.address, salt, {from: sponsorAccounts[1], gasPrice: "1"})
+			const gasUsed = receiptApprove.receipt.gasUsed
+			console.log(`Gas used for approveToken 1: ${gasUsed}`)
+			const allowanceAfter = await basicToken.allowance(accountAddress, zippieWallet.address)
+			assert(allowanceAfter > 0, "allowance not set")
+						
+			// Check if ETH was transfered correctly to sponsor after selfdestruct(tx.origin)
+			const accountBalanceAfterSelfdestruct = await await web3.eth.getBalance(accountAddress)
+			assert(accountBalanceAfterSelfdestruct === "0", "incorrect account balance after selfdestruct")
+			const sponsorBalanceAfter = await web3.eth.getBalance(sponsorAccounts[1])
+			assert(web3.utils.toWei("1", "ether") === web3.utils.toBN(sponsorBalanceAfter).sub(web3.utils.toBN(sponsorBalanceBefore)).add(web3.utils.toBN(gasUsed)).toString(), "incorrect sponsor balance after seldfedstruct")
+		});	
 	});
 });
