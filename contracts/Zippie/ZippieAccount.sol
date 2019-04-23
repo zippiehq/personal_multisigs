@@ -19,7 +19,7 @@ contract ZippieAccount {
           );
     }
 
-    function approveToken(address token, bytes32 salt) public returns(address) {
+    function approveToken(address token, bytes32 salt) internal returns(address) {
         address account = createAccount(salt);
         ZippieAccountERC20(account).approve(token);
         return account;

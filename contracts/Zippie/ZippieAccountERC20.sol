@@ -12,8 +12,6 @@ contract ZippieAccountERC20 {
   function approve(address token) public {
     require(msg.sender == owner);
     require(IERC20(token).approve(msg.sender, 2**256-1), "Approve failed");
-    //selfdestruct(msg.sender);
-    selfdestruct(tx.origin);
-    //selfdestruct(address(0)); 
+    selfdestruct(tx.origin); // Sponsor (any available ETH will be sent here)
   }
 }
