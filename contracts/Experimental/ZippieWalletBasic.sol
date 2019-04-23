@@ -1,4 +1,4 @@
-pragma solidity ^0.5.6;
+pragma solidity ^0.5.7;
 
 import "../Zippie/ZippieMultisig.sol";
 import "../Zippie/ZippieUtils.sol";
