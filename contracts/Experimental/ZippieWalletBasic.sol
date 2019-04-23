@@ -17,7 +17,7 @@ contract ZippieWalletBasic is ZippieAccount, ZippieMultisig {
       * @dev Transfer ERC20 tokens when verified that 
       * enough signers has signed keccak256(amount, verification key)
       * @param addresses required addresses
-      * [0] ERC20 contract to use
+      * [0] ERC20 token to transfer
       * [1] recipient of the ERC20 tokens
       * [2] verification key (nonce)
       * @param signers all possible signers
@@ -81,12 +81,12 @@ contract ZippieWalletBasic is ZippieAccount, ZippieMultisig {
             s[0]
         );
 
-        // get the check hash (amount, nonce) 
+        // get the check hash (token, amount, nonce) 
         // and verify that required number of signers signed it 
         // (recipient specified when check was claimed)
         verifyMultisigSignerSignatures(
             ZippieUtils.toEthSignedMessageHash(
-                keccak256(abi.encodePacked(amount, addresses[2]))
+                keccak256(abi.encodePacked("redeemBlankCheck", addresses[0], amount, addresses[2]))
             ), 
             [0, m[0]], 
             signers, 
