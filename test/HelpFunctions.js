@@ -67,7 +67,7 @@ async function createBlankCheck_1of1Signer_1of1Card(
 }
 
 async function getAccountAddress(signers, m, tokenAddress, walletAddress) {
-	const bytecode = accountBytecode //+ web3.eth.abi.encodeParameters(['address'], [tokenAddress]).slice(2)
+	const bytecode = accountBytecode
 	const bytecodeHash = web3.utils.sha3(bytecode)
 	const salt = await test.soliditySha3_addresses_m(signers, m);
 	//const salt = web3.utils.sha3(web3.eth.abi.encodeParameters(['address[]', 'uint8[]'], [bc1.signers, bc1.m]))

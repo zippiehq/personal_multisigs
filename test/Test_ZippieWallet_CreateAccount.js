@@ -276,7 +276,7 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 			const allowanceBefore2 = await basicToken2.allowance(accountAddress, zippieWallet.address)
 			assert(allowanceBefore2.toString() === "0", "allowance set before approved")
 
-			// Redeem blank check approve token 2
+			// Redeem blank check and approve token 2
 			const receipt2 = await zippieWallet.redeemBlankCheck(bc2.addresses, bc2.signers, bc2.m, bc2.signatures.v, bc2.signatures.r, bc2.signatures.s, bc2.amount, bc2.cardNonces, {from: sponsorAccounts[0]})
 			console.log(`Gas used for redeemBlankCheck w/ createAccount m[1,1,0,0] - Token 2: ${receipt2.receipt.gasUsed}`)
 
