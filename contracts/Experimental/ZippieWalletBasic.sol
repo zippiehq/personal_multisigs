@@ -1,4 +1,4 @@
-pragma solidity ^0.5.6;
+pragma solidity ^0.5.7;
 
 import "../Zippie/ZippieMultisig.sol";
 import "../Zippie/ZippieUtils.sol";
@@ -17,7 +17,7 @@ contract ZippieWalletBasic is ZippieAccount, ZippieMultisig {
       * @dev Transfer ERC20 tokens when verified that 
       * enough signers has signed keccak256(amount, verification key)
       * @param addresses required addresses
-      * [0] ERC20 contract to use
+      * [0] ERC20 token to transfer
       * [1] recipient of the ERC20 tokens
       * [2] verification key (nonce)
       * @param signers all possible signers
@@ -56,7 +56,6 @@ contract ZippieWalletBasic is ZippieAccount, ZippieMultisig {
 
         // get account address
         address accountAddress = getAccountAddress(
-            addresses[0], 
             keccak256(abi.encodePacked(signers, m))
         );
        
@@ -82,12 +81,12 @@ contract ZippieWalletBasic is ZippieAccount, ZippieMultisig {
             s[0]
         );
 
-        // get the check hash (amount, nonce) 
+        // get the check hash (token, amount, nonce) 
         // and verify that required number of signers signed it 
         // (recipient specified when check was claimed)
         verifyMultisigSignerSignatures(
             ZippieUtils.toEthSignedMessageHash(
-                keccak256(abi.encodePacked(amount, addresses[2]))
+                keccak256(abi.encodePacked("redeemBlankCheck", addresses[0], amount, addresses[2]))
             ), 
             [0, m[0]], 
             signers, 
@@ -100,8 +99,8 @@ contract ZippieWalletBasic is ZippieAccount, ZippieMultisig {
         // check if account needs to be "created" (ERC20 approve)
         if(IERC20(addresses[0]).allowance(accountAddress, address(this)) == 0) {
             require(
-                createAccount(addresses[0], keccak256(abi.encodePacked(signers, m))) == accountAddress, 
-                "Account creation failed"
+                approveToken(addresses[0], keccak256(abi.encodePacked(signers, m))) == accountAddress, 
+                "Token approval failed"
             );
         }
 

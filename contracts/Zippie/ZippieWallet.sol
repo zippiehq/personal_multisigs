@@ -1,4 +1,4 @@
-pragma solidity ^0.5.6;
+pragma solidity ^0.5.7;
 
 import "./ZippieMultisig.sol";
 import "./ZippieCard.sol";
@@ -24,7 +24,7 @@ contract ZippieWallet is ZippieAccount, ZippieMultisig, ZippieCard {
       * enough signers has signed keccak256(amount, verification key)
       * card signatures are not required if amount doesn't exceeded the current limit
       * @param addresses required addresses
-      * [0] ERC20 token used by this account
+      * [0] ERC20 token to transfer
       * [1] recipient of the ERC20 tokens
       * [2] verification key (nonce)
       * @param signers all possible signers and cards
@@ -69,7 +69,6 @@ contract ZippieWallet is ZippieAccount, ZippieMultisig, ZippieCard {
 
         // get account address
         address accountAddress = getAccountAddress(
-            addresses[0], 
             keccak256(abi.encodePacked(signers, m))
         );
 
@@ -98,7 +97,7 @@ contract ZippieWallet is ZippieAccount, ZippieMultisig, ZippieCard {
             s[0]
         );
 
-        // get the check hash (amount, nonce) 
+        // get the check hash (token, amount, nonce) 
         // and verify that required number of signers signed it 
         // (recipient is specified when check is claimed)
         // prepend with function name "redeemBlankCheck"
@@ -106,7 +105,7 @@ contract ZippieWallet is ZippieAccount, ZippieMultisig, ZippieCard {
         // layout don't get the same hash
         verifyMultisigSignerSignatures(
             ZippieUtils.toEthSignedMessageHash(
-                keccak256(abi.encodePacked("redeemBlankCheck", amount, addresses[2]))
+                keccak256(abi.encodePacked("redeemBlankCheck", addresses[0], amount, addresses[2]))
             ), 
             [0, m[0]], 
             signers, 
@@ -136,8 +135,8 @@ contract ZippieWallet is ZippieAccount, ZippieMultisig, ZippieCard {
         // check if account needs to be "created" (ERC20 approve)
         if(IERC20(addresses[0]).allowance(accountAddress, address(this)) == 0) {
             require(
-                createAccount(addresses[0], keccak256(abi.encodePacked(signers, m))) == accountAddress, 
-                "Account creation failed"
+                approveToken(addresses[0], keccak256(abi.encodePacked(signers, m))) == accountAddress, 
+                "Token approval failed"
             );
         }
 
@@ -158,8 +157,7 @@ contract ZippieWallet is ZippieAccount, ZippieMultisig, ZippieCard {
       * card signatures are not required if limit is decreased
       * only if increased
       * @param addresses required addresses
-      * [0] ERC20 token used by this account
-      * [1] verification key (nonce)
+      * [0] verification key (nonce)
       * @param signers all possible signers and cards
       * [0..i] signer addresses
       * [i+1..j] card addresses
@@ -192,13 +190,12 @@ contract ZippieWallet is ZippieAccount, ZippieMultisig, ZippieCard {
         returns (bool)
     {
         require(
-            addresses.length == 2, 
+            addresses.length == 1, 
             "Incorrect number of addresses"
         );
 
         // get account address
         address accountAddress = getAccountAddress(
-            addresses[0], 
             keccak256(abi.encodePacked(signers, m))
         );
         
@@ -218,7 +215,7 @@ contract ZippieWallet is ZippieAccount, ZippieMultisig, ZippieCard {
         // (nonce signing this multisig account address)
         verifyMultisigNonce(
             accountAddress, 
-            addresses[1], 
+            addresses[0], 
             ZippieUtils.toEthSignedMessageHash(
                 keccak256(abi.encodePacked(accountAddress))
             ), 
@@ -234,7 +231,7 @@ contract ZippieWallet is ZippieAccount, ZippieMultisig, ZippieCard {
         // layout don't get the same hash
         verifyMultisigSignerSignatures(
             ZippieUtils.toEthSignedMessageHash(
-                keccak256(abi.encodePacked("setLimit", amount, addresses[1]))
+                keccak256(abi.encodePacked("setLimit", amount, addresses[0]))
             ), 
             [0, m[0]], 
             signers, 

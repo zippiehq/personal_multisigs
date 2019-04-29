@@ -48,7 +48,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 		
 		const incorrectCard = accounts[42]
 
-		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1")
+		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1", addresses[0])
 		const recipientSignature = await getRecipientSignature(recipient, verificationKey)
 
 		const digest = "0xABCDEF"
@@ -83,7 +83,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 		const incorrectCard = accounts[42]
 		const signersWithIncorrectCard = [signer, incorrectCard]
 
-		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1")
+		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1", addresses[0])
 		const recipientSignature = await getRecipientSignature(recipient, verificationKey)
 
 		const signature = getSignature(blankCheckSignature, digestSignature, recipientSignature)
@@ -116,7 +116,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 		await basicToken.transfer(multisig, web3.utils.toWei("100", "ether"), {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
 
-		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1")
+		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1", addresses[0])
 		const recipientSignature = await getRecipientSignature(recipient, verificationKey)
 
 		const v = [recipientSignature.v, blankCheckSignature.v, digestSignature.v, digestSignature2.v]
@@ -154,7 +154,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 		await basicToken.transfer(multisig, web3.utils.toWei("100", "ether"), {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
 
-		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1")
+		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1", addresses[0])
 		const recipientSignature = await getRecipientSignature(recipient, verificationKey)
 
 		const v = [recipientSignature.v, blankCheckSignature.v, digestSignature.v, digestSignature2.v]
@@ -185,7 +185,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 		await basicToken.transfer(multisig, web3.utils.toWei("100", "ether"), {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
 
-		let blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1")
+		let blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1", addresses[0])
 		let recipientSignature = await getRecipientSignature(recipient, verificationKey)
 
 		const signature = getSignature(blankCheckSignature, digestSignature, recipientSignature)
@@ -207,7 +207,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 		const verificationKey2 = accounts[7]
 		const addresses2 = [basicToken.address, recipient, verificationKey2]
 		
-		blankCheckSignature = await getBlankCheckSignature(verificationKey2, signer, "1")
+		blankCheckSignature = await getBlankCheckSignature(verificationKey2, signer, "1", addresses[0])
 		recipientSignature = await getRecipientSignature(recipient, verificationKey2)
 
 		const signature2 = getSignature(blankCheckSignature, digestSignature, recipientSignature)
@@ -229,7 +229,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 		const addresses3 = [basicToken.address, recipient, verificationKey3]
 		const signers2 = [signer, card2]
 		
-		blankCheckSignature = await getBlankCheckSignature(verificationKey3, signer, "1")
+		blankCheckSignature = await getBlankCheckSignature(verificationKey3, signer, "1", addresses[0])
 		recipientSignature = await getRecipientSignature(recipient, verificationKey3)
 
 		const signature3 = getSignature(blankCheckSignature, digestSignature2, recipientSignature)
@@ -262,7 +262,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 		await basicToken.transfer(multisig, web3.utils.toWei("100", "ether"), {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
 
-		let blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1")
+		let blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1", addresses[0])
 		let recipientSignature = await getRecipientSignature(recipient, verificationKey)
 
 		let v = [recipientSignature.v, blankCheckSignature.v, digestSignature.v, digestSignature2.v]
@@ -287,7 +287,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 		const verificationKey2 = accounts[7]
 		const addresses2 = [basicToken.address, recipient, verificationKey2]
 		
-		blankCheckSignature = await getBlankCheckSignature(verificationKey2, signer, "1")
+		blankCheckSignature = await getBlankCheckSignature(verificationKey2, signer, "1", addresses[0])
 		recipientSignature = await getRecipientSignature(recipient, verificationKey2)
 
 		v = [recipientSignature.v, blankCheckSignature.v, digestSignature.v, digestSignature2.v]
@@ -312,7 +312,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 		await basicToken.transfer(multisig, web3.utils.toWei("100", "ether"), {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
 
-		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1")
+		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1", addresses[0])
 		const recipientSignature = await getRecipientSignature(recipient, verificationKey)
 
 		const v = [recipientSignature.v, blankCheckSignature.v, digestSignature.v, digestSignature.v]
@@ -346,7 +346,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 
 		const blankCheckAmount = "101"
 
-		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, blankCheckAmount)
+		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, blankCheckAmount, addresses[0])
 		const recipientSignature = await getRecipientSignature(recipient, verificationKey)
 
 		const signature = getSignature(blankCheckSignature, digestSignature, recipientSignature)

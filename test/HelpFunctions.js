@@ -33,7 +33,7 @@ async function createBlankCheck_1of1Signer_NoCard(
 	amount) 
 {
 	const signers = [signerAccount]
-	const signerSignature = await getBlankCheckSignature(nonceAccount, signerAccount, amount)
+	const signerSignature = await getBlankCheckSignature(nonceAccount, signerAccount, amount, tokenAddress)
 	const nonceSignature = await getRecipientSignature(recipientAccount, nonceAccount)	
 	
 	const addresses = [tokenAddress, recipientAccount, nonceAccount]
@@ -56,7 +56,7 @@ async function createBlankCheck_1of1Signer_1of1Card(
 {
 	const cardSignature = await getHardcodedDigestSignature(cardNumber, cardNonceNumber)
 	const signers = [signerAccount, cardSignature.pubkey]
-	const signerSignature = await getBlankCheckSignature(nonceAccount, signerAccount, amount)
+	const signerSignature = await getBlankCheckSignature(nonceAccount, signerAccount, amount, tokenAddress)
 	const nonceSignature = await getRecipientSignature(recipientAccount, nonceAccount)	
 	
 	const addresses = [tokenAddress, recipientAccount, nonceAccount]
@@ -67,7 +67,7 @@ async function createBlankCheck_1of1Signer_1of1Card(
 }
 
 async function getAccountAddress(signers, m, tokenAddress, walletAddress) {
-	const bytecode = accountBytecode + web3.eth.abi.encodeParameters(['address'], [tokenAddress]).slice(2)
+	const bytecode = accountBytecode
 	const bytecodeHash = web3.utils.sha3(bytecode)
 	const salt = await test.soliditySha3_addresses_m(signers, m);
 	//const salt = web3.utils.sha3(web3.eth.abi.encodeParameters(['address[]', 'uint8[]'], [bc1.signers, bc1.m]))
@@ -96,9 +96,9 @@ function getSignature(blankCheckSignature, digestSignature, recipientSignature) 
 
 	return {v:v, r:r, s:s}
 }
- async function getBlankCheckSignature(verificationKey, signer, amount) {
+ async function getBlankCheckSignature(verificationKey, signer, amount, tokenAddress) {
 	// sign by multisig signer
-	const blankCheckHash = await test.soliditySha3_name_amount_address("redeemBlankCheck", web3.utils.toWei(amount, "ether"), verificationKey);
+	const blankCheckHash = await test.soliditySha3_name_address_amount_address("redeemBlankCheck", tokenAddress, web3.utils.toWei(amount, "ether"), verificationKey);
 	const blankCheckSignature = await web3.eth.sign(blankCheckHash, signer);
 	return getRSV(blankCheckSignature.slice(2))
 }

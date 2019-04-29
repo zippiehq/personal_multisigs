@@ -47,7 +47,7 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 		const incorrectSigner = accounts[42]
 		const incorrectSigners = [incorrectSigner]
 
-		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1")
+		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1", addresses[0])
 		const recipientSignature = await getRecipientSignature(recipient, verificationKey)
 
 		const signature = getSignatureNoCard(blankCheckSignature, recipientSignature)
@@ -84,7 +84,7 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 		const incorrectSigner = accounts[42]
 
 		// sign incorrect data
-		const blankCheckSignature = await getBlankCheckSignature(verificationKey, incorrectSigner, "1")
+		const blankCheckSignature = await getBlankCheckSignature(verificationKey, incorrectSigner, "1", addresses[0])
 		const recipientSignature = await getRecipientSignature(recipient, verificationKey)
 
 		const signature = getSignatureNoCard(blankCheckSignature, recipientSignature)
@@ -119,8 +119,8 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 		const incorrectSigners = [incorrectSigner, signer2]
 		const blankCheckAmount = "1"
 
-		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, blankCheckAmount)
-		const blankCheckSignature2 = await getBlankCheckSignature(verificationKey, signer2, blankCheckAmount)
+		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, blankCheckAmount, addresses[0])
+		const blankCheckSignature2 = await getBlankCheckSignature(verificationKey, signer2, blankCheckAmount, addresses[0])
 		const recipientSignature = await getRecipientSignature(recipient, verificationKey)
 
 		const signature = getSignature(blankCheckSignature, blankCheckSignature2, recipientSignature)
@@ -148,9 +148,9 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 		const incorrectSigner = accounts[42]
 		const blankCheckAmount = "1"
 
-		const blankCheckSignature = await getBlankCheckSignature(verificationKey, incorrectSigner, blankCheckAmount)
-		const blankCheckSignature2 = await getBlankCheckSignature(verificationKey, signer2, blankCheckAmount)
-		const recipientSignature = await getRecipientSignature(recipient, verificationKey)
+		const blankCheckSignature = await getBlankCheckSignature(verificationKey, incorrectSigner, blankCheckAmount, addresses[0])
+		const blankCheckSignature2 = await getBlankCheckSignature(verificationKey, signer2, blankCheckAmount, addresses[0])
+		const recipientSignature = await getRecipientSignature(recipient, verificationKey, addresses[0])
 
 		const signature = getSignature(blankCheckSignature, blankCheckSignature2, recipientSignature)
 
@@ -176,8 +176,8 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 		
 		const blankCheckAmount = "1"
 
-		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, blankCheckAmount)
-		const blankCheckSignature2 = await getBlankCheckSignature(verificationKey, signer2, blankCheckAmount)
+		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, blankCheckAmount, addresses[0])
+		const blankCheckSignature2 = await getBlankCheckSignature(verificationKey, signer2, blankCheckAmount, addresses[0])
 		const recipientSignature = await getRecipientSignature(recipient, verificationKey)
 
 		const signature = getSignature(blankCheckSignature, blankCheckSignature2, recipientSignature)
@@ -204,7 +204,7 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 
 		const wrongVerificationKey = accounts[98]
 
-		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1")
+		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1", addresses[0])
 		const recipientSignature = await getRecipientSignature(recipient, wrongVerificationKey)
 
 		const signature = getSignatureNoCard(blankCheckSignature, recipientSignature)
@@ -245,7 +245,7 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 
 		const blankCheckAmount = "101"
 
-		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, blankCheckAmount)
+		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, blankCheckAmount, addresses[0])
 		const recipientSignature = await getRecipientSignature(recipient, verificationKey)
 
 		const signature = getSignatureNoCard(blankCheckSignature, recipientSignature)

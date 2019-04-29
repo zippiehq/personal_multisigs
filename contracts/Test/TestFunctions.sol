@@ -1,4 +1,4 @@
-pragma solidity ^0.5.6;
+pragma solidity ^0.5.7;
 
 contract TestFunctions {
 
@@ -19,6 +19,10 @@ contract TestFunctions {
 
     function soliditySha3_name_amount_address(string memory name, uint256 amount, address key) public pure returns(bytes32){
         return keccak256(abi.encodePacked(name, amount, key));
+    }
+
+    function soliditySha3_name_address_amount_address(string memory name, address token, uint256 amount, address key) public pure returns(bytes32){
+        return keccak256(abi.encodePacked(name, token, amount, key));
     }
 
     function soliditySha3_address(address addr) public pure returns(bytes32){

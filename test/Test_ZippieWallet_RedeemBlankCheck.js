@@ -43,7 +43,7 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		await basicToken.transfer(multisig, web3.utils.toWei("100", "ether"), {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
 
-		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1")
+		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1", addresses[0])
 		const recipientSignature = await getRecipientSignature(recipient, verificationKey)
 
 		const signature = getSignatureNoCard(blankCheckSignature, recipientSignature)
@@ -78,8 +78,8 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		const addresses = [basicToken.address, recipient, verificationKey]
 		const blankCheckAmount = "1"
 
-		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, blankCheckAmount)
-		const blankCheckSignature2 = await getBlankCheckSignature(verificationKey, signer2, blankCheckAmount)
+		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, blankCheckAmount, addresses[0])
+		const blankCheckSignature2 = await getBlankCheckSignature(verificationKey, signer2, blankCheckAmount, addresses[0])
 		const recipientSignature = await getRecipientSignature(recipient, verificationKey)
 
 		const signature = getSignature(blankCheckSignature, blankCheckSignature2, recipientSignature)
