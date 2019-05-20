@@ -1,8 +1,8 @@
 pragma solidity ^0.5.7;
 
-import "./ZippieMultisig.sol";
-import "./ZippieCard.sol";
-import "./ZippieUtils.sol";
+import "../../Multisig/ZippieMultisig.sol";
+import "../../Card/ZippieCard.sol";
+import "../../Utils/ZippieUtils.sol";
 import "./ZippieAccount.sol";
 
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
