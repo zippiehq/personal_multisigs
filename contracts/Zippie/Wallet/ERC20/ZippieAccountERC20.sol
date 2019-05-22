@@ -1,5 +1,6 @@
 pragma solidity ^0.5.7;
 
+import "../../Account/IZippieAccount.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
 /**
@@ -7,7 +8,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
   * @dev ERC20 account contract where owner can be approved
   * to send tokens
  */
-contract ZippieAccountERC20 {
+contract ZippieAccountERC20 is IZippieAccount {
   address private owner;
 
   constructor() public {

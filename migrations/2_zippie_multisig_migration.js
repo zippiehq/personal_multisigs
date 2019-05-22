@@ -1,11 +1,11 @@
-const ZippieWallet = artifacts.require("./ZippieWallet.sol");
+const ZippieWalletERC20 = artifacts.require("./ZippieWalletERC20.sol");
 const ZippieCardNonces = artifacts.require("./ZippieCardNonces.sol");
 const BasicERC20MockOwner = artifacts.require("./BasicERC20MockOwner.sol");
 
 module.exports = function(deployer) {
     var basicToken;
     var zippieCardNonces;
-    var zippieWallet;
+    var zippieWalletERC20;
 
     deployer
         .deploy(BasicERC20MockOwner)
@@ -21,9 +21,9 @@ module.exports = function(deployer) {
         })
         .then(function(ZippieCardNoncesInstance) {
             zippieCardNonces = ZippieCardNoncesInstance;
-            return deployer.deploy(ZippieWallet, zippieCardNonces.address);
+            return deployer.deploy(ZippieWalletERC20, zippieCardNonces.address);
         })
         .then(function() {
-            return ZippieWallet.deployed();
-        });
+            return ZippieWalletERC20.deployed();
+        })
 };

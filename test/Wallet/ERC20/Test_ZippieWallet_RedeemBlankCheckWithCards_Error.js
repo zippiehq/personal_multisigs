@@ -1,6 +1,6 @@
 const TestFunctions = artifacts.require("./TestFunctions.sol");
 const BasicERC20Mock = artifacts.require("./BasicERC20Mock.sol");
-const ZippieWallet = artifacts.require("./ZippieWallet.sol");
+const ZippieWallet = artifacts.require("./ZippieWalletERC20.sol");
 const ZippieCardNonces = artifacts.require("./ZippieCardNonces.sol");
 let test;
 
