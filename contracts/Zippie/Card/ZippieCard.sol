@@ -1,7 +1,7 @@
 pragma solidity ^0.5.7;
 
 import "./IZippieCardNonces.sol";
-import "./ZippieUtils.sol";
+import "../Utils/ZippieUtils.sol";
 
 /**
   * @title Zippie Card

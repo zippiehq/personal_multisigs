@@ -1,10 +1,15 @@
 const TestFunctions = artifacts.require("./TestFunctions.sol");
 let test
-TestFunctions.new().then(instance => {
-	test = instance
+
+beforeEach(() => { 
+	TestFunctions.new().then(instance => {
+		test = instance
+	})
 })
 
-const { bytecode:accountBytecode } = require('../build/contracts/ZippieAccountERC20.json')
+// XXX Bytecode changes if contract is moved into a new folder (huh?)
+//const { bytecode:accountBytecode } = require('../build/contracts/ZippieAccountERC20.json')
+const accountBytecode = '0x608060405234801561001057600080fd5b50600080546001600160a01b0319163317905560ff806100316000396000f3fe6080604052348015600f57600080fd5b506004361060285760003560e01c8063daea85c514602d575b600080fd5b605060048036036020811015604157600080fd5b50356001600160a01b03166052565b005b6000546001600160a01b03163314606857600080fd5b60408051600160e01b63a22cb4650281523360048201526001602482015290516001600160a01b0383169163a22cb46591604480830192600092919082900301818387803b15801560b857600080fd5b505af115801560cb573d6000803e3d6000fd5b503292505050fffea165627a7a72305820138a39f8dcc74909958a7c9a3debcc975c1b1527953c47473594aa49882499790029'
 
 module.exports = {
 	createBlankCheck_1of1Signer_NoCard,
@@ -15,7 +20,6 @@ module.exports = {
 	getSignature,
 	getBlankCheckSignature,
 	getNonceSignature,
-	getSetLimitSignature,
 	getDigestSignature,
 	getSignatureNoCard,
 	getEmptyDigestSignature,
@@ -30,17 +34,17 @@ async function createBlankCheck_1of1Signer_NoCard(
 	nonceAccount,
 	signerAccount,
 	m,
-	amount) 
+	tokenId) 
 {
 	const signers = [signerAccount]
-	const signerSignature = await getBlankCheckSignature(nonceAccount, signerAccount, amount, tokenAddress)
+	const signerSignature = await getBlankCheckSignature(nonceAccount, signerAccount, tokenId, tokenAddress)
 	const nonceSignature = await getRecipientSignature(recipientAccount, nonceAccount)	
 	
 	const addresses = [tokenAddress, recipientAccount, nonceAccount]
 	const signatures = getSignatureNoCard(signerSignature, nonceSignature)
 	const cardNonces = []
 
-	return { addresses: addresses, signers: signers, m: m, signatures: signatures, amount: web3.utils.toWei(amount, "ether"), cardNonces: cardNonces }
+	return { addresses: addresses, signers: signers, m: m, signatures: signatures, tokenId: tokenId, cardNonces: cardNonces }
 }
 
 async function createBlankCheck_1of1Signer_1of1Card(
@@ -50,20 +54,20 @@ async function createBlankCheck_1of1Signer_1of1Card(
 	signerAccount,
 	cardNumber,
 	m,
-	amount,
+	tokenId,
 	cardNonceNumber
 ) 
 {
 	const cardSignature = await getHardcodedDigestSignature(cardNumber, cardNonceNumber)
 	const signers = [signerAccount, cardSignature.pubkey]
-	const signerSignature = await getBlankCheckSignature(nonceAccount, signerAccount, amount, tokenAddress)
+	const signerSignature = await getBlankCheckSignature(nonceAccount, signerAccount, tokenId, tokenAddress)
 	const nonceSignature = await getRecipientSignature(recipientAccount, nonceAccount)	
 	
 	const addresses = [tokenAddress, recipientAccount, nonceAccount]
 	const signatures = getSignature(signerSignature, cardSignature, nonceSignature)
 	const cardNonces = [cardSignature.digestHash]
 
-	return { addresses: addresses, signers: signers, m: m, signatures: signatures, amount: web3.utils.toWei(amount, "ether"), cardNonces: cardNonces }
+	return { addresses: addresses, signers: signers, m: m, signatures: signatures, tokenId: tokenId, cardNonces: cardNonces }
 }
 
 async function getAccountAddress(signers, m, tokenAddress, walletAddress) {
@@ -96,9 +100,9 @@ function getSignature(blankCheckSignature, digestSignature, recipientSignature) 
 
 	return {v:v, r:r, s:s}
 }
- async function getBlankCheckSignature(verificationKey, signer, amount, tokenAddress) {
+ async function getBlankCheckSignature(verificationKey, signer, tokenId, tokenAddress) {
 	// sign by multisig signer
-	const blankCheckHash = await test.soliditySha3_name_address_amount_address("redeemBlankCheck", tokenAddress, web3.utils.toWei(amount, "ether"), verificationKey);
+	const blankCheckHash = await test.soliditySha3_name_address_amount_address("redeemBlankCheck", tokenAddress, tokenId, verificationKey);
 	const blankCheckSignature = await web3.eth.sign(blankCheckHash, signer);
 	return getRSV(blankCheckSignature.slice(2))
 }
@@ -108,13 +112,6 @@ async function getNonceSignature(nonce, verificationKey) {
 	const nonceHash = await test.soliditySha3_address(nonce);
 	const nonceSignature = await web3.eth.sign(nonceHash, verificationKey);
 	return getRSV(nonceSignature.slice(2))
-}
-
-async function getSetLimitSignature(verificationKey, signer, amount) {
-	// sign by multisig signer
-	const limitHash = await test.soliditySha3_name_amount_address("setLimit", web3.utils.toWei(amount, "ether"), verificationKey);
-	const limitSignature = await web3.eth.sign(limitHash, signer);
-	return getRSV(limitSignature.slice(2))
 }
 
 async function getDigestSignature(digestHash, card) {

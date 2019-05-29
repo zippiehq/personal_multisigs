@@ -1,6 +1,6 @@
 const TestFunctions = artifacts.require("./TestFunctions.sol");
-const BasicERC20Mock = artifacts.require("./BasicERC20Mock.sol");
-const ZippieWallet = artifacts.require("./ZippieWallet.sol");
+const BasicERC721Mock = artifacts.require("./BasicERC721Mock.sol");
+const ZippieWallet = artifacts.require("./ZippieWalletERC721.sol");
 const ZippieCardNonces = artifacts.require("./ZippieCardNonces.sol");
 
 const {
@@ -25,7 +25,7 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 
 	beforeEach(() => {
 		return TestFunctions.new().then(_ => {
-				return BasicERC20Mock.new(sponsor).then(instance => {
+				return BasicERC721Mock.new(sponsor).then(instance => {
 					basicToken = instance;
 					return ZippieCardNonces.new().then(instance => {
 						zippieCardNonces = instance
@@ -40,10 +40,11 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		const signers = [signer]
 		const m = [1, 1, 0, 0]
 		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
-		await basicToken.transfer(multisig, web3.utils.toWei("100", "ether"), {from: sponsor});
+		const tokenId = "1"
+		await basicToken.transferFrom(sponsor, multisig, tokenId, {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
 
-		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, "1", addresses[0])
+		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, tokenId, addresses[0])
 		const recipientSignature = await getRecipientSignature(recipient, verificationKey)
 
 		const signature = getSignatureNoCard(blankCheckSignature, recipientSignature)
@@ -52,18 +53,18 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		const initialBalanceRecipient = await basicToken.balanceOf(recipient)
 		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check already marked as cashed before transfer");
 		
-		const amount = web3.utils.toWei("1", "ether")
-		await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
+		await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, tokenId, [], {from: sponsor});
 		
+		const amount = "1"
 		const newBalanceSender = await basicToken.balanceOf(multisig)
 		const newBalanceRecipient = await basicToken.balanceOf(recipient)	
-		assert((initialBalanceSender - newBalanceSender).toString() === amount, "balance did not transfer from sender");
-		assert((newBalanceRecipient - initialBalanceRecipient).toString() === amount, "balance did not transfer to recipient");
+		assert((initialBalanceSender - newBalanceSender).toString() === amount, "token did not transfer from sender");
+		assert((newBalanceRecipient - initialBalanceRecipient).toString() === amount, "token did not transfer to recipient");
 		assert(await zippieWallet.usedNonces(multisig, verificationKey) === true, "check has not been marked as cashed after transfer");
 
 		try {
 			// try the same exact transfer 			
-			await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
+			await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, tokenId, [], {from: sponsor});
 			assert(false, "duplicate transfer went through, but should have failed!")
 		} catch(error) {
 			assert(error.reason === "Nonce already used", error.reason)
@@ -74,12 +75,12 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		const signers = [signer, signer2]
 		const m = [2, 2, 0, 0]
 		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
-		await basicToken.transfer(multisig, web3.utils.toWei("100", "ether"), {from: sponsor});
+		const tokenId = "1"
+		await basicToken.transferFrom(sponsor, multisig, tokenId, {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
-		const blankCheckAmount = "1"
 
-		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, blankCheckAmount, addresses[0])
-		const blankCheckSignature2 = await getBlankCheckSignature(verificationKey, signer2, blankCheckAmount, addresses[0])
+		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, tokenId, addresses[0])
+		const blankCheckSignature2 = await getBlankCheckSignature(verificationKey, signer2, tokenId, addresses[0])
 		const recipientSignature = await getRecipientSignature(recipient, verificationKey)
 
 		const signature = getSignature(blankCheckSignature, blankCheckSignature2, recipientSignature)
@@ -88,13 +89,13 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		const initialBalanceRecipient = await basicToken.balanceOf(recipient)
 		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check already marked as cashed before transfer");
 		
-		const amount = web3.utils.toWei(blankCheckAmount, "ether")
-		await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, amount, [], {from: sponsor});
+		await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, tokenId, [], {from: sponsor});
 		
+		const amount = "1"
 		const newBalanceSender = await basicToken.balanceOf(multisig)
 		const newBalanceRecipient = await basicToken.balanceOf(recipient)
-		assert((initialBalanceSender - newBalanceSender).toString() === amount, "balance did not transfer from sender");
-		assert((newBalanceRecipient - initialBalanceRecipient).toString() === amount, "balance did not transfer to recipient");
+		assert((initialBalanceSender - newBalanceSender).toString() === amount, "token did not transfer from sender");
+		assert((newBalanceRecipient - initialBalanceRecipient).toString() === amount, "token did not transfer to recipient");
 		assert(await zippieWallet.usedNonces(multisig, verificationKey) === true, "check has not been marked as cashed after transfer");
 	});
 });

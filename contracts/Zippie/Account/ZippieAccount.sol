@@ -1,18 +1,21 @@
 pragma solidity ^0.5.7;
 
-import "./ZippieAccountERC20.sol";
+import "./IZippieAccount.sol";
 
 /**
   * @title Zippie Account
-  * @dev Create ERC20 accounts by deploying an account contract
-  * using the Create2 opcode and then allow (ERC20.approve) this contract to
-  * send tokens (ERC20.tranferFrom) from the account
+  * @dev Create accounts by deploying an account contract
+  * using the Create2 opcode and then allow (e.g. ERC20.approve) this contract to
+  * send tokens (e.g. ERC20.tranferFrom) from the account
  */
 contract ZippieAccount {
 
-    // ZippieAccountERC20.sol (bytecode for the contract)
-    bytes zippieAccountBytecode = hex'608060405234801561001057600080fd5b50600080546001600160a01b03191633179055610171806100326000396000f3fe608060405234801561001057600080fd5b506004361061002b5760003560e01c8063daea85c514610030575b600080fd5b6100566004803603602081101561004657600080fd5b50356001600160a01b0316610058565b005b6000546001600160a01b0316331461006f57600080fd5b60408051600160e01b63095ea7b3028152336004820152600019602482015290516001600160a01b0383169163095ea7b39160448083019260209291908290030181600087803b1580156100c257600080fd5b505af11580156100d6573d6000803e3d6000fd5b505050506040513d60208110156100ec57600080fd5b50516101425760408051600160e51b62461bcd02815260206004820152600e60248201527f417070726f7665206661696c6564000000000000000000000000000000000000604482015290519081900360640190fd5b32fffea165627a7a723058204d7f5142761801988b6084b2e62ff233b5cf7cc1fd5c26f9b3cbc96f7b1c5b020029';
-    
+    bytes private _zippieAccountBytecode;
+
+    constructor(bytes memory zippieAccountBytecode) public {
+        _zippieAccountBytecode = zippieAccountBytecode;
+    }
+
     /**
       * @dev Get account address (contract deployed with create2 opcode)
       * @param salt salt value
@@ -24,20 +27,20 @@ contract ZippieAccount {
                   byte(0xff), 
                   address(this), 
                   salt, 
-                  keccak256(zippieAccountBytecode)
+                  keccak256(_zippieAccountBytecode)
               ))
           );
     }
 
     /**
       * @dev Deploy account contract and approve this contract 
-      * to send tokens from the account (ERC20 allowance)
+      * to send tokens from the account (e.g. ERC20 allowance)
       * @param token token address
       * @param salt salt value
       */
     function approveToken(address token, bytes32 salt) internal returns(address) {
         address account = createAccount(salt);
-        ZippieAccountERC20(account).approve(token);
+        IZippieAccount(account).approve(token);
         return account;
     }
 
@@ -46,7 +49,7 @@ contract ZippieAccount {
       * @param salt card address
       */
     function createAccount(bytes32 salt) internal returns(address) {
-      bytes memory code = zippieAccountBytecode;
+      bytes memory code = _zippieAccountBytecode;
       address payable addr;
       assembly {
           addr := create2(0, add(code, 0x20), mload(code), salt)
