@@ -340,11 +340,19 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 		});	
 		it("gas used for normal ERC20 transfer and approve + transferFrom", async () => {
 			const receiptTranfer = await basicToken.transfer(recipientAccounts[0], web3.utils.toWei("1", "ether"), {from: tokenAccounts[0], gasPrice: 1});
-			console.log(`Gas used for ERC20 transfer: ${receiptTranfer.receipt.gasUsed}`)			
+			console.log(`Gas used for ERC20 transfer - Transfer 1: ${receiptTranfer.receipt.gasUsed}`)		
+			const receiptTranfer2 = await basicToken.transfer(recipientAccounts[0], web3.utils.toWei("1", "ether"), {from: tokenAccounts[0], gasPrice: 1});
+			console.log(`Gas used for ERC20 transfer - Transfer 2: ${receiptTranfer2.receipt.gasUsed}`)	
+			const receiptTranfer3 = await basicToken.transfer(recipientAccounts[0], web3.utils.toWei("1", "ether"), {from: tokenAccounts[0], gasPrice: 1});
+			console.log(`Gas used for ERC20 transfer - Transfer 3: ${receiptTranfer3.receipt.gasUsed}`)		
 			const receiptApprove = await basicToken.approve(sponsorAccounts[0], '115792089237316195423570985008687907853269984665640564039457584007913129639935', {from: tokenAccounts[0], gasPrice: 1});
 			console.log(`Gas used for ERC20 approve: ${receiptApprove.receipt.gasUsed}`)
 			const receiptTranferFrom = await basicToken.transferFrom(tokenAccounts[0], recipientAccounts[0], web3.utils.toWei("1", "ether"), {from: sponsorAccounts[0], gasPrice: 1});
-			console.log(`Gas used for ERC20 tranferFrom: ${receiptTranferFrom.receipt.gasUsed}`)	
+			console.log(`Gas used for ERC20 tranferFrom - Transfer 1: ${receiptTranferFrom.receipt.gasUsed}`)
+			const receiptTranferFrom2 = await basicToken.transferFrom(tokenAccounts[0], recipientAccounts[0], web3.utils.toWei("1", "ether"), {from: sponsorAccounts[0], gasPrice: 1});
+			console.log(`Gas used for ERC20 tranferFrom - Transfer 2: ${receiptTranferFrom2.receipt.gasUsed}`)
+			const receiptTranferFrom3 = await basicToken.transferFrom(tokenAccounts[0], recipientAccounts[0], web3.utils.toWei("1", "ether"), {from: sponsorAccounts[0], gasPrice: 1});
+			console.log(`Gas used for ERC20 tranferFrom - Transfer 3: ${receiptTranferFrom3.receipt.gasUsed}`)	
 		});
 	});
 });

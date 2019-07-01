@@ -30,8 +30,7 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 						return ZippieCardNonces.new().then(instance => {
 							zippieCardNonces = instance
 							return ZippieWallet.new(zippieCardNonces.address)}).then(instance => {
-     						zippieWallet = instance;
-								return basicToken.approve(instance.address, web3.utils.toWei("100", "ether"), {from: accounts[5]});
+     							zippieWallet = instance;
 					});
 				});
 			});
