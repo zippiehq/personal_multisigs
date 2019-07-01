@@ -20,7 +20,6 @@ module.exports = {
 	getSignature,
 	getBlankCheckSignature,
 	getNonceSignature,
-	getSetLimitSignature,
 	getDigestSignature,
 	getSignatureNoCard,
 	getEmptyDigestSignature,
@@ -113,13 +112,6 @@ async function getNonceSignature(nonce, verificationKey) {
 	const nonceHash = await test.soliditySha3_address(nonce);
 	const nonceSignature = await web3.eth.sign(nonceHash, verificationKey);
 	return getRSV(nonceSignature.slice(2))
-}
-
-async function getSetLimitSignature(verificationKey, signer, amount) {
-	// sign by multisig signer
-	const limitHash = await test.soliditySha3_name_amount_address("setLimit", web3.utils.toWei(amount, "ether"), verificationKey);
-	const limitSignature = await web3.eth.sign(limitHash, signer);
-	return getRSV(limitSignature.slice(2))
 }
 
 async function getDigestSignature(digestHash, card) {
