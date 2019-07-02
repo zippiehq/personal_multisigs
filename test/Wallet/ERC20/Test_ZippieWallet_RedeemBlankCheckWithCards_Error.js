@@ -39,7 +39,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 	it("should fail a blank check transfer (from a 1 of 1 multisig with 2FA) if nonce is signed by incorrect card", async () => {
 		const signers = [signer, card]
 		const m = [1, 1, 1, 1]
-		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		const multisig = getAccountAddress(signers, m, zippieWallet.address)
 		await basicToken.transfer(multisig, web3.utils.toWei("100", "ether"), {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
 		
@@ -73,7 +73,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 
 		const signers = [signer, card]
 		const m = [1, 1, 1, 1]
-		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		const multisig = getAccountAddress(signers, m, zippieWallet.address)
 		await basicToken.transfer(multisig, web3.utils.toWei("100", "ether"), {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
 
@@ -109,7 +109,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 		
 		const signers = [signer, card, card2]
 		const m = [1, 1, 2, 2]
-		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		const multisig = getAccountAddress(signers, m, zippieWallet.address)
 		await basicToken.transfer(multisig, web3.utils.toWei("100", "ether"), {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
 
@@ -147,7 +147,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 		
 		const signers = [signer, card, card2]
 		const m = [1, 1, 2, 2]
-		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		const multisig = getAccountAddress(signers, m, zippieWallet.address)
 		await basicToken.transfer(multisig, web3.utils.toWei("100", "ether"), {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
 
@@ -178,7 +178,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 
 		const signers = [signer, card]
 		const m = [1, 1, 1, 1]
-		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		const multisig = getAccountAddress(signers, m, zippieWallet.address)
 		await basicToken.transfer(multisig, web3.utils.toWei("100", "ether"), {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
 
@@ -255,7 +255,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 		
 		const signers = [signer, card, card2]
 		const m = [1, 1, 2, 2]
-		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		const multisig = getAccountAddress(signers, m, zippieWallet.address)
 		await basicToken.transfer(multisig, web3.utils.toWei("100", "ether"), {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
 
@@ -305,7 +305,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 
 		const signers = [signer, card, card]
 		const m = [1, 1, 2, 2]
-		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		const multisig = getAccountAddress(signers, m, zippieWallet.address)
 		await basicToken.transfer(multisig, web3.utils.toWei("100", "ether"), {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
 
@@ -337,7 +337,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 
 		const signers = [signer, card]
 		const m = [1, 1, 1, 1]
-		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		const multisig = getAccountAddress(signers, m, zippieWallet.address)
 		await basicToken.transfer(multisig, web3.utils.toWei("100", "ether"), {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
 

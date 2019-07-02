@@ -36,7 +36,7 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 	it("should fail a blank check transfer (from a 1 of 1 multisig) if incorrect signer", async () => {
 		const signers = [signer]
 		const m = [1, 1, 0, 0]
-		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		const multisig = getAccountAddress(signers, m, zippieWallet.address)
 		const tokenId = "1"
 		await basicToken.transferFrom(sponsor, multisig, tokenId, {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
@@ -74,7 +74,7 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 	it("should fail a blank check transfer (from a 1 of 1 multisig) if data is signed by incorrect signer", async () => {
 		const signers = [signer]
 		const m = [1, 1, 0, 0]
-		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		const multisig = getAccountAddress(signers, m, zippieWallet.address)
 		const tokenId = "1"		
 		await basicToken.transferFrom(sponsor, multisig, tokenId, {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
@@ -108,7 +108,7 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 	it("should fail a blank check transfer (from a 2 of 2 multisig) if 1 incorrect signer", async () => {
 		const signers = [signer, signer2]
 		const m = [2, 2, 0, 0]
-		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		const multisig = getAccountAddress(signers, m, zippieWallet.address)
 		const tokenId = "1"		
 		await basicToken.transferFrom(sponsor, multisig, tokenId, {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
@@ -137,7 +137,7 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 	it("should fail a blank check transfer (from a 2 of 2 multisig) if data is signed by incorrect signer", async () => {
 		const signers = [signer, signer2]
 		const m = [2, 2, 0, 0]
-		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		const multisig = getAccountAddress(signers, m, zippieWallet.address)
 		const tokenId = "1"		
 		await basicToken.transferFrom(sponsor, multisig, tokenId, {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
@@ -165,7 +165,7 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 	it("should fail a blank check transfer (from a 2 of 2 multisig) if signers are the same", async () => {
 		const signers = [signer, signer]
 		const m = [2, 2, 0, 0]
-		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		const multisig = getAccountAddress(signers, m, zippieWallet.address)
 		const tokenId = "1"		
 		await basicToken.transferFrom(sponsor, multisig, tokenId, {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
@@ -191,7 +191,7 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 	it("should fail a blank check transfer when the verificationKey is wrong", async () => {
 		const signers = [signer]
 		const m = [1, 1, 0, 0]
-		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		const multisig = getAccountAddress(signers, m, zippieWallet.address)
 		const tokenId = "1"		
 		await basicToken.transferFrom(sponsor, multisig, tokenId, {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
@@ -233,7 +233,7 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 	it("should fail a blank check transfer (from a 1 of 1 multisig) if multisig is not owner of tokenId", async () => {
 		const signers = [signer]
 		const m = [1, 1, 0, 0]
-		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		const multisig = getAccountAddress(signers, m, zippieWallet.address)
 		const tokenId = "1"
 		const addresses = [basicToken.address, recipient, verificationKey]
 

@@ -65,7 +65,7 @@ async function createBlankCheck_1of1Signer_1of1Card(
 	return { addresses: addresses, signers: signers, m: m, signatures: signatures, amount: web3.utils.toWei(amount, "ether"), cardNonces: cardNonces }
 }
 
-async function getAccountAddress(signers, m, tokenAddress, walletAddress) {
+function getAccountAddress(signers, m, walletAddress) {
 	const bytecode = accountBytecode
 	const bytecodeHash = web3.utils.sha3(bytecode)
 	const salt = soliditySha3_addresses_m(signers, m);
@@ -95,7 +95,8 @@ function getSignature(blankCheckSignature, digestSignature, recipientSignature) 
 
 	return {v:v, r:r, s:s}
 }
- async function getBlankCheckSignature(verificationKey, signer, amount, tokenAddress) {
+
+async function getBlankCheckSignature(verificationKey, signer, amount, tokenAddress) {
 	// sign by multisig signer
 	const blankCheckHash = soliditySha3_name_address_amount_address("redeemBlankCheck", tokenAddress, web3.utils.toWei(amount, "ether"), verificationKey);
 	const blankCheckSignature = await web3.eth.sign(blankCheckHash, signer);

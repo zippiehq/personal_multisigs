@@ -39,7 +39,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 
 		const signers = [signer, card]
 		const m = [1, 1, 1, 1]
-		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		const multisig = getAccountAddress(signers, m, zippieWallet.address)
 		const tokenId = "1"
 		await basicToken.transferFrom(sponsor, multisig, tokenId, {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
@@ -84,7 +84,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Functionality", (account
 		
 		const signers = [signer, card, card2]
 		const m = [1, 1, 2, 2]
-		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		const multisig = getAccountAddress(signers, m, zippieWallet.address)
 		const tokenId = "1"
 		await basicToken.transferFrom(sponsor, multisig, tokenId, {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
