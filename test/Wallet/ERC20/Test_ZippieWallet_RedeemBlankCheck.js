@@ -1,4 +1,3 @@
-const TestFunctions = artifacts.require("./TestFunctions.sol");
 const BasicERC20Mock = artifacts.require("./BasicERC20Mock.sol");
 const ZippieWallet = artifacts.require("./ZippieWalletERC20.sol");
 const ZippieCardNonces = artifacts.require("./ZippieCardNonces.sol");
@@ -24,13 +23,12 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 	const sponsor = accounts[6] // Zippie PMG server
 
 	beforeEach(() => {
-		return TestFunctions.new().then(_ => {
-				return BasicERC20Mock.new(sponsor).then(instance => {
-					basicToken = instance;
-					return ZippieCardNonces.new().then(instance => {
-						zippieCardNonces = instance
-						return ZippieWallet.new(zippieCardNonces.address)}).then(instance => {
-							 zippieWallet = instance;
+		return BasicERC20Mock.new(sponsor).then(instance => {
+			basicToken = instance;
+			return ZippieCardNonces.new().then(instance => {
+				zippieCardNonces = instance
+				return ZippieWallet.new(zippieCardNonces.address).then(instance => {
+					zippieWallet = instance;
 				});
 			});
 		});

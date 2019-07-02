@@ -1,8 +1,6 @@
-const TestFunctions = artifacts.require("./TestFunctions.sol");
 const BasicERC20Mock = artifacts.require("./BasicERC20Mock.sol");
 const ZippieWallet = artifacts.require("./ZippieWalletERC20.sol");
 const ZippieCardNonces = artifacts.require("./ZippieCardNonces.sol");
-let test;
 
 const {
 	getAccountAddress,
@@ -11,6 +9,7 @@ const {
 	getBlankCheckSignature,
 	getDigestSignature,
 	getHardcodedDigestSignature,
+	soliditySha3_sign,
  } = require("./HelpFunctions");
  
 contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts) => {
@@ -26,18 +25,16 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 	const sponsor = accounts[6] // Zippie PMG server
 
 	beforeEach(() => {
-		return TestFunctions.new().then(instance => {
-				test = instance;
-			return BasicERC20Mock.new(sponsor).then(instance => {
-				basicToken = instance
-				return ZippieCardNonces.new().then(instance => {
-					zippieCardNonces = instance
-					return ZippieWallet.new(zippieCardNonces.address)}).then(instance => {
-						zippieWallet = instance;
-					});
+		return BasicERC20Mock.new(sponsor).then(instance => {
+			basicToken = instance;
+			return ZippieCardNonces.new().then(instance => {
+				zippieCardNonces = instance
+				return ZippieWallet.new(zippieCardNonces.address).then(instance => {
+					zippieWallet = instance;
 				});
 			});
 		});
+	});
 
 	it("should fail a blank check transfer (from a 1 of 1 multisig with 2FA) if nonce is signed by incorrect card", async () => {
 		const signers = [signer, card]
@@ -52,7 +49,7 @@ contract("Test Zippie Multisig Check Cashing With Cards Error Cases", (accounts)
 		const recipientSignature = await getRecipientSignature(recipient, verificationKey)
 
 		const digest = "0xABCDEF"
-		const digestHash = await test.soliditySha3_sign(digest)
+		const digestHash = soliditySha3_sign(digest)
 		const digestSignature = await getDigestSignature(digestHash, incorrectCard)
 		
 		const signature = getSignature(blankCheckSignature, digestSignature, recipientSignature)
