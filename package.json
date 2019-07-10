@@ -1,7 +1,7 @@
 {
-  "name": "zippie-multisig-wallet",
+  "name": "zippie-solidity",
   "version": "1.0.0",
-  "description": "Zippie multisig wallet",
+  "description": "Zippie Smart Contracts",
   "scripts": {
     "node": "ganache-cli -a 101 -m zippie",
     "test": "truffle test"
