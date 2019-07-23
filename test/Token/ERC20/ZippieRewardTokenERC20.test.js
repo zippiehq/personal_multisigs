@@ -79,7 +79,7 @@ contract("ZippieRewardTokenERC20", ([owner, sender, receiver, other]) => {
     });
   })
 
-  describe('ERC20 Brunable', function() {
+  describe('ERC20 Burnable', function() {
     it("allows token holders to burn tokens", async function() {
       expect(await this.token.balanceOf(sender)).to.be.bignumber.equal(new BN(1));
       const { logs } = await this.token.burn(new BN(1), { from: sender });

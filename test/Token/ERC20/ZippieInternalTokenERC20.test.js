@@ -88,7 +88,7 @@ contract("ZippieInternalTokenERC20", ([owner, sender, receiver, other]) => {
       expect(await this.token.isWhitelisted(sender)).to.be.equal(true);
     });
 
-    it("reverts id a non-whitelistAdmins tries to add whitelisted accounts", async function () {
+    it("reverts if a non-whitelistAdmins tries to add whitelisted accounts", async function () {
       expect(await this.token.isWhitelistAdmin(other)).to.be.equal(false);
       expect(await this.token.isWhitelisted(sender)).to.be.equal(false);
       await expectRevert(this.token.addWhitelisted(sender, { from: other }), 'WhitelistAdminRole: caller does not have the WhitelistAdmin role');
@@ -103,7 +103,7 @@ contract("ZippieInternalTokenERC20", ([owner, sender, receiver, other]) => {
       expect(await this.token.isWhitelisted(sender)).to.be.equal(false);
     });
 
-    it("reverts id a non-whitelistAdmins tries to remove whitelisted accounts", async function () {
+    it("reverts if a non-whitelistAdmins tries to remove whitelisted accounts", async function () {
       expect(await this.token.isWhitelistAdmin(owner)).to.be.equal(true);
       await this.token.addWhitelisted(sender, { from: owner });
       expect(await this.token.isWhitelisted(sender)).to.be.equal(true);
@@ -206,7 +206,7 @@ contract("ZippieInternalTokenERC20", ([owner, sender, receiver, other]) => {
         });
       })
     
-      describe('ERC20 Brunable', function() {
+      describe('ERC20 Burnable', function() {
         it("allows token holders to burn tokens", async function() {
           expect(await this.token.balanceOf(sender)).to.be.bignumber.equal(new BN(1));
           const { logs } = await this.token.burn(new BN(1), { from: sender });
