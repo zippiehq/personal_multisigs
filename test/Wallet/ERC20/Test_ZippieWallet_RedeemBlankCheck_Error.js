@@ -1,4 +1,3 @@
-const TestFunctions = artifacts.require("./TestFunctions.sol");
 const BasicERC20Mock = artifacts.require("./BasicERC20Mock.sol");
 const ZippieWallet = artifacts.require("./ZippieWalletERC20.sol");
 const ZippieCardNonces = artifacts.require("./ZippieCardNonces.sol");
@@ -24,23 +23,21 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 	const sponsor = accounts[6] // Zippie PMG server
 
 	beforeEach(() => {
-			return TestFunctions.new().then(_ => {
-    			return BasicERC20Mock.new(sponsor).then(instance => {
-						basicToken = instance;
-						return ZippieCardNonces.new().then(instance => {
-							zippieCardNonces = instance
-							return ZippieWallet.new(zippieCardNonces.address)}).then(instance => {
-     						zippieWallet = instance;
-								return basicToken.approve(instance.address, web3.utils.toWei("100", "ether"), {from: accounts[5]});
-					});
+		return BasicERC20Mock.new(sponsor).then(instance => {
+			basicToken = instance;
+			return ZippieCardNonces.new().then(instance => {
+				zippieCardNonces = instance
+				return ZippieWallet.new(zippieCardNonces.address).then(instance => {
+					zippieWallet = instance;
 				});
 			});
+		});
 	});
 
 	it("should fail a blank check transfer (from a 1 of 1 multisig) if incorrect signer", async () => {
 		const signers = [signer]
 		const m = [1, 1, 0, 0]
-		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		const multisig = getAccountAddress(signers, m, zippieWallet.address)
 		await basicToken.transfer(multisig, web3.utils.toWei("100", "ether"), {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
 
@@ -77,7 +74,7 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 	it("should fail a blank check transfer (from a 1 of 1 multisig) if data is signed by incorrect signer", async () => {
 		const signers = [signer]
 		const m = [1, 1, 0, 0]
-		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		const multisig = getAccountAddress(signers, m, zippieWallet.address)
 		await basicToken.transfer(multisig, web3.utils.toWei("100", "ether"), {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
 
@@ -111,7 +108,7 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 	it("should fail a blank check transfer (from a 2 of 2 multisig) if 1 incorrect signer", async () => {
 		const signers = [signer, signer2]
 		const m = [2, 2, 0, 0]
-		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		const multisig = getAccountAddress(signers, m, zippieWallet.address)
 		await basicToken.transfer(multisig, web3.utils.toWei("100", "ether"), {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
 
@@ -141,7 +138,7 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 	it("should fail a blank check transfer (from a 2 of 2 multisig) if data is signed by incorrect signer", async () => {
 		const signers = [signer, signer2]
 		const m = [2, 2, 0, 0]
-		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		const multisig = getAccountAddress(signers, m, zippieWallet.address)
 		await basicToken.transfer(multisig, web3.utils.toWei("100", "ether"), {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
 
@@ -170,7 +167,7 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 	it("should fail a blank check transfer (from a 2 of 2 multisig) if signers are the same", async () => {
 		const signers = [signer, signer]
 		const m = [2, 2, 0, 0]
-		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		const multisig = getAccountAddress(signers, m, zippieWallet.address)
 		await basicToken.transfer(multisig, web3.utils.toWei("100", "ether"), {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
 		
@@ -198,7 +195,7 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 	it("should fail a blank check transfer when the verificationKey is wrong", async () => {
 		const signers = [signer]
 		const m = [1, 1, 0, 0]
-		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		const multisig = getAccountAddress(signers, m, zippieWallet.address)
 		await basicToken.transfer(multisig, web3.utils.toWei("100", "ether"), {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
 
@@ -239,7 +236,7 @@ contract("Test Zippie Multisig Check Cashing Error Cases", (accounts) => {
 	it("should fail a blank check transfer (from a 1 of 1 multisig) if multisig lacks balance to cover amount", async () => {
 		const signers = [signer]
 		const m = [1, 1, 0, 0]
-		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		const multisig = getAccountAddress(signers, m, zippieWallet.address)
 		await basicToken.transfer(multisig, web3.utils.toWei("100", "ether"), {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
 

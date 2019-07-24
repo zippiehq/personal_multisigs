@@ -1,4 +1,3 @@
-const TestFunctions = artifacts.require("./TestFunctions.sol");
 const BasicERC721Mock = artifacts.require("./BasicERC721Mock.sol");
 const ZippieWallet = artifacts.require("./ZippieWalletERC721.sol");
 const ZippieCardNonces = artifacts.require("./ZippieCardNonces.sol");
@@ -24,13 +23,12 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 	const sponsor = accounts[6] // Zippie PMG server
 
 	beforeEach(() => {
-		return TestFunctions.new().then(_ => {
-				return BasicERC721Mock.new(sponsor).then(instance => {
-					basicToken = instance;
-					return ZippieCardNonces.new().then(instance => {
-						zippieCardNonces = instance
-						return ZippieWallet.new(zippieCardNonces.address)}).then(instance => {
-							 zippieWallet = instance;
+		return BasicERC721Mock.new(sponsor).then(instance => {
+			basicToken = instance;
+			return ZippieCardNonces.new().then(instance => {
+				zippieCardNonces = instance
+				return ZippieWallet.new(zippieCardNonces.address).then(instance => {
+					zippieWallet = instance;
 				});
 			});
 		});
@@ -39,7 +37,7 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 	it("should allow a blank check to be cashed once from a 1 of 1 multisig, and fail the second time", async () => {
 		const signers = [signer]
 		const m = [1, 1, 0, 0]
-		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		const multisig = getAccountAddress(signers, m, zippieWallet.address)
 		const tokenId = "1"
 		await basicToken.transferFrom(sponsor, multisig, tokenId, {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]
@@ -74,7 +72,7 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 	it("should allow a blank check to be cashed from a 2 of 2 multisig", async () => {
 		const signers = [signer, signer2]
 		const m = [2, 2, 0, 0]
-		const multisig = await getAccountAddress(signers, m, basicToken.address, zippieWallet.address)
+		const multisig = getAccountAddress(signers, m, zippieWallet.address)
 		const tokenId = "1"
 		await basicToken.transferFrom(sponsor, multisig, tokenId, {from: sponsor});
 		const addresses = [basicToken.address, recipient, verificationKey]

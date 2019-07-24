@@ -1,4 +1,3 @@
-var TestFunctions = artifacts.require("./TestFunctions.sol");
 var BasicERC20Mock = artifacts.require("./BasicERC20Mock.sol");
 var ZippieWallet = artifacts.require("./ZippieWalletERC20.sol");
 var ZippieCardNonces = artifacts.require("./ZippieCardNonces.sol");
@@ -6,15 +5,11 @@ var ZippieCardNonces = artifacts.require("./ZippieCardNonces.sol");
 const { 
 	createBlankCheck_1of1Signer_1of1Card,
 	createBlankCheck_1of1Signer_NoCard,
+	getAccountAddress,
+	soliditySha3_addresses_m,
 } = require('./HelpFunctions');
 
-// XXX Bytecode changes if contract is moved into a new folder (huh?)
-//const { abi:accountAbi, bytecode:accountBytecode } = require('../build/contracts/ZippieAccountERC20.json')
-const accountBytecode = '0x608060405234801561001057600080fd5b50600080546001600160a01b03191633179055610171806100326000396000f3fe608060405234801561001057600080fd5b506004361061002b5760003560e01c8063daea85c514610030575b600080fd5b6100566004803603602081101561004657600080fd5b50356001600160a01b0316610058565b005b6000546001600160a01b0316331461006f57600080fd5b60408051600160e01b63095ea7b3028152336004820152600019602482015290516001600160a01b0383169163095ea7b39160448083019260209291908290030181600087803b1580156100c257600080fd5b505af11580156100d6573d6000803e3d6000fd5b505050506040513d60208110156100ec57600080fd5b50516101425760408051600160e51b62461bcd02815260206004820152600e60248201527f417070726f7665206661696c6564000000000000000000000000000000000000604482015290519081900360640190fd5b32fffea165627a7a7230582032c59f0247a959ee08569c8456e1b35a213a36088625adeb369ffa1a46228e3e0029'
-
 contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)", (accounts) => {
-
-	var test;
 	var basicToken;
 	var basicToken2;
 	var zippieCardNonces;
@@ -48,17 +43,14 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 	]
 
 	beforeEach(() => {
-		return TestFunctions.new().then(instance => {
-			test = instance;
+		return BasicERC20Mock.new(tokenAccounts[0]).then(instance => {
+			basicToken = instance
 			return BasicERC20Mock.new(tokenAccounts[0]).then(instance => {
-				basicToken = instance
-				return BasicERC20Mock.new(tokenAccounts[0]).then(instance => {
-					basicToken2 = instance
-					return ZippieCardNonces.new().then(instance => {
-						zippieCardNonces = instance
-						return ZippieWallet.new(zippieCardNonces.address).then(instance => {
-							zippieWallet = instance;
-						});
+				basicToken2 = instance
+				return ZippieCardNonces.new().then(instance => {
+					zippieCardNonces = instance
+					return ZippieWallet.new(zippieCardNonces.address).then(instance => {
+						zippieWallet = instance;
 					});
 				});
 			});
@@ -87,12 +79,8 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 				"1",
 			)
 
-			// Calculate account address
-			const bytecode = accountBytecode
-			const bytecodeHash = web3.utils.sha3(bytecode)
-			const salt = await test.soliditySha3_addresses_m(bc1.signers, bc1.m);
-			const accountHash = web3.utils.sha3(`0x${'ff'}${zippieWallet.address.slice(2)}${salt.slice(2)}${bytecodeHash.slice(2)}`)
-			const accountAddress = `0x${accountHash.slice(-40)}`.toLowerCase()			
+			// Get account address	
+			const accountAddress = getAccountAddress(bc1.signers, bc1.m, zippieWallet.address)
 
 			// Send tokens to account
 			await basicToken.transfer(accountAddress, web3.utils.toWei("100", "ether"), {from: tokenAccounts[0]});
@@ -163,12 +151,8 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 				1
 			)
 
-			// Calculate account address
-			const bytecode = accountBytecode
-			const bytecodeHash = web3.utils.sha3(bytecode)
-			const salt = await test.soliditySha3_addresses_m(bc1.signers, bc1.m);
-			const accountHash = web3.utils.sha3(`0x${'ff'}${zippieWallet.address.slice(2)}${salt.slice(2)}${bytecodeHash.slice(2)}`)
-			const accountAddress = `0x${accountHash.slice(-40)}`.toLowerCase()
+			// Get account address	
+			const accountAddress = getAccountAddress(bc1.signers, bc1.m, zippieWallet.address)
 
 			// Send tokens to account
 			await basicToken.transfer(accountAddress, web3.utils.toWei("100", "ether"), {from: tokenAccounts[0]});
@@ -234,12 +218,8 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 				"1",
 			)
 
-			// Calculate account address
-			const bytecode = accountBytecode
-			const bytecodeHash = web3.utils.sha3(bytecode)
-			const salt = await test.soliditySha3_addresses_m(bc1.signers, bc1.m);
-			const accountHash = web3.utils.sha3(`0x${'ff'}${zippieWallet.address.slice(2)}${salt.slice(2)}${bytecodeHash.slice(2)}`)
-			const accountAddress = `0x${accountHash.slice(-40)}`.toLowerCase()			
+			// Get account address	
+			const accountAddress = getAccountAddress(bc1.signers, bc1.m, zippieWallet.address)		
 
 			// Send token 1 to account
 			await basicToken.transfer(accountAddress, web3.utils.toWei("100", "ether"), {from: tokenAccounts[0]});
@@ -302,12 +282,9 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 				"1",
 			)
 
-			// Calculate account address
-			const bytecode = accountBytecode
-			const bytecodeHash = web3.utils.sha3(bytecode)
-			const salt = await test.soliditySha3_addresses_m(bc1.signers, bc1.m);
-			const accountHash = web3.utils.sha3(`0x${'ff'}${zippieWallet.address.slice(2)}${salt.slice(2)}${bytecodeHash.slice(2)}`)
-			const accountAddress = `0x${accountHash.slice(-40)}`.toLowerCase()
+			// Get account address	
+			const accountAddress = getAccountAddress(bc1.signers, bc1.m, zippieWallet.address)
+			const salt = soliditySha3_addresses_m(bc1.signers, bc1.m);
 			const accountAddressSolidity = await zippieWallet.getAccountAddress(salt, {from: sponsorAccounts[0]})
 			assert(accountAddress === accountAddressSolidity.toLowerCase(), "account address calculation didn't match")
 
@@ -340,11 +317,19 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 		});	
 		it("gas used for normal ERC20 transfer and approve + transferFrom", async () => {
 			const receiptTranfer = await basicToken.transfer(recipientAccounts[0], web3.utils.toWei("1", "ether"), {from: tokenAccounts[0], gasPrice: 1});
-			console.log(`Gas used for ERC20 transfer: ${receiptTranfer.receipt.gasUsed}`)			
+			console.log(`Gas used for ERC20 transfer - Transfer 1: ${receiptTranfer.receipt.gasUsed}`)		
+			const receiptTranfer2 = await basicToken.transfer(recipientAccounts[0], web3.utils.toWei("1", "ether"), {from: tokenAccounts[0], gasPrice: 1});
+			console.log(`Gas used for ERC20 transfer - Transfer 2: ${receiptTranfer2.receipt.gasUsed}`)	
+			const receiptTranfer3 = await basicToken.transfer(recipientAccounts[0], web3.utils.toWei("1", "ether"), {from: tokenAccounts[0], gasPrice: 1});
+			console.log(`Gas used for ERC20 transfer - Transfer 3: ${receiptTranfer3.receipt.gasUsed}`)		
 			const receiptApprove = await basicToken.approve(sponsorAccounts[0], '115792089237316195423570985008687907853269984665640564039457584007913129639935', {from: tokenAccounts[0], gasPrice: 1});
 			console.log(`Gas used for ERC20 approve: ${receiptApprove.receipt.gasUsed}`)
 			const receiptTranferFrom = await basicToken.transferFrom(tokenAccounts[0], recipientAccounts[0], web3.utils.toWei("1", "ether"), {from: sponsorAccounts[0], gasPrice: 1});
-			console.log(`Gas used for ERC20 tranferFrom: ${receiptTranferFrom.receipt.gasUsed}`)	
+			console.log(`Gas used for ERC20 tranferFrom - Transfer 1: ${receiptTranferFrom.receipt.gasUsed}`)
+			const receiptTranferFrom2 = await basicToken.transferFrom(tokenAccounts[0], recipientAccounts[0], web3.utils.toWei("1", "ether"), {from: sponsorAccounts[0], gasPrice: 1});
+			console.log(`Gas used for ERC20 tranferFrom - Transfer 2: ${receiptTranferFrom2.receipt.gasUsed}`)
+			const receiptTranferFrom3 = await basicToken.transferFrom(tokenAccounts[0], recipientAccounts[0], web3.utils.toWei("1", "ether"), {from: sponsorAccounts[0], gasPrice: 1});
+			console.log(`Gas used for ERC20 tranferFrom - Transfer 3: ${receiptTranferFrom3.receipt.gasUsed}`)	
 		});
 	});
 });

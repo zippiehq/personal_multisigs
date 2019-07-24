@@ -8,7 +8,6 @@ ADD migrations /app/migrations
 ADD test /app/test
 
 # Files
-ADD .solcover.js /app/.solcover.js
 ADD package.json /app/package.json
 ADD truffle-config.js /app/truffle-config.js
 

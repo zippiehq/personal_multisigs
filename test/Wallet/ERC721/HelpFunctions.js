@@ -1,12 +1,3 @@
-const TestFunctions = artifacts.require("./TestFunctions.sol");
-let test
-
-beforeEach(() => { 
-	TestFunctions.new().then(instance => {
-		test = instance
-	})
-})
-
 // XXX Bytecode changes if contract is moved into a new folder (huh?)
 //const { bytecode:accountBytecode } = require('../build/contracts/ZippieAccountERC20.json')
 const accountBytecode = '0x608060405234801561001057600080fd5b50600080546001600160a01b0319163317905560ff806100316000396000f3fe6080604052348015600f57600080fd5b506004361060285760003560e01c8063daea85c514602d575b600080fd5b605060048036036020811015604157600080fd5b50356001600160a01b03166052565b005b6000546001600160a01b03163314606857600080fd5b60408051600160e01b63a22cb4650281523360048201526001602482015290516001600160a01b0383169163a22cb46591604480830192600092919082900301818387803b15801560b857600080fd5b505af115801560cb573d6000803e3d6000fd5b503292505050fffea165627a7a72305820138a39f8dcc74909958a7c9a3debcc975c1b1527953c47473594aa49882499790029'
@@ -25,6 +16,10 @@ module.exports = {
 	getEmptyDigestSignature,
 	getHardcodedDigestSignature,
 	getRSV,
+	soliditySha3_addresses_m,
+	soliditySha3_name_address_amount_address,
+	soliditySha3_address,
+	soliditySha3_sign,
 	log,
 }
 
@@ -70,25 +65,24 @@ async function createBlankCheck_1of1Signer_1of1Card(
 	return { addresses: addresses, signers: signers, m: m, signatures: signatures, tokenId: tokenId, cardNonces: cardNonces }
 }
 
-async function getAccountAddress(signers, m, tokenAddress, walletAddress) {
+function getAccountAddress(signers, m, walletAddress) {
 	const bytecode = accountBytecode
 	const bytecodeHash = web3.utils.sha3(bytecode)
-	const salt = await test.soliditySha3_addresses_m(signers, m);
-	//const salt = web3.utils.sha3(web3.eth.abi.encodeParameters(['address[]', 'uint8[]'], [bc1.signers, bc1.m]))
+	const salt = soliditySha3_addresses_m(signers, m);
 	const accountHash = web3.utils.sha3(`0x${'ff'}${walletAddress.slice(2)}${salt.slice(2)}${bytecodeHash.slice(2)}`)
 	const accountAddress = `0x${accountHash.slice(-40)}`.toLowerCase()
 	return accountAddress
 }
 
 async function getMultisigSignature(signers, m, multisig) {
-	const multisigHash = await test.soliditySha3_addresses_m(signers, m);
+	const multisigHash = soliditySha3_addresses_m(signers, m);
 	const multisigSignature = await web3.eth.sign(multisigHash, multisig);
 	return getRSV(multisigSignature.slice(2))
 }
 
 async function getRecipientSignature(recipient, verificationKey) {
 	// sign by a random verification key
-	const recipientHash = await test.soliditySha3_address(recipient);
+	const recipientHash = soliditySha3_address(recipient);
 	const recipientSignature = await web3.eth.sign(recipientHash, verificationKey);
 	return getRSV(recipientSignature.slice(2))
 }
@@ -100,16 +94,17 @@ function getSignature(blankCheckSignature, digestSignature, recipientSignature) 
 
 	return {v:v, r:r, s:s}
 }
- async function getBlankCheckSignature(verificationKey, signer, tokenId, tokenAddress) {
+
+async function getBlankCheckSignature(verificationKey, signer, tokenId, tokenAddress) {
 	// sign by multisig signer
-	const blankCheckHash = await test.soliditySha3_name_address_amount_address("redeemBlankCheck", tokenAddress, tokenId, verificationKey);
+	const blankCheckHash = soliditySha3_name_address_amount_address("redeemBlankCheck", tokenAddress, tokenId, verificationKey);
 	const blankCheckSignature = await web3.eth.sign(blankCheckHash, signer);
 	return getRSV(blankCheckSignature.slice(2))
 }
 
 async function getNonceSignature(nonce, verificationKey) {
 	// sign by a random verification key
-	const nonceHash = await test.soliditySha3_address(nonce);
+	const nonceHash = soliditySha3_address(nonce);
 	const nonceSignature = await web3.eth.sign(nonceHash, verificationKey);
 	return getRSV(nonceSignature.slice(2))
 }
@@ -191,6 +186,30 @@ function getHardcodedDigestSignature(cardNr, signatureNr) {
 
 function getRSV(str) {
 	return {r:"0x" + str.slice(0,64), s: "0x" + str.slice(64,128), v: web3.utils.hexToNumber(str.slice(128,130)) + 27 };
+}
+
+function soliditySha3_addresses_m(signers, m) {
+	return web3.utils.soliditySha3('0x' + getAbiParameterArrayEncodePacked(signers) + getAbiParameterArrayEncodePacked(m))
+}
+
+function soliditySha3_name_address_amount_address(name, token, amount, key) {
+	return web3.utils.soliditySha3(name, token, amount, key)
+}
+
+function soliditySha3_address(addr) {
+	return web3.utils.soliditySha3(addr)
+}
+
+function soliditySha3_sign(hash) {
+	return web3.utils.soliditySha3("\x19Ethereum Signed Message:\n32", hash);
+}
+
+function getAbiParameterArrayEncodePacked(dataArray) {
+	let packedData = ''
+	for (let i = 0; i < dataArray.length; i++) {
+		packedData = packedData + web3.utils.padLeft(dataArray[i], 64).slice(2)
+	}
+	return packedData
 }
 
 function log(msg) {

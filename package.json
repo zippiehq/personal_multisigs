@@ -1,44 +1,21 @@
 {
-  "name": "zippie-multisig-wallet",
+  "name": "zippie-solidity",
   "version": "1.0.0",
-  "description": "Zippie multisig wallet",
-  "main": "truffle-config.js",
-  "files": [
-    "build",
-    "contracts",
-    "test"
-  ],
+  "description": "Zippie Smart Contracts",
   "scripts": {
     "node": "ganache-cli -a 101 -m zippie",
-    "test": "truffle test",
-    "flatten": "truffle-flattener contracts/zippie/ZippieWallet.sol > ZippieWallet-flat.sol"
+    "test": "truffle test"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/zippiehq/personal_multisigs.git"
-  },
-  "keywords": [
-    "solidity",
-    "ethereum",
-    "web3",
-    "multisig",
-    "wallet",
-    "eth",
-    "erc20",
-    "weth",
-    "zippie"
-  ],
   "author": "Zippie",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/zippiehq/personal_multisigs/issues"
-  },
-  "homepage": "https://github.com/zippiehq/personal_multisigs",
   "devDependencies": {
-    "ganache-cli": "^6.4.3",
-    "openzeppelin-solidity": "^2.2.0",
-    "truffle": "^5.0.17",
-    "truffle-flattener": "^1.3.0"
+    "chai": "^4.2.0",
+    "ganache-cli": "^6.4.4",
+    "openzeppelin-test-helpers": "^0.4.0",
+    "truffle": "^5.0.25",
+    "truffle-flattener": "^1.4.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "openzeppelin-solidity": "^2.3.0"
+  }
 }
