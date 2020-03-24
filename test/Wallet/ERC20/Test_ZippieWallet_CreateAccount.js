@@ -7,6 +7,7 @@ const {
 	createBlankCheck_1of1Signer_NoCard,
 	getAccountAddress,
 	soliditySha3_addresses_m,
+	ZERO_ADDRESS,
 } = require('./HelpFunctions');
 
 contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)", (accounts) => {
@@ -89,7 +90,7 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 			let balanceOfRecipient = await basicToken.balanceOf(recipientAccounts[0])
 			assert(balanceOfSender.toString() === web3.utils.toWei("100", "ether"), "initial balance of sender is incorrect")
 			assert(balanceOfRecipient.toString() === web3.utils.toWei("0", "ether"), "initial balance of recipient is incorrect") 
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[0]) === false, "check already marked as cashed before transfer")
+			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[0]) === ZERO_ADDRESS, "check already marked as cashed before transfer")
 			
 			const allowanceBefore = await basicToken.allowance(accountAddress, zippieWallet.address)
 			assert(allowanceBefore.toString() === "0", "allowance set before approved")
@@ -102,7 +103,7 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 			balanceOfRecipient = await basicToken.balanceOf(recipientAccounts[0])
 			assert(balanceOfSender.toString() === web3.utils.toWei("99", "ether"), "amount did not transfer from sender")
 			assert(balanceOfRecipient.toString() === web3.utils.toWei("1", "ether"), "amount did not transfer to recipient") 
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[0]) === true, "check has not been marked as cashed after transfer")
+			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[0]) === recipientAccounts[0], "check has not been marked as cashed after transfer")
 
 			const allowanceAfter = await basicToken.allowance(accountAddress, zippieWallet.address)
 			assert(allowanceAfter > 0, "allowance not set")
@@ -123,7 +124,7 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 			balanceOfRecipient = await basicToken.balanceOf(recipientAccounts[0])
 			assert(balanceOfSender.toString() === web3.utils.toWei("98", "ether"), "amount did not transfer from sender")
 			assert(balanceOfRecipient.toString() === web3.utils.toWei("2", "ether"), "amount did not transfer to recipient") 
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[1]) === true, "check has not been marked as cashed after transfer")
+			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[1]) === recipientAccounts[0], "check has not been marked as cashed after transfer")
 		});
 
 		it("redeemBlankCheck m[1,1,1,1]", async () => {
@@ -161,7 +162,7 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 			let balanceOfRecipient = await basicToken.balanceOf(recipientAccounts[0])
 			assert(balanceOfSender.toString() === web3.utils.toWei("100", "ether"), "initial balance of sender is incorrect")
 			assert(balanceOfRecipient.toString() === web3.utils.toWei("0", "ether"), "initial balance of recipient is incorrect") 
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[0]) === false, "check already marked as cashed before transfer")
+			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[0]) === ZERO_ADDRESS, "check already marked as cashed before transfer")
 			
 			const allowanceBefore = await basicToken.allowance(accountAddress, zippieWallet.address)
 			assert(allowanceBefore.toString() === "0", "allowance set before approved")
@@ -174,7 +175,7 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 			balanceOfRecipient = await basicToken.balanceOf(recipientAccounts[0])
 			assert(balanceOfSender.toString() === web3.utils.toWei("99", "ether"), "amount did not transfer from sender")
 			assert(balanceOfRecipient.toString() === web3.utils.toWei("1", "ether"), "amount did not transfer to recipient") 
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[0]) === true, "check has not been marked as cashed after transfer")
+			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[0]) === recipientAccounts[0], "check has not been marked as cashed after transfer")
 
 			const allowanceAfter = await basicToken.allowance(accountAddress, zippieWallet.address)
 			assert(allowanceAfter > 0, "allowance not set")
@@ -195,7 +196,7 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 			balanceOfRecipient = await basicToken.balanceOf(recipientAccounts[0])
 			assert(balanceOfSender.toString() === web3.utils.toWei("98", "ether"), "amount did not transfer from sender")
 			assert(balanceOfRecipient.toString() === web3.utils.toWei("2", "ether"), "amount did not transfer to recipient") 
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[1]) === true, "check has not been marked as cashed after transfer")
+			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[1]) === recipientAccounts[0], "check has not been marked as cashed after transfer")
 		});
 		it("redeemBlankCheck m[1,1,0,0] with 2 tokens (2 approve)", async () => {
 			// Blank Check 1
@@ -228,7 +229,7 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 			let balanceOfRecipient = await basicToken.balanceOf(recipientAccounts[0])
 			assert(balanceOfSender.toString() === web3.utils.toWei("100", "ether"), "initial balance of sender is incorrect")
 			assert(balanceOfRecipient.toString() === web3.utils.toWei("0", "ether"), "initial balance of recipient is incorrect") 
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[0]) === false, "check already marked as cashed before transfer")
+			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[0]) === ZERO_ADDRESS, "check already marked as cashed before transfer")
 			
 			const allowanceBefore = await basicToken.allowance(accountAddress, zippieWallet.address)
 			assert(allowanceBefore.toString() === "0", "allowance set before approved")
@@ -241,7 +242,7 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 			balanceOfRecipient = await basicToken.balanceOf(recipientAccounts[0])
 			assert(balanceOfSender.toString() === web3.utils.toWei("99", "ether"), "amount did not transfer from sender")
 			assert(balanceOfRecipient.toString() === web3.utils.toWei("1", "ether"), "amount did not transfer to recipient") 
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[0]) === true, "check has not been marked as cashed after transfer")
+			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[0]) === recipientAccounts[0], "check has not been marked as cashed after transfer")
 
 			const allowanceAfter = await basicToken.allowance(accountAddress, zippieWallet.address)
 			assert(allowanceAfter > 0, "allowance not set")
@@ -253,7 +254,7 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 			let balanceOfRecipient2 = await basicToken2.balanceOf(recipientAccounts[0])
 			assert(balanceOfSender2.toString() === web3.utils.toWei("100", "ether"), "initial balance of sender is incorrect")
 			assert(balanceOfRecipient2.toString() === web3.utils.toWei("0", "ether"), "initial balance of recipient is incorrect") 
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[1]) === false, "check already marked as cashed before transfer")
+			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[1]) === ZERO_ADDRESS, "check already marked as cashed before transfer")
 			
 			const allowanceBefore2 = await basicToken2.allowance(accountAddress, zippieWallet.address)
 			assert(allowanceBefore2.toString() === "0", "allowance set before approved")
@@ -266,7 +267,7 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 			balanceOfRecipient2 = await basicToken2.balanceOf(recipientAccounts[0])
 			assert(balanceOfSender2.toString() === web3.utils.toWei("99", "ether"), "amount did not transfer from sender")
 			assert(balanceOfRecipient2.toString() === web3.utils.toWei("1", "ether"), "amount did not transfer to recipient") 
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[1]) === true, "check has not been marked as cashed after transfer")
+			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[1]) === recipientAccounts[0], "check has not been marked as cashed after transfer")
 
 			const allowanceAfter2 = await basicToken2.allowance(accountAddress, zippieWallet.address)
 			assert(allowanceAfter2 > 0, "allowance not set")

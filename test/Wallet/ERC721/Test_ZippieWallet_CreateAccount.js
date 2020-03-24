@@ -7,6 +7,7 @@ const {
 	createBlankCheck_1of1Signer_NoCard,
 	getAccountAddress,
 	soliditySha3_addresses_m,
+	ZERO_ADDRESS,
 } = require('./HelpFunctions');
 
 
@@ -89,7 +90,7 @@ contract("ZippieWalletERC721 (using CREATE2 to approve ERC721 transfers for acco
 			// Check token owner and operator approval before redeem
 			const ownerOfToken1Before = await basicToken.ownerOf("1")
 			assert(ownerOfToken1Before.toLowerCase() === accountAddress, "initial owner of token 1 is incorrect")
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[0]) === false, "check already marked as cashed before transfer")
+			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[0]) === ZERO_ADDRESS, "check already marked as cashed before transfer")
 			const approvalBefore = await basicToken.isApprovedForAll(accountAddress, zippieWallet.address)
 			assert(approvalBefore === false, "operator approval set before redeem")
 
@@ -100,7 +101,7 @@ contract("ZippieWalletERC721 (using CREATE2 to approve ERC721 transfers for acco
 			// Check owner and operator approval after redeem
 			const ownerOfToken1After = await basicToken.ownerOf("1")
 			assert(ownerOfToken1After === recipientAccounts[0], "token 1 owner after redeem is incorrect")
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[0]) === true, "check has not been marked as cashed after transfer")
+			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[0]) === recipientAccounts[0], "check has not been marked as cashed after transfer")
 			const approvalAfter = await basicToken.isApprovedForAll(accountAddress, zippieWallet.address)
 			assert(approvalAfter === true, "operator approval not set after redeem")
 
@@ -118,7 +119,7 @@ contract("ZippieWalletERC721 (using CREATE2 to approve ERC721 transfers for acco
 			// Check token owner before redeem
 			const ownerOfToken2Before = await basicToken.ownerOf("2")
 			assert(ownerOfToken2Before.toLowerCase() === accountAddress, "initial owner of token 2 is incorrect")
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[1]) === false, "check already marked as cashed before transfer")
+			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[1]) === ZERO_ADDRESS, "check already marked as cashed before transfer")
 
 			// Redeem second blank check (no create account, was done in previous call)
 			const receipt2 = await zippieWallet.redeemBlankCheck(bc2.addresses, bc2.signers, bc2.m, bc2.signatures.v, bc2.signatures.r, bc2.signatures.s, bc2.tokenId, bc2.cardNonces, {from: sponsorAccounts[0]})
@@ -127,7 +128,7 @@ contract("ZippieWalletERC721 (using CREATE2 to approve ERC721 transfers for acco
 			// Check owner after redeem
 			const ownerOfToken2After = await basicToken.ownerOf("2")
 			assert(ownerOfToken2After === recipientAccounts[0], "token 2 owner after redeem is incorrect")
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[1]) === true, "check has not been marked as cashed after transfer")
+			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[1]) === recipientAccounts[0], "check has not been marked as cashed after transfer")
 		});
 
 		it("redeemBlankCheck m[1,1,1,1]", async () => {
@@ -164,7 +165,7 @@ contract("ZippieWalletERC721 (using CREATE2 to approve ERC721 transfers for acco
 			// Check token owner and operator approval before redeem
 			const ownerOfToken1Before = await basicToken.ownerOf("1")
 			assert(ownerOfToken1Before.toLowerCase() === accountAddress, "initial owner of token 1 is incorrect")
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[0]) === false, "check already marked as cashed before transfer")
+			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[0]) === ZERO_ADDRESS, "check already marked as cashed before transfer")
 			const approvalBefore = await basicToken.isApprovedForAll(accountAddress, zippieWallet.address)
 			assert(approvalBefore === false, "operator approval set before redeem")
 
@@ -175,7 +176,7 @@ contract("ZippieWalletERC721 (using CREATE2 to approve ERC721 transfers for acco
 			// Check owner and operator approval after redeem
 			const ownerOfToken1After = await basicToken.ownerOf("1")
 			assert(ownerOfToken1After === recipientAccounts[0], "token 1 owner after redeem is incorrect")
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[0]) === true, "check has not been marked as cashed after transfer")
+			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[0]) === recipientAccounts[0], "check has not been marked as cashed after transfer")
 			const approvalAfter = await basicToken.isApprovedForAll(accountAddress, zippieWallet.address)
 			assert(approvalAfter === true, "operator approval not set after redeem")
 
@@ -193,7 +194,7 @@ contract("ZippieWalletERC721 (using CREATE2 to approve ERC721 transfers for acco
 			// Check token owner before redeem
 			const ownerOfToken2Before = await basicToken.ownerOf("2")
 			assert(ownerOfToken2Before.toLowerCase() === accountAddress, "initial owner of token 2 is incorrect")
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[1]) === false, "check already marked as cashed before transfer")
+			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[1]) === ZERO_ADDRESS, "check already marked as cashed before transfer")
 
 			// Redeem second blank check (no create account, was done in previous call)
 			const receipt2 = await zippieWallet.redeemBlankCheck(bc2.addresses, bc2.signers, bc2.m, bc2.signatures.v, bc2.signatures.r, bc2.signatures.s, bc2.tokenId, bc2.cardNonces, {from: sponsorAccounts[0]})
@@ -202,7 +203,7 @@ contract("ZippieWalletERC721 (using CREATE2 to approve ERC721 transfers for acco
 			// Check owner after redeem
 			const ownerOfToken2After = await basicToken.ownerOf("2")
 			assert(ownerOfToken2After === recipientAccounts[0], "token 2 owner after redeem is incorrect")
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[1]) === true, "check has not been marked as cashed after transfer")
+			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[1]) === recipientAccounts[0], "check has not been marked as cashed after transfer")
 		});
 		it("redeemBlankCheck m[1,1,0,0] with 2 tokens (2 approve)", async () => {
 			// Blank Check 1 (token 1, tokenId 1)
@@ -234,7 +235,7 @@ contract("ZippieWalletERC721 (using CREATE2 to approve ERC721 transfers for acco
 			// Check token owner and operator approval before redeem
 			const ownerOfToken1Before = await basicToken.ownerOf("1")
 			assert(ownerOfToken1Before.toLowerCase() === accountAddress, "initial owner of token 1 is incorrect")
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[0]) === false, "check already marked as cashed before transfer")
+			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[0]) === ZERO_ADDRESS, "check already marked as cashed before transfer")
 			const approvalBefore = await basicToken.isApprovedForAll(accountAddress, zippieWallet.address)
 			assert(approvalBefore === false, "operator approval set before redeem")
 
@@ -245,7 +246,7 @@ contract("ZippieWalletERC721 (using CREATE2 to approve ERC721 transfers for acco
 			// Check owner and operator approval after redeem
 			const ownerOfToken1After = await basicToken.ownerOf("1")
 			assert(ownerOfToken1After === recipientAccounts[0], "token 1 owner after redeem is incorrect")
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[0]) === true, "check has not been marked as cashed after transfer")
+			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[0]) === recipientAccounts[0], "check has not been marked as cashed after transfer")
 			const approvalAfter = await basicToken.isApprovedForAll(accountAddress, zippieWallet.address)
 			assert(approvalAfter === true, "operator approval not set after redeem")
 
@@ -255,7 +256,7 @@ contract("ZippieWalletERC721 (using CREATE2 to approve ERC721 transfers for acco
 			// Check token owner and operator approval before redeem
 			const ownerOfToken2Before = await basicToken2.ownerOf("1")
 			assert(ownerOfToken2Before.toLowerCase() === accountAddress, "initial owner of token 1 is incorrect")
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[1]) === false, "check already marked as cashed before transfer")
+			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[1]) === ZERO_ADDRESS, "check already marked as cashed before transfer")
 			const approvalBefore2 = await basicToken2.isApprovedForAll(accountAddress, zippieWallet.address)
 			assert(approvalBefore2 === false, "operator approval set before redeem")
 
@@ -266,7 +267,7 @@ contract("ZippieWalletERC721 (using CREATE2 to approve ERC721 transfers for acco
 			// Check owner and operator approval after redeem
 			const ownerOfToken2After = await basicToken2.ownerOf("1")
 			assert(ownerOfToken2After === recipientAccounts[0], "token 1 owner after redeem is incorrect")
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[1]) === true, "check has not been marked as cashed after transfer")
+			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[1]) === recipientAccounts[0], "check has not been marked as cashed after transfer")
 			const approvalAfter2 = await basicToken2.isApprovedForAll(accountAddress, zippieWallet.address)
 			assert(approvalAfter2 === true, "operator approval not set after redeem")
 		});

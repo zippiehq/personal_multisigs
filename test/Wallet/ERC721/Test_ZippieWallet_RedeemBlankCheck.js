@@ -8,6 +8,7 @@ const {
 	getSignature,
 	getBlankCheckSignature,
 	getSignatureNoCard,
+	ZERO_ADDRESS,
  } = require("./HelpFunctions");
  
 contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
@@ -49,7 +50,7 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		
 		const initialBalanceSender = await basicToken.balanceOf(multisig)
 		const initialBalanceRecipient = await basicToken.balanceOf(recipient)
-		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check already marked as cashed before transfer");
+		assert(await zippieWallet.usedNonces(multisig, verificationKey) === ZERO_ADDRESS, "check already marked as cashed before transfer");
 		
 		await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, tokenId, [], {from: sponsor});
 		
@@ -58,7 +59,7 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		const newBalanceRecipient = await basicToken.balanceOf(recipient)	
 		assert((initialBalanceSender - newBalanceSender).toString() === amount, "token did not transfer from sender");
 		assert((newBalanceRecipient - initialBalanceRecipient).toString() === amount, "token did not transfer to recipient");
-		assert(await zippieWallet.usedNonces(multisig, verificationKey) === true, "check has not been marked as cashed after transfer");
+		assert(await zippieWallet.usedNonces(multisig, verificationKey) === recipient, "check has not been marked as cashed after transfer");
 
 		try {
 			// try the same exact transfer 			
@@ -85,7 +86,7 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 
 		const initialBalanceSender = await basicToken.balanceOf(multisig)
 		const initialBalanceRecipient = await basicToken.balanceOf(recipient)
-		assert(await zippieWallet.usedNonces(multisig, verificationKey) === false, "check already marked as cashed before transfer");
+		assert(await zippieWallet.usedNonces(multisig, verificationKey) === ZERO_ADDRESS, "check already marked as cashed before transfer");
 		
 		await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, tokenId, [], {from: sponsor});
 		
@@ -94,6 +95,6 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		const newBalanceRecipient = await basicToken.balanceOf(recipient)
 		assert((initialBalanceSender - newBalanceSender).toString() === amount, "token did not transfer from sender");
 		assert((newBalanceRecipient - initialBalanceRecipient).toString() === amount, "token did not transfer to recipient");
-		assert(await zippieWallet.usedNonces(multisig, verificationKey) === true, "check has not been marked as cashed after transfer");
+		assert(await zippieWallet.usedNonces(multisig, verificationKey) === recipient, "check has not been marked as cashed after transfer");
 	});
 });

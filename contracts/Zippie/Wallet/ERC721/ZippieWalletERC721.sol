@@ -85,6 +85,7 @@ contract ZippieWalletERC721 is ZippieAccount, ZippieMultisig, ZippieCard {
         verifyMultisigNonce(
             accountAddress, 
             addresses[2], 
+            addresses[1],
             ZippieUtils.toEthSignedMessageHash(
                 keccak256(abi.encodePacked(addresses[1]))
             ), 
