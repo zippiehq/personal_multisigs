@@ -35,7 +35,8 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 	// random verification key
 	const verificationKeys = [
 		accounts[4], 
-		accounts[14]
+		accounts[14],
+		accounts[15]
 	]
 
 	// token recipient
@@ -83,6 +84,16 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 			// Get account address	
 			const accountAddress = getAccountAddress(bc1.signers, bc1.m, zippieWallet.address)
 
+			// Blank Check 3
+			const bc3 = await createBlankCheck_1of1Signer_NoCard(
+				basicToken.address,
+				accountAddress,
+				verificationKeys[2],
+				signerAccounts[0],
+				[1, 1, 0, 0],
+				"1",
+			)
+
 			// Send tokens to account
 			await basicToken.transfer(accountAddress, web3.utils.toWei("100", "ether"), {from: tokenAccounts[0]});
 
@@ -96,8 +107,20 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 			assert(allowanceBefore.toString() === "0", "allowance set before approved")
 
 			// Redeem blank check and create account
-			const receipt = await zippieWallet.redeemBlankCheck(bc1.addresses, bc1.signers, bc1.m, bc1.signatures.v, bc1.signatures.r, bc1.signatures.s, bc1.amount, bc1.cardNonces, {from: sponsorAccounts[0]})
-			console.log(`Gas used for redeemBlankCheck w/ createAccount m[1,1,0,0]: ${receipt.receipt.gasUsed}`)
+			const tx = await zippieWallet.redeemBlankCheck(bc1.addresses, bc1.signers, bc1.m, bc1.signatures.v, bc1.signatures.r, bc1.signatures.s, bc1.amount, bc1.cardNonces, {from: sponsorAccounts[0]})
+			console.log(`Gas used for redeemBlankCheck w/ createAccount m[1,1,0,0]: ${tx.receipt.gasUsed}`)
+			assert(tx.receipt.rawLogs.some(log => { 
+				return log.topics[0] === web3.utils.sha3("Transfer(address,address,uint256)") 
+			}) === true, "missing Transfer event")
+			assert(tx.receipt.rawLogs.some(log => { 
+				return log.topics[0] === web3.utils.sha3("Approval(address,address,uint256)") 
+				&& log.data === '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' 
+			}) === true, "missing Approval event")
+			assert(tx.receipt.rawLogs.some(log => { 
+				return log.topics[0] === web3.utils.sha3("Approval(address,address,uint256)") 
+				&& log.data !== '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' 
+			}) === true, "missing Approval event")
+
 
 			balanceOfSender = await basicToken.balanceOf(accountAddress)
 			balanceOfRecipient = await basicToken.balanceOf(recipientAccounts[0])
@@ -117,14 +140,39 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 			}
 
 			// Redeem second blank check (no create account, was done in previous call)
-			const receipt2 = await zippieWallet.redeemBlankCheck(bc2.addresses, bc2.signers, bc2.m, bc2.signatures.v, bc2.signatures.r, bc2.signatures.s, bc2.amount, bc2.cardNonces, {from: sponsorAccounts[0]})
-			console.log(`Gas used for redeemBlankCheck w/o createAccount m[1,1,0,0]: ${receipt2.receipt.gasUsed}`)
+			const tx2 = await zippieWallet.redeemBlankCheck(bc2.addresses, bc2.signers, bc2.m, bc2.signatures.v, bc2.signatures.r, bc2.signatures.s, bc2.amount, bc2.cardNonces, {from: sponsorAccounts[0]})
+			console.log(`Gas used for redeemBlankCheck w/o createAccount m[1,1,0,0]: ${tx2.receipt.gasUsed}`)
+			assert(tx2.receipt.rawLogs.some(log => { 
+				return log.topics[0] === web3.utils.sha3("Transfer(address,address,uint256)") 
+			}) === true, "missing Transfer event")
+			assert(tx2.receipt.rawLogs.some(log => {
+				return log.topics[0] === web3.utils.sha3("Approval(address,address,uint256)") 
+				&& log.data === '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' 
+			}) === false, "unexpected Approval event")
+			assert(tx2.receipt.rawLogs.some(log => { 
+				return log.topics[0] === web3.utils.sha3("Approval(address,address,uint256)") 
+				&& log.data !== '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' 
+			}) === true, "missing Approval event")
 
 			balanceOfSender = await basicToken.balanceOf(accountAddress)
 			balanceOfRecipient = await basicToken.balanceOf(recipientAccounts[0])
 			assert(balanceOfSender.toString() === web3.utils.toWei("98", "ether"), "amount did not transfer from sender")
 			assert(balanceOfRecipient.toString() === web3.utils.toWei("2", "ether"), "amount did not transfer to recipient") 
 			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[1]) === recipientAccounts[0], "check has not been marked as cashed after transfer")
+
+			// Redeem third blank check back to sender (i.e. cancel)
+			const tx3 = await zippieWallet.redeemBlankCheck(bc3.addresses, bc3.signers, bc3.m, bc3.signatures.v, bc3.signatures.r, bc3.signatures.s, bc3.amount, bc3.cardNonces, {from: sponsorAccounts[0]})
+			console.log(`Gas used for redeemBlankCheck w/o transfer (i.e. cacnel) m[1,1,0,0]: ${tx3.receipt.gasUsed}`)
+			assert(tx3.receipt.rawLogs.some(log => { 
+				return log.topics[0] === web3.utils.sha3("Transfer(address,address,uint256)") 
+			}) === false, "unexpected Transfer event")
+			assert(tx3.receipt.rawLogs.some(log => {
+				return log.topics[0] === web3.utils.sha3("Approval(address,address,uint256)") 
+			}) === false, "unexpected Approval event")
+
+			balanceOfSender = await basicToken.balanceOf(accountAddress)
+			assert(balanceOfSender.toString() === web3.utils.toWei("98", "ether"), "balance transfer from sender when it shouldn't");
+			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[2]) === accountAddress, "check has not been marked as cashed after transfer")
 		});
 
 		it("redeemBlankCheck m[1,1,1,1]", async () => {
@@ -287,7 +335,7 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 			const accountAddress = getAccountAddress(bc1.signers, bc1.m, zippieWallet.address)
 			const salt = soliditySha3_addresses_m(bc1.signers, bc1.m);
 			const accountAddressSolidity = await zippieWallet.getAccountAddress(salt, {from: sponsorAccounts[0]})
-			assert(accountAddress === accountAddressSolidity.toLowerCase(), "account address calculation didn't match")
+			assert(accountAddress === accountAddressSolidity, "account address calculation didn't match")
 
 			// Send tokens to account
 			await basicToken.transfer(accountAddress, web3.utils.toWei("100", "ether"), {from: tokenAccounts[0]});

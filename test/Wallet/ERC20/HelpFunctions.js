@@ -74,7 +74,7 @@ function getAccountAddress(signers, m, walletAddress) {
 	//const salt = web3.utils.sha3(web3.eth.abi.encodeParameters(['address[]', 'uint8[]'], [bc1.signers, bc1.m]))
 	const accountHash = web3.utils.sha3(`0x${'ff'}${walletAddress.slice(2)}${salt.slice(2)}${bytecodeHash.slice(2)}`)
 	const accountAddress = `0x${accountHash.slice(-40)}`.toLowerCase()
-	return accountAddress
+	return web3.utils.toChecksumAddress(accountAddress)
 }
 
 async function getMultisigSignature(signers, m, multisig) {

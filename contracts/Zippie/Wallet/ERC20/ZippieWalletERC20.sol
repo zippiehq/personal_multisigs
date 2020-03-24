@@ -132,6 +132,13 @@ contract ZippieWalletERC20 is ZippieAccount, ZippieMultisig, ZippieCard {
             );
         }
 
+        // sender and recipient are same (i.e. "cancel")
+        // but don't need to send tokens to back to same account
+        // just mark verification key (nonce) as used
+        if(accountAddress == addresses[1]) {
+            return true;
+        }
+
         // check if account needs to be "created" (ERC20 approve)
         if(IERC20(addresses[0]).allowance(accountAddress, address(this)) == 0) {
             require(

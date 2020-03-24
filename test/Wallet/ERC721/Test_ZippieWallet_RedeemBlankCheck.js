@@ -52,7 +52,10 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		const initialBalanceRecipient = await basicToken.balanceOf(recipient)
 		assert(await zippieWallet.usedNonces(multisig, verificationKey) === ZERO_ADDRESS, "check already marked as cashed before transfer");
 		
-		await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, tokenId, [], {from: sponsor});
+		const tx = await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, tokenId, [], {from: sponsor});
+		assert(tx.receipt.rawLogs.some(log => { 
+			return log.topics[0] === web3.utils.sha3("Transfer(address,address,uint256)") 
+		}) === true, "missing Transfer event")
 		
 		const amount = "1"
 		const newBalanceSender = await basicToken.balanceOf(multisig)
@@ -88,7 +91,10 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		const initialBalanceRecipient = await basicToken.balanceOf(recipient)
 		assert(await zippieWallet.usedNonces(multisig, verificationKey) === ZERO_ADDRESS, "check already marked as cashed before transfer");
 		
-		await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, tokenId, [], {from: sponsor});
+		const tx = await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, tokenId, [], {from: sponsor});
+		assert(tx.receipt.rawLogs.some(log => { 
+			return log.topics[0] === web3.utils.sha3("Transfer(address,address,uint256)") 
+		}) === true, "missing Transfer event")
 		
 		const amount = "1"
 		const newBalanceSender = await basicToken.balanceOf(multisig)
@@ -96,5 +102,71 @@ contract("Test Zippie Multisig Check Cashing Functionality", (accounts) => {
 		assert((initialBalanceSender - newBalanceSender).toString() === amount, "token did not transfer from sender");
 		assert((newBalanceRecipient - initialBalanceRecipient).toString() === amount, "token did not transfer to recipient");
 		assert(await zippieWallet.usedNonces(multisig, verificationKey) === recipient, "check has not been marked as cashed after transfer");
+	});
+	it("should allow a blank check to be cashed back to same account without tranfering tokens (i.e. 'cancelled')", async () => {
+		const signers = [signer]
+		const m = [1, 1, 0, 0]
+		const multisig = getAccountAddress(signers, m, zippieWallet.address)
+		const tokenId = "1"
+		await basicToken.transferFrom(sponsor, multisig, tokenId, {from: sponsor});
+		const addresses = [basicToken.address, multisig, verificationKey]
+
+		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, tokenId, addresses[0])
+		const recipientSignature = await getRecipientSignature(multisig, verificationKey)
+
+		const signature = getSignatureNoCard(blankCheckSignature, recipientSignature)
+		
+		const initialBalanceSender = await basicToken.balanceOf(multisig)
+		assert(await zippieWallet.usedNonces(multisig, verificationKey) === ZERO_ADDRESS, "check already marked as cashed before transfer");
+		
+		const tx = await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, tokenId, [], {from: sponsor});
+		assert(tx.receipt.rawLogs.some(log => { 
+			return log.topics[0] === web3.utils.sha3("Transfer(address,address,uint256)") 
+		}) === false, "unexpected Transfer event")
+		
+		const newBalanceSender = await basicToken.balanceOf(multisig)
+		assert(initialBalanceSender.toString() === newBalanceSender.toString(), "balance transfer from sender when it shouldn't");
+		assert(await zippieWallet.usedNonces(multisig, verificationKey) === multisig, "check has not been marked as cashed after transfer");
+
+		try {
+			// try the same exact transfer 			
+			await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, tokenId, [], {from: sponsor});
+			assert(false, "duplicate transfer went through, but should have failed!")
+		} catch(error) {
+			assert(error.reason === "Nonce already used", error.reason)
+		}
+	});
+	it("should allow a blank check to be 'cancelled' when balance is 0", async () => {
+		const signers = [signer]
+		const m = [1, 1, 0, 0]
+		const multisig = getAccountAddress(signers, m, zippieWallet.address)
+		const tokenId = "1"
+		const addresses = [basicToken.address, multisig, verificationKey]
+
+		const blankCheckSignature = await getBlankCheckSignature(verificationKey, signer, tokenId, addresses[0])
+		const recipientSignature = await getRecipientSignature(multisig, verificationKey)
+
+		const signature = getSignatureNoCard(blankCheckSignature, recipientSignature)
+		
+		const initialBalanceSender = await basicToken.balanceOf(multisig)
+		assert(initialBalanceSender.toString() === "0", "balance is not 0");
+		assert(await zippieWallet.usedNonces(multisig, verificationKey) === ZERO_ADDRESS, "check already marked as cashed before transfer");
+		
+		const tx = await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, tokenId, [], {from: sponsor});
+		assert(tx.receipt.rawLogs.some(log => { 
+			return log.topics[0] === web3.utils.sha3("Transfer(address,address,uint256)") 
+		}) === false, "unexpected Transfer event")
+		
+		const newBalanceSender = await basicToken.balanceOf(multisig)
+		assert(initialBalanceSender.toString() === newBalanceSender.toString(), "balance transfer from sender when it shouldn't");
+		assert(await zippieWallet.usedNonces(multisig, verificationKey) === multisig, "check has not been marked as cashed after transfer");
+
+		try {
+			// try the same exact transfer 			
+			await zippieWallet.redeemBlankCheck(addresses, signers, m, signature.v, signature.r, signature.s, tokenId, [], {from: sponsor});
+			assert(false, "duplicate transfer went through, but should have failed!")
+		} catch(error) {
+			assert(error.reason === "Nonce already used", error.reason)
+		}
 	});
 });
