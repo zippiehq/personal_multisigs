@@ -17,6 +17,8 @@
     "truffle-flattener": "^1.4.0"
   },
   "dependencies": {
+    "@ensdomains/ens": "^0.4.4",
+    "@ensdomains/resolver": "^0.2.4",
     "openzeppelin-solidity": "^2.3.0"
   }
 }
