@@ -9,16 +9,16 @@
   "author": "Zippie",
   "license": "MIT",
   "devDependencies": {
-    "@truffle/hdwallet-provider": "^1.0.32",
+    "@truffle/hdwallet-provider": "^1.0.33",
     "chai": "^4.2.0",
-    "ganache-cli": "^6.4.4",
-    "openzeppelin-test-helpers": "^0.4.0",
-    "truffle": "^5.0.25",
-    "truffle-flattener": "^1.4.0"
+    "ganache-cli": "^6.9.1",
+    "openzeppelin-test-helpers": "^0.5.1",
+    "truffle": "^5.1.18",
+    "truffle-flattener": "^1.4.2"
   },
   "dependencies": {
     "@ensdomains/ens": "^0.4.4",
     "@ensdomains/resolver": "^0.2.4",
-    "openzeppelin-solidity": "^2.3.0"
+    "openzeppelin-solidity": "^2.5.0"
   }
 }
