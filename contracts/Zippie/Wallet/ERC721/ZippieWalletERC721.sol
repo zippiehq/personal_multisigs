@@ -85,6 +85,7 @@ contract ZippieWalletERC721 is ZippieAccount, ZippieMultisig, ZippieCard {
         verifyMultisigNonce(
             accountAddress, 
             addresses[2], 
+            addresses[1],
             ZippieUtils.toEthSignedMessageHash(
                 keccak256(abi.encodePacked(addresses[1]))
             ), 
@@ -125,6 +126,13 @@ contract ZippieWalletERC721 is ZippieAccount, ZippieMultisig, ZippieCard {
                 r, 
                 s
             );
+        }
+
+        // sender and recipient are same (i.e. "cancel")
+        // but don't need to send tokens to back to same account
+        // just mark verification key (nonce) as used
+        if(accountAddress == addresses[1]) {
+            return true;
         }
 
         // check if account needs to be "created" (ERC721 setApprovalForAll)

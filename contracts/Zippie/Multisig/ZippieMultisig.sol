@@ -12,8 +12,8 @@ import "../Utils/ZippieUtils.sol";
  */
 contract ZippieMultisig {
 
-    // nonces for replay protection 
-    mapping (address => mapping(address => bool)) public usedNonces;
+    // nonces for replay protection (senderAddress => verificationKey => recipientAddress)
+    mapping (address => mapping(address => address)) public usedNonces;
 
     /** 
       * @dev Verify that a random nonce account (one time private key) 
@@ -29,6 +29,7 @@ contract ZippieMultisig {
     function verifyMultisigNonce(
         address multisigAddress, 
         address nonceAddress, 
+        address recipientAddress,
         bytes32 signedHash, 
         uint8 v, 
         bytes32 r, 
@@ -38,7 +39,7 @@ contract ZippieMultisig {
         returns (bool)
     {
         require(
-            usedNonces[multisigAddress][nonceAddress] == false, 
+            usedNonces[multisigAddress][nonceAddress] == address(0), 
             "Nonce already used"
         ); 
         require(
@@ -47,7 +48,7 @@ contract ZippieMultisig {
         );
         
         // flag nonce as used to prevent reuse
-        usedNonces[multisigAddress][nonceAddress] = true; 
+        usedNonces[multisigAddress][nonceAddress] = recipientAddress; 
         return true;  
     }
 
