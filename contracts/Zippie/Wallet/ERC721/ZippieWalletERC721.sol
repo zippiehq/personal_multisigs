@@ -1,11 +1,11 @@
-pragma solidity ^0.5.10;
+pragma solidity ^0.6.0;
 
 import "../../Multisig/ZippieMultisig.sol";
 import "../../Card/ZippieCard.sol";
 import "../../Utils/ZippieUtils.sol";
 import "../../Account/ZippieAccount.sol";
 
-import "openzeppelin-solidity/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 /**
   * @title Zippie Multisig Wallet for ERC721 (with 2FA smart card)

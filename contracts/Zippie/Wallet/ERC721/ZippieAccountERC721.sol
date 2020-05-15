@@ -1,7 +1,7 @@
-pragma solidity ^0.5.10;
+pragma solidity ^0.6.0;
 
 import "../../Account/IZippieAccount.sol";
-import "openzeppelin-solidity/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 /**
   * @title Zippie Account ERC721
@@ -19,7 +19,7 @@ contract ZippieAccountERC721 is IZippieAccount {
     * @dev Approve owner to send a specific ERC721 token (all tokenId's)
     * @param token token to be approved
     */
-  function approve(address token) public {
+  function approve(address token) public override {
     require(msg.sender == owner);
     IERC721(token).setApprovalForAll(msg.sender, true);
     selfdestruct(tx.origin); // Sponsor (any available ETH will be sent here)

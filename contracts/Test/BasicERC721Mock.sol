@@ -1,10 +1,10 @@
-pragma solidity ^0.5.10;
+pragma solidity ^0.6.0;
 
-import "openzeppelin-solidity/contracts/token/ERC721/ERC721Full.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-contract BasicERC721Mock is ERC721Full {
+contract BasicERC721Mock is ERC721 {
 
-    constructor(address _initialAccount) ERC721Full("Zippie Collectables", "ZIPC") public {
+    constructor(address _initialAccount) ERC721("Zippie Collectables", "ZIPC") public {
         // Mint intitial collectable to creator
         _mint(_initialAccount, 1);
         _mint(_initialAccount, 2);

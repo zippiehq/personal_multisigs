@@ -1,11 +1,11 @@
-pragma solidity ^0.5.10;
+pragma solidity ^0.6.0;
 
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract BasicERC20Mock is ERC20, ERC20Detailed {
+contract BasicERC20Mock is ERC20 {
 
-    constructor(address _initialAccount) ERC20Detailed("Zippie", "ZIPT", 18) public {
+    constructor(address _initialAccount) ERC20("Zippie", "ZIPT") public {
+        _setupDecimals(18);
         // Set initial balance to creator
         _mint(_initialAccount, 100 ether);
     }
