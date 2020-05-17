@@ -24,9 +24,6 @@ contract ZippieSmartWalletERC20 is ZippieAccount, Ownable {
         address recipient, 
         bytes32 merchantId, 
         bytes32 orderId,
-        uint8 v, 
-        bytes32 r, 
-        bytes32 s, 
         uint256 amount
     ) 
         public 
@@ -42,29 +39,16 @@ contract ZippieSmartWalletERC20 is ZippieAccount, Ownable {
             "Merchant owner not set"
         );
 
-        // XXX: We need nonces (replay protection) if smart accounts are reused
+        require(
+            merchantOwner(merchantId) == msg.sender, 
+            "Sender not merchant owner"
+        );
+
+        // XXX: check merchant owner premissions
 
         // get account address
         address accountAddress = getAccountAddress(
             keccak256(abi.encodePacked(merchantId, orderId))
-        );
-
-        // verify signature is "merchant owner"
-        bytes32 signedHash = ZippieUtils.toEthSignedMessageHash(
-            keccak256(abi.encodePacked(
-                "transferPayment", 
-                merchantId,
-                orderId, 
-                address(this), 
-                token, 
-                amount, 
-                recipient
-            ))
-        );
-
-        require(
-            merchantOwner(merchantId) == ecrecover(signedHash, v, r, s), 
-            "Invalid signature"
         );
 
         // check if smart account needs to be "created" (ERC20 approve)

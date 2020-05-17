@@ -67,10 +67,9 @@ contract("ZippieSmartWalletERC20", ([owner, merchant, recipient, other]) => {
       await this.wallet.setMerchantOwner(merchantId, merchant, { from: owner })
       expect(await this.wallet.merchantOwner(merchantId)).to.equal(merchant)
       
-      // Transfer payment from smart account to recipient (signed by "merchant")
+      // Transfer payment from smart account to recipient (send from "merchant")
       expect(await this.token.balanceOf(recipient)).to.be.bignumber.equal(new BN(0))
-      const { v, r, s } = await getTransferPaymentSignature(merchant, merchantId, orderId, this.wallet.address, this.token.address, new BN(1), recipient)
-      await this.wallet.transferPayment(this.token.address, recipient, merchantId, orderId, v, r, s, new BN(1), { from: owner })
+      await this.wallet.transferPayment(this.token.address, recipient, merchantId, orderId, new BN(1), { from: merchant })
       expect(await this.token.balanceOf(recipient)).to.be.bignumber.equal(new BN(1))
     })
 
@@ -87,12 +86,11 @@ contract("ZippieSmartWalletERC20", ([owner, merchant, recipient, other]) => {
       await this.wallet.setMerchantOwner(merchantId, merchant, { from: owner })
       expect(await this.wallet.merchantOwner(merchantId)).to.equal(merchant)
       
-      // Transfer payment from smart account to recipient (signed by "other")
+      // Transfer payment from smart account to recipient (send from "other")
       expect(await this.token.balanceOf(recipient)).to.be.bignumber.equal(new BN(0))
-      const { v, r, s } = await getTransferPaymentSignature(other, merchantId, orderId, this.wallet.address, this.token.address, new BN(1), recipient)
       await expectRevert(
-        this.wallet.transferPayment(this.token.address, recipient, merchantId, orderId, v, r, s, new BN(1), { from: owner }),
-        'Invalid signature'
+        this.wallet.transferPayment(this.token.address, recipient, merchantId, orderId, new BN(1), { from: other }),
+        'Sender not merchant owner'
       )
       expect(await this.token.balanceOf(recipient)).to.be.bignumber.equal(new BN(0))
     })
@@ -111,9 +109,8 @@ contract("ZippieSmartWalletERC20", ([owner, merchant, recipient, other]) => {
 
       // Transfer payment from smart account to recipient before mwrchant owner is set
       expect(await this.token.balanceOf(recipient)).to.be.bignumber.equal(new BN(0))
-      const { v, r, s } = await getTransferPaymentSignature(other, merchantId, orderId, this.wallet.address, this.token.address, new BN(1), recipient)
       await expectRevert(
-        this.wallet.transferPayment(this.token.address, recipient, merchantId, orderId, v, r, s, new BN(1), { from: owner }),
+        this.wallet.transferPayment(this.token.address, recipient, merchantId, orderId, new BN(1), { from: merchant }),
         'Merchant owner not set'
       )
       expect(await this.token.balanceOf(recipient)).to.be.bignumber.equal(new BN(0))
@@ -135,15 +132,13 @@ contract("ZippieSmartWalletERC20", ([owner, merchant, recipient, other]) => {
       await this.token.transfer(accountAddress2, new BN(1), { from: owner })
       expect(await this.token.balanceOf(accountAddress2)).to.be.bignumber.equal(new BN(1))
       
-      // Transfer payment from smart account 1 to recipient (signed by "merchant")
+      // Transfer payment from smart account 1 to recipient 
       expect(await this.token.balanceOf(recipient)).to.be.bignumber.equal(new BN(0))
-      const signature1 = await getTransferPaymentSignature(merchant, merchantId, orderId, this.wallet.address, this.token.address, new BN(1), recipient)
-      await this.wallet.transferPayment(this.token.address, recipient, merchantId, orderId, signature1.v, signature1.r, signature1.s, new BN(1), { from: owner })
+      await this.wallet.transferPayment(this.token.address, recipient, merchantId, orderId, new BN(1), { from: merchant })
       expect(await this.token.balanceOf(recipient)).to.be.bignumber.equal(new BN(1))   
 
-      // Transfer payment from smart account 2 to recipient (signed by "merchant")
-      const singature2 = await getTransferPaymentSignature(merchant, merchantId, orderId2, this.wallet.address, this.token.address, new BN(1), recipient)
-      await this.wallet.transferPayment(this.token.address, recipient, merchantId, orderId2, singature2.v, singature2.r, singature2.s, new BN(1), { from: owner })
+      // Transfer payment from smart account 2 to recipient
+      await this.wallet.transferPayment(this.token.address, recipient, merchantId, orderId2, new BN(1), { from: merchant })
       expect(await this.token.balanceOf(recipient)).to.be.bignumber.equal(new BN(2)) 
     })
 
@@ -167,28 +162,23 @@ contract("ZippieSmartWalletERC20", ([owner, merchant, recipient, other]) => {
       await this.token.transfer(accountAddress2, new BN(1), { from: owner })
       expect(await this.token.balanceOf(accountAddress2)).to.be.bignumber.equal(new BN(1))
 
-      // Payment transfer signature 1 (signed by "merchant")
-      const signature1 = await getTransferPaymentSignature(merchant, merchantId, orderId, this.wallet.address, this.token.address, new BN(1), recipient)
-      // Payment transfer signature 2 (signed by "other")
-      const singature2 = await getTransferPaymentSignature(other, merchantId2, orderId, this.wallet.address, this.token.address, new BN(1), recipient)
-
       // Try to transfer payment from each others accounts
       await expectRevert(
-        this.wallet.transferPayment(this.token.address, recipient, merchantId, orderId, singature2.v, singature2.r, singature2.s, new BN(1), { from: owner }),
-        'Invalid signature'
+        this.wallet.transferPayment(this.token.address, recipient, merchantId, orderId, new BN(1), { from: other }),
+        'Sender not merchant owner'
       ) 
       await expectRevert(
-        this.wallet.transferPayment(this.token.address, recipient, merchantId2, orderId, signature1.v, signature1.r, signature1.s, new BN(1), { from: owner }),
-        'Invalid signature'
+        this.wallet.transferPayment(this.token.address, recipient, merchantId2, orderId, new BN(1), { from: merchant }),
+        'Sender not merchant owner'
       )
       
-      // Transfer payment from smart account 1 to recipient (signed by "merchant")
+      // Transfer payment from smart account 1 to recipient (send from "merchant")
       expect(await this.token.balanceOf(recipient)).to.be.bignumber.equal(new BN(0))
-      await this.wallet.transferPayment(this.token.address, recipient, merchantId, orderId, signature1.v, signature1.r, signature1.s, new BN(1), { from: owner })
+      await this.wallet.transferPayment(this.token.address, recipient, merchantId, orderId, new BN(1), { from: merchant })
       expect(await this.token.balanceOf(recipient)).to.be.bignumber.equal(new BN(1))   
 
-      // Transfer payment from smart account 2 to recipient (signed by "other")
-      await this.wallet.transferPayment(this.token.address, recipient, merchantId2, orderId, singature2.v, singature2.r, singature2.s, new BN(1), { from: owner })
+      // Transfer payment from smart account 2 to recipient (send from "other")
+      await this.wallet.transferPayment(this.token.address, recipient, merchantId2, orderId, new BN(1), { from: other })
       expect(await this.token.balanceOf(recipient)).to.be.bignumber.equal(new BN(2)) 
     })
 
@@ -206,21 +196,19 @@ contract("ZippieSmartWalletERC20", ([owner, merchant, recipient, other]) => {
       await this.token.transfer(accountAddress, new BN(1), { from: owner })
       expect(await this.token.balanceOf(accountAddress)).to.be.bignumber.equal(new BN(2))
       
-      // Transfer payment from smart account to recipient (signed by "merchant")
+      // Transfer payment from smart account to recipient
       expect(await this.token.balanceOf(recipient)).to.be.bignumber.equal(new BN(0))
-      const signature1 = await getTransferPaymentSignature(merchant, merchantId, orderId, this.wallet.address, this.token.address, new BN(1), recipient)
-      await this.wallet.transferPayment(this.token.address, recipient, merchantId, orderId, signature1.v, signature1.r, signature1.s, new BN(1), { from: owner })
+      await this.wallet.transferPayment(this.token.address, recipient, merchantId, orderId, new BN(1), { from: merchant })
       expect(await this.token.balanceOf(recipient)).to.be.bignumber.equal(new BN(1))   
 
-      // Transfer payment from smart account to recipient (reusing same signature)
-      await this.wallet.transferPayment(this.token.address, recipient, merchantId, orderId, signature1.v, signature1.r, signature1.s, new BN(1), { from: owner })
+      // Transfer payment from smart account to recipient
+      await this.wallet.transferPayment(this.token.address, recipient, merchantId, orderId, new BN(1), { from: merchant })
       expect(await this.token.balanceOf(recipient)).to.be.bignumber.equal(new BN(2)) 
     })
 
     it("rejects payment transfers with amount 0", async function () {      
-      const { v, r, s } = await getTransferPaymentSignature(merchant, merchantId, orderId, this.wallet.address, this.token.address, new BN(0), recipient)
       await expectRevert(
-        this.wallet.transferPayment(this.token.address, recipient, merchantId, orderId, v, r, s, new BN(0), { from: owner }),
+        this.wallet.transferPayment(this.token.address, recipient, merchantId, orderId, new BN(0), { from: merchant }),
         'Amount must be greater than 0'
       )
     })
@@ -238,11 +226,10 @@ contract("ZippieSmartWalletERC20", ([owner, merchant, recipient, other]) => {
       await this.wallet.setMerchantOwner(merchantId, merchant, { from: owner })
       expect(await this.wallet.merchantOwner(merchantId)).to.equal(merchant)
       
-      // Transfer payment from smart account to recipient (signed by "merchant") with amount greater than balance
+      // Transfer payment from smart account to recipient with amount greater than balance
       expect(await this.token.balanceOf(recipient)).to.be.bignumber.equal(new BN(0))
-      const { v, r, s } = await getTransferPaymentSignature(merchant, merchantId, orderId, this.wallet.address, this.token.address, new BN(2), recipient)
       await expectRevert(
-        this.wallet.transferPayment(this.token.address, recipient, merchantId, orderId, v, r, s, new BN(2), { from: owner }),
+        this.wallet.transferPayment(this.token.address, recipient, merchantId, orderId, new BN(2), { from: merchant }),
         "ERC20: transfer amount exceeds balance"
       )
       expect(await this.token.balanceOf(accountAddress)).to.be.bignumber.equal(new BN(1))
@@ -264,11 +251,10 @@ contract("ZippieSmartWalletERC20", ([owner, merchant, recipient, other]) => {
       await this.token.transfer(accountAddress, new BN(2), { from: owner })
       expect(await this.token.balanceOf(accountAddress)).to.be.bignumber.equal(new BN(2))
       
-      // Transfer payment from smart account to recipient (signed by "merchant")
+      // Transfer payment from smart account to recipient
       expect(await this.token.allowance(accountAddress, this.wallet.address)).to.be.bignumber.equal(new BN(0))
       expect(await this.token.balanceOf(recipient)).to.be.bignumber.equal(new BN(0))
-      const signature1 = await getTransferPaymentSignature(merchant, merchantId, orderId, this.wallet.address, this.token.address, new BN(1), recipient)
-      const transferPaymentTx1 = await this.wallet.transferPayment(this.token.address, recipient, merchantId, orderId, signature1.v, signature1.r, signature1.s, new BN(1), { from: owner })
+      const transferPaymentTx1 = await this.wallet.transferPayment(this.token.address, recipient, merchantId, orderId, new BN(1), { from: merchant })
       expect(await this.token.balanceOf(accountAddress)).to.be.bignumber.equal(new BN(1))
       expect(await this.token.balanceOf(recipient)).to.be.bignumber.equal(new BN(1))   
       expect(await this.token.allowance(accountAddress, this.wallet.address)).to.be.bignumber.above(new BN(0))
@@ -286,9 +272,8 @@ contract("ZippieSmartWalletERC20", ([owner, merchant, recipient, other]) => {
 				&& log.data !== '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' 
 			}) === true, "missing Approval event")
 
-      // Transfer payment from smart account to recipient (signed by "merchant")
-      const signature2 = await getTransferPaymentSignature(merchant, merchantId, orderId, this.wallet.address, this.token.address, new BN(1), recipient)
-      const transferPaymentTx2 = await this.wallet.transferPayment(this.token.address, recipient, merchantId, orderId, signature2.v, signature2.r, signature2.s, new BN(1), { from: owner })
+      // Transfer payment from smart account to recipient
+      const transferPaymentTx2 = await this.wallet.transferPayment(this.token.address, recipient, merchantId, orderId, new BN(1), { from: merchant })
       expect(await this.token.balanceOf(recipient)).to.be.bignumber.equal(new BN(2)) 
       expect(await this.token.balanceOf(accountAddress)).to.be.bignumber.equal(new BN(0))
 

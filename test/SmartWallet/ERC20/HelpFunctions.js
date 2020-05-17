@@ -6,7 +6,6 @@ const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 module.exports = {
 	ZERO_ADDRESS,
 	getAccountAddress,
-	getTransferPaymentSignature,
 }
 
 function getAccountAddress(merchantId, orderId, walletAddress) {
@@ -16,15 +15,4 @@ function getAccountAddress(merchantId, orderId, walletAddress) {
 	const accountHash = web3.utils.sha3(`0x${'ff'}${walletAddress.slice(2)}${salt.slice(2)}${bytecodeHash.slice(2)}`)
 	const accountAddress = `0x${accountHash.slice(-40)}`.toLowerCase()
 	return web3.utils.toChecksumAddress(accountAddress)
-}
-
-async function getTransferPaymentSignature(ownerAccount, merchantId, orderId, walletAddress, tokenAddress, amount, recipient) {
-	// sign by multisig signer
-	const transferPaymentHash = web3.utils.soliditySha3('transferPayment', merchantId, orderId, walletAddress, tokenAddress, amount, recipient)
-	const transferPaymentSignature = await web3.eth.sign(transferPaymentHash, ownerAccount);
-	return getRSV(transferPaymentSignature.slice(2))
-}
-
-function getRSV(str) {
-	return { r: '0x' + str.slice(0,64), s: '0x' + str.slice(64,128), v: web3.utils.hexToNumber(str.slice(128,130)) + 27 };
 }
