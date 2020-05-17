@@ -54,6 +54,14 @@ contract("ZippieSmartWalletERC20", ([owner, merchant, recipient, other]) => {
       )
     })
 
+    it("prevents merchant owner to be removed", async function () {
+      expect(await this.wallet.owner()).to.not.equal(other)
+      await expectRevert(
+        this.wallet.setMerchantOwner(merchantId, ZERO_ADDRESS, { from: owner }),
+        'Invalid owner address'
+      )
+    })
+
     it("allows merchant owner to transfer payment tokens from associated smart accounts", async function () {
       // Get smart account address	
       const accountAddress = getAccountAddress(merchantId, orderId, this.wallet.address)

@@ -1,17 +1,12 @@
 pragma solidity ^0.6.0;
 
-import "../../Utils/ZippieUtils.sol";
 import "../../Account/ZippieAccount.sol";
+import "../../Merchant/ZippieMerchantRegistry.sol";
+
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract ZippieSmartWalletERC20 is ZippieAccount, Ownable {
-
-    // Merchant owner registry
-    // XXX: Seprate contract?
-    mapping (bytes32 => address) private _merchantOwners;
-    event MerchantOwnershipChanged(bytes32 indexed merchantId, address indexed previousOwner, address indexed newOwner);
+contract ZippieSmartWalletERC20 is ZippieAccount, ZippieMerchantRegistry {
 
     constructor() 
         // ZippieAccountERC20.sol 
@@ -65,32 +60,5 @@ contract ZippieSmartWalletERC20 is ZippieAccount, Ownable {
             "Transfer failed"
         );
         return true;
-    }
-
-    function setMerchantOwner(
-        bytes32 merchantId, 
-        address newOwner
-    ) 
-        public 
-        onlyOwner 
-        returns (bool) 
-    {
-        require(
-            newOwner != address(0), 
-            "Invalid owner address"
-        );
-        emit MerchantOwnershipChanged(merchantId, _merchantOwners[merchantId], newOwner);
-        _merchantOwners[merchantId] = newOwner;
-        return true;
-    }
-
-    function merchantOwner( 
-        bytes32 merchantId
-    ) 
-        public 
-        view 
-        returns (address) 
-    {
-        return _merchantOwners[merchantId];
     }
 }
