@@ -1,5 +1,6 @@
 const { BN, constants, expectEvent, expectRevert } = require("openzeppelin-test-helpers")
 const { expect } = require('chai')
+const ZippieMerchantRegistry = artifacts.require("ZippieMerchantRegistry")
 const ZippieSmartWalletERC20 = artifacts.require("ZippieSmartWalletERC20")
 const BasicERC20Mock = artifacts.require("BasicERC20Mock")
 const { 
@@ -18,46 +19,47 @@ const orderId2 = "0x000000000000000000000000000000000000000000000000000000000000
 contract("ZippieSmartWalletERC20", ([owner, merchant, recipient, other]) => {
 
   beforeEach(async function () {
-    this.wallet = await ZippieSmartWalletERC20.new({ from: owner })
+    this.merchantRegistry = await ZippieMerchantRegistry.new({ from: owner })
+    this.wallet = await ZippieSmartWalletERC20.new(this.merchantRegistry.address, { from: owner })
     this.token = await BasicERC20Mock.new(owner, { from: owner })
   })
 
   describe('ZippieSmartWalletERC20', function() {
     it("allows wallet owner to set merchant owner", async function () {
-      expect(await this.wallet.owner()).to.equal(owner)
-      expect(await this.wallet.merchantOwner(merchantId)).to.equal(ZERO_ADDRESS)
-      const receipt = await this.wallet.setMerchantOwner(merchantId, merchant, { from: owner })
+      expect(await this.merchantRegistry.owner()).to.equal(owner)
+      expect(await this.merchantRegistry.merchantOwner(merchantId)).to.equal(ZERO_ADDRESS)
+      const receipt = await this.merchantRegistry.setMerchantOwner(merchantId, merchant, { from: owner })
       expectEvent(receipt, 'MerchantOwnershipChanged')
-      expect(await this.wallet.merchantOwner(merchantId)).to.equal(merchant)
+      expect(await this.merchantRegistry.merchantOwner(merchantId)).to.equal(merchant)
     })
 
     it("prevents non-wallet owners to set merchant owner", async function () {
-      expect(await this.wallet.owner()).to.not.equal(other)
+      expect(await this.merchantRegistry.owner()).to.not.equal(other)
       await expectRevert(
-        this.wallet.setMerchantOwner(merchantId, merchant, { from: other }),
+        this.merchantRegistry.setMerchantOwner(merchantId, merchant, { from: other }),
         'Ownable: caller is not the owner'
       )
     })
 
     it("allows wallet ownership to be transfered by wallet owner", async function () {
-      expect(await this.wallet.owner()).to.equal(owner)
-      const receipt = await this.wallet.transferOwnership(other, { from: owner })
+      expect(await this.merchantRegistry.owner()).to.equal(owner)
+      const receipt = await this.merchantRegistry.transferOwnership(other, { from: owner })
       expectEvent(receipt, 'OwnershipTransferred')
-      expect(await this.wallet.owner()).to.equal(other)
+      expect(await this.merchantRegistry.owner()).to.equal(other)
     })
 
     it("prevents wallet ownership to be transfered by non-wallet owner", async function () {
-      expect(await this.wallet.owner()).to.not.equal(other)
+      expect(await this.merchantRegistry.owner()).to.not.equal(other)
       await expectRevert(
-        this.wallet.transferOwnership(other, { from: other }),
+        this.merchantRegistry.transferOwnership(other, { from: other }),
         'Ownable: caller is not the owner'
       )
     })
 
     it("prevents merchant owner to be removed", async function () {
-      expect(await this.wallet.owner()).to.not.equal(other)
+      expect(await this.merchantRegistry.owner()).to.not.equal(other)
       await expectRevert(
-        this.wallet.setMerchantOwner(merchantId, ZERO_ADDRESS, { from: owner }),
+        this.merchantRegistry.setMerchantOwner(merchantId, ZERO_ADDRESS, { from: owner }),
         'Invalid owner address'
       )
     })
@@ -72,8 +74,8 @@ contract("ZippieSmartWalletERC20", ([owner, merchant, recipient, other]) => {
       expect(await this.token.balanceOf(accountAddress)).to.be.bignumber.equal(new BN(1))
 
       // Set merchant owner "merchant"
-      await this.wallet.setMerchantOwner(merchantId, merchant, { from: owner })
-      expect(await this.wallet.merchantOwner(merchantId)).to.equal(merchant)
+      await this.merchantRegistry.setMerchantOwner(merchantId, merchant, { from: owner })
+      expect(await this.merchantRegistry.merchantOwner(merchantId)).to.equal(merchant)
       
       // Transfer payment from smart account to recipient (send from "merchant")
       expect(await this.token.balanceOf(recipient)).to.be.bignumber.equal(new BN(0))
@@ -91,8 +93,8 @@ contract("ZippieSmartWalletERC20", ([owner, merchant, recipient, other]) => {
       expect(await this.token.balanceOf(accountAddress)).to.be.bignumber.equal(new BN(1))
 
       // Set merchant owner to "merchant"
-      await this.wallet.setMerchantOwner(merchantId, merchant, { from: owner })
-      expect(await this.wallet.merchantOwner(merchantId)).to.equal(merchant)
+      await this.merchantRegistry.setMerchantOwner(merchantId, merchant, { from: owner })
+      expect(await this.merchantRegistry.merchantOwner(merchantId)).to.equal(merchant)
       
       // Transfer payment from smart account to recipient (send from "other")
       expect(await this.token.balanceOf(recipient)).to.be.bignumber.equal(new BN(0))
@@ -113,7 +115,7 @@ contract("ZippieSmartWalletERC20", ([owner, merchant, recipient, other]) => {
       expect(await this.token.balanceOf(accountAddress)).to.be.bignumber.equal(new BN(1))
       
       // Merchant owner not set
-      expect(await this.wallet.merchantOwner(merchantId)).to.equal(ZERO_ADDRESS)
+      expect(await this.merchantRegistry.merchantOwner(merchantId)).to.equal(ZERO_ADDRESS)
 
       // Transfer payment from smart account to recipient before mwrchant owner is set
       expect(await this.token.balanceOf(recipient)).to.be.bignumber.equal(new BN(0))
@@ -131,8 +133,8 @@ contract("ZippieSmartWalletERC20", ([owner, merchant, recipient, other]) => {
       expect(accountAddress1).to.not.equal(accountAddress2)
 
       // Set merchant owner "merchant" (both accounts)
-      await this.wallet.setMerchantOwner(merchantId, merchant, { from: owner })
-      expect(await this.wallet.merchantOwner(merchantId)).to.equal(merchant)
+      await this.merchantRegistry.setMerchantOwner(merchantId, merchant, { from: owner })
+      expect(await this.merchantRegistry.merchantOwner(merchantId)).to.equal(merchant)
 
       // Do ERC20 transfer to smart account 1 & 2
       await this.token.transfer(accountAddress1, new BN(1), { from: owner })
@@ -157,12 +159,12 @@ contract("ZippieSmartWalletERC20", ([owner, merchant, recipient, other]) => {
       expect(accountAddress1).to.not.equal(accountAddress2)
 
       // Set merchant owner "merchant" (account 1)
-      await this.wallet.setMerchantOwner(merchantId, merchant, { from: owner })
-      expect(await this.wallet.merchantOwner(merchantId)).to.equal(merchant)
+      await this.merchantRegistry.setMerchantOwner(merchantId, merchant, { from: owner })
+      expect(await this.merchantRegistry.merchantOwner(merchantId)).to.equal(merchant)
       
       // Set merchant owner "other" (account 2)
-      await this.wallet.setMerchantOwner(merchantId2, other, { from: owner })
-      expect(await this.wallet.merchantOwner(merchantId2)).to.equal(other)
+      await this.merchantRegistry.setMerchantOwner(merchantId2, other, { from: owner })
+      expect(await this.merchantRegistry.merchantOwner(merchantId2)).to.equal(other)
 
       // Do ERC20 transfer to smart account 1 & 2
       await this.token.transfer(accountAddress1, new BN(1), { from: owner })
@@ -195,8 +197,8 @@ contract("ZippieSmartWalletERC20", ([owner, merchant, recipient, other]) => {
       const accountAddress = getAccountAddress(merchantId, orderId, this.wallet.address)
 
       // Set merchant owner "merchant"
-      await this.wallet.setMerchantOwner(merchantId, merchant, { from: owner })
-      expect(await this.wallet.merchantOwner(merchantId)).to.equal(merchant)
+      await this.merchantRegistry.setMerchantOwner(merchantId, merchant, { from: owner })
+      expect(await this.merchantRegistry.merchantOwner(merchantId)).to.equal(merchant)
 
       // Do ERC20 transfer to smart account
       await this.token.transfer(accountAddress, new BN(1), { from: owner })
@@ -231,8 +233,8 @@ contract("ZippieSmartWalletERC20", ([owner, merchant, recipient, other]) => {
       expect(await this.token.balanceOf(accountAddress)).to.be.bignumber.equal(new BN(1))
 
       // Set merchant owner "merchant"
-      await this.wallet.setMerchantOwner(merchantId, merchant, { from: owner })
-      expect(await this.wallet.merchantOwner(merchantId)).to.equal(merchant)
+      await this.merchantRegistry.setMerchantOwner(merchantId, merchant, { from: owner })
+      expect(await this.merchantRegistry.merchantOwner(merchantId)).to.equal(merchant)
       
       // Transfer payment from smart account to recipient with amount greater than balance
       expect(await this.token.balanceOf(recipient)).to.be.bignumber.equal(new BN(0))
@@ -252,8 +254,8 @@ contract("ZippieSmartWalletERC20", ([owner, merchant, recipient, other]) => {
       assert(accountAddress === accountAddressSolidity, "account address calculation didn't match")
 
       // Set merchant owner "merchant"
-      await this.wallet.setMerchantOwner(merchantId, merchant, { from: owner })
-      expect(await this.wallet.merchantOwner(merchantId)).to.equal(merchant)
+      await this.merchantRegistry.setMerchantOwner(merchantId, merchant, { from: owner })
+      expect(await this.merchantRegistry.merchantOwner(merchantId)).to.equal(merchant)
 
       // Do ERC20 transfer to smart account
       await this.token.transfer(accountAddress, new BN(2), { from: owner })

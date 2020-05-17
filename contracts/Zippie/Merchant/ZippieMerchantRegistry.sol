@@ -1,8 +1,9 @@
 pragma solidity ^0.6.0;
 
+import "./IZippieMerchantRegistry.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract ZippieMerchantRegistry is Ownable {
+contract ZippieMerchantRegistry is IZippieMerchantRegistry, Ownable {
 
     mapping (bytes32 => address) private _merchantOwners;
     event MerchantOwnershipChanged(bytes32 indexed merchantId, address indexed previousOwner, address indexed newOwner);
@@ -12,6 +13,7 @@ contract ZippieMerchantRegistry is Ownable {
         address newOwner
     ) 
         public 
+        override
         onlyOwner 
         returns (bool) 
     {
@@ -28,6 +30,7 @@ contract ZippieMerchantRegistry is Ownable {
         bytes32 merchantId
     ) 
         public 
+        override
         view 
         returns (address) 
     {
