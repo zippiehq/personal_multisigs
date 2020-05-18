@@ -1,9 +1,12 @@
 pragma solidity ^0.6.0;
 
 interface IZippieMerchantRegistry {
-    function setMerchantOwner(bytes32 merchantId, address newOwner) 
+    function setMerchantOwner(address merchantId, address newOwner) 
         external returns (bool);
 
-    function merchantOwner(bytes32 merchantId) 
+    function merchantOwner(address merchantId) 
         external view returns(address);
+
+    function hasPremission(bytes32 premission, address merchantId)
+        external view returns(bool);
 }
