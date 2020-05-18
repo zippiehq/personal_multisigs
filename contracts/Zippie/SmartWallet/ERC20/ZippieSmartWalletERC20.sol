@@ -10,7 +10,10 @@ contract ZippieSmartWalletERC20 is ZippieAccount {
     address private _zippieMerchantRegistry;
 
     bytes32 public constant TRANSFER_B2B = keccak256("TRANSFER_B2B");
+    bytes32 public constant TRANSFER_B2C = keccak256("TRANSFER_B2C");
+
     event TransferB2B(address indexed token, address indexed senderMerchant, bytes32 senderOrderId, address sender, address indexed recipientMerchant, bytes32 recipientOrderId, address recipient, uint256 amount);
+    event TransferB2C(address indexed token, address indexed senderMerchant, bytes32 senderOrderId, address sender, address recipient, uint256 amount);
 
     constructor(address zippieMerchantRegistry) 
         // ZippieAccountERC20.sol 
@@ -88,9 +91,65 @@ contract ZippieSmartWalletERC20 is ZippieAccount {
 
         return true;
     }
+
+    // XXX: Add docs
+    function transferB2C(
+        address token, 
+        address senderMerchant, 
+        bytes32 senderOrderId,
+        address recipient,
+        uint256 amount
+    ) 
+        public 
+        returns (bool)
+    {
+        require(
+            amount > 0, 
+            "ZippieSmartWalletERC20: Amount must be greater than 0"
+        );
+
+        require(
+            IZippieMerchantRegistry(_zippieMerchantRegistry).merchantOwner(senderMerchant) != address(0), 
+            "ZippieSmartWalletERC20: Merchant owner not set"
+        );
+
+        require(
+            IZippieMerchantRegistry(_zippieMerchantRegistry).merchantOwner(senderMerchant) == msg.sender, 
+            "ZippieSmartWalletERC20: Sender not merchant owner"
+        );
+
+        require(
+            IZippieMerchantRegistry(_zippieMerchantRegistry).hasPremission(TRANSFER_B2C, senderMerchant), 
+            "ZippieSmartWalletERC20: Sender missing required premission to tranfer B2C"
+        );
+
+        // get smart account address for sender
+        address sender = getAccountAddress(
+            keccak256(abi.encodePacked(senderMerchant, senderOrderId))
+        );
+
+        // check if smart account needs to be "created" (ERC20 approve)
+        if(IERC20(token).allowance(sender, address(this)) == 0) {
+            require(
+                approveToken(token, keccak256(abi.encodePacked(senderMerchant, senderOrderId))) == sender, 
+                "ZippieSmartWalletERC20: Token approval failed"
+            );
+        }
+
+        // transfer tokens from smart account to recipient
+        require(
+            IERC20(token).transferFrom(sender, recipient, amount), 
             "ZippieSmartWalletERC20: Transfer failed"
         );
 
+        emit TransferB2C(
+            token, 
+            senderMerchant, 
+            senderOrderId,
+            sender,
+            recipient,
+            amount
+        );
 
         return true;
     }
