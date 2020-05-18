@@ -10,6 +10,7 @@ contract ZippieSmartWalletERC20 is ZippieAccount {
     address private _zippieMerchantRegistry;
 
     bytes32 public constant TRANSFER_B2B = keccak256("TRANSFER_B2B");
+    event TransferB2B(address indexed token, address indexed senderMerchant, bytes32 senderOrderId, address sender, address indexed recipientMerchant, bytes32 recipientOrderId, address recipient, uint256 amount);
 
     constructor(address zippieMerchantRegistry) 
         // ZippieAccountERC20.sol 
@@ -51,30 +52,45 @@ contract ZippieSmartWalletERC20 is ZippieAccount {
         );
 
         // get smart account address for sender
-        address senderAddress = getAccountAddress(
+        address sender = getAccountAddress(
             keccak256(abi.encodePacked(senderMerchant, senderOrderId))
         );
 
         // get smart account address for recipient
-        address recipientAddress = getAccountAddress(
+        address recipient = getAccountAddress(
             keccak256(abi.encodePacked(recipientMerchant, recipientOrderId))
         );
 
         // check if smart account needs to be "created" (ERC20 approve)
-        if(IERC20(token).allowance(senderAddress, address(this)) == 0) {
+        if(IERC20(token).allowance(sender, address(this)) == 0) {
             require(
-                approveToken(token, keccak256(abi.encodePacked(senderMerchant, senderOrderId))) == senderAddress, 
+                approveToken(token, keccak256(abi.encodePacked(senderMerchant, senderOrderId))) == sender, 
                 "ZippieSmartWalletERC20: Token approval failed"
             );
         }
 
         // transfer tokens from smart account to recipient smart account
         require(
-            IERC20(token).transferFrom(senderAddress, recipientAddress, amount), 
+            IERC20(token).transferFrom(sender, recipient, amount), 
             "ZippieSmartWalletERC20: Transfer failed"
         );
 
-        // XXX: emit event?
+        emit TransferB2B(
+            token, 
+            senderMerchant, 
+            senderOrderId,
+            sender,
+            recipientMerchant,
+            recipientOrderId, 
+            recipient,
+            amount
+        );
+
+        return true;
+    }
+            "ZippieSmartWalletERC20: Transfer failed"
+        );
+
 
         return true;
     }

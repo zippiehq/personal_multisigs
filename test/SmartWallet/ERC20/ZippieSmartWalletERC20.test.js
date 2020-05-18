@@ -42,7 +42,17 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
       
       // Transfer from smart account to another merchant smart account
       expect(await this.token.balanceOf(recipientAddress)).to.be.bignumber.equal(new BN(0))
-      await this.wallet.transferB2B(this.token.address, merchant1, orderId1, merchant2, orderId1, new BN(1), { from: merchantOwner1 })
+      const receipt = await this.wallet.transferB2B(this.token.address, merchant1, orderId1, merchant2, orderId1, new BN(1), { from: merchantOwner1 })
+      expectEvent(receipt, 'TransferB2B', { 
+        token: this.token.address, 
+        senderMerchant: merchant1, 
+        senderOrderId: orderId1, 
+        sender: senderAddress, 
+        recipientMerchant: merchant2, 
+        recipientOrderId: orderId1, 
+        recipient: recipientAddress, 
+        amount: new BN(1) 
+      })
       expect(await this.token.balanceOf(recipientAddress)).to.be.bignumber.equal(new BN(1))
     })
 
