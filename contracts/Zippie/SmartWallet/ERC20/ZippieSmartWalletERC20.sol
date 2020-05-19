@@ -5,6 +5,11 @@ import "../../Merchant/IZippieMerchantRegistry.sol";
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+/**
+  * @title Zippie Smart Wallet
+  * @notice Transfer ERC20 from Zippie Merchant Smart Accounts
+  * @dev Using ZippieAccounts (account contracts deployed with CREATE2)
+ */
 contract ZippieSmartWalletERC20 is ZippieAccount {
 
     address private _zippieMerchantRegistry;
@@ -15,6 +20,9 @@ contract ZippieSmartWalletERC20 is ZippieAccount {
     event TransferB2B(address indexed token, address indexed senderMerchant, bytes32 senderOrderId, address sender, address indexed recipientMerchant, bytes32 recipientOrderId, address recipient, uint256 amount);
     event TransferB2C(address indexed token, address indexed senderMerchant, bytes32 senderOrderId, address sender, address recipient, uint256 amount);
 
+    /**
+     * @dev Constructs a new Zippie Smart Wallet using provided Zippie Merchant Registry
+     */
     constructor(address zippieMerchantRegistry) 
         // ZippieAccountERC20.sol 
         ZippieAccount(hex'608060405234801561001057600080fd5b50600080546001600160a01b03191633179055610171806100326000396000f3fe608060405234801561001057600080fd5b506004361061002b5760003560e01c8063daea85c514610030575b600080fd5b6100566004803603602081101561004657600080fd5b50356001600160a01b0316610058565b005b6000546001600160a01b0316331461006f57600080fd5b60408051600160e01b63095ea7b3028152336004820152600019602482015290516001600160a01b0383169163095ea7b39160448083019260209291908290030181600087803b1580156100c257600080fd5b505af11580156100d6573d6000803e3d6000fd5b505050506040513d60208110156100ec57600080fd5b50516101425760408051600160e51b62461bcd02815260206004820152600e60248201527f417070726f7665206661696c6564000000000000000000000000000000000000604482015290519081900360640190fd5b32fffea165627a7a7230582032c59f0247a959ee08569c8456e1b35a213a36088625adeb369ffa1a46228e3e0029') 
@@ -22,7 +30,17 @@ contract ZippieSmartWalletERC20 is ZippieAccount {
             _zippieMerchantRegistry = zippieMerchantRegistry;
         }
 
-    // XXX: Add docs
+
+    /** @dev Transfer ERC20 tokens from merchant smart account
+      * to other merchant smart account
+      * @param token ERC20 token to transfer
+      * @param senderMerchant sending merchant account address
+      * @param senderOrderId sending merchant orderId
+      * @param recipientMerchant recipient merchant account address
+      * @param recipientOrderId recipient merchant orderId
+      * @param amount amount to transfer
+      * @return true if transfer successful 
+      */
     function transferB2B(
         address token, 
         address senderMerchant, 
@@ -50,8 +68,8 @@ contract ZippieSmartWalletERC20 is ZippieAccount {
         );
 
         require(
-            IZippieMerchantRegistry(_zippieMerchantRegistry).hasPremission(TRANSFER_B2B, senderMerchant), 
-            "ZippieSmartWalletERC20: Sender missing required premission to tranfer B2B"
+            IZippieMerchantRegistry(_zippieMerchantRegistry).hasPermission(TRANSFER_B2B, senderMerchant), 
+            "ZippieSmartWalletERC20: Sender missing required permission to tranfer B2B"
         );
 
         // get smart account address for sender
@@ -92,7 +110,15 @@ contract ZippieSmartWalletERC20 is ZippieAccount {
         return true;
     }
 
-    // XXX: Add docs
+    /** @dev Transfer ERC20 tokens from merchant smart account
+      * to consumer (any address)
+      * @param token ERC20 token to transfer
+      * @param senderMerchant sending merchant account address
+      * @param senderOrderId sending merchant orderId
+      * @param recipient consumer recipient address
+      * @param amount amount to transfer
+      * @return true if transfer successful 
+      */
     function transferB2C(
         address token, 
         address senderMerchant, 
@@ -119,8 +145,8 @@ contract ZippieSmartWalletERC20 is ZippieAccount {
         );
 
         require(
-            IZippieMerchantRegistry(_zippieMerchantRegistry).hasPremission(TRANSFER_B2C, senderMerchant), 
-            "ZippieSmartWalletERC20: Sender missing required premission to tranfer B2C"
+            IZippieMerchantRegistry(_zippieMerchantRegistry).hasPermission(TRANSFER_B2C, senderMerchant), 
+            "ZippieSmartWalletERC20: Sender missing required permission to tranfer B2C"
         );
 
         // get smart account address for sender

@@ -24,7 +24,7 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
 
   describe('ZippieSmartWalletERC20', function() {
     describe('transferB2B', function() {
-      it("allows merchant owner to transfer from associated smart accounts if merchant has B2B premission", async function () {
+      it("allows merchant owner to transfer from associated smart accounts if merchant has B2B permission", async function () {
         // Get smart account addresses	
         const senderAddress = getAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
         const recipientAddress = getAccountAddress(merchant2, ORDER_ID_1, this.wallet.address)
@@ -43,7 +43,7 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
         })
         expect(await this.merchantRegistry.owner(merchant1)).to.equal(merchantOwner1)
 
-        // Set premission for B2B
+        // Set permission for B2B
         await this.merchantRegistry.grantRole(TRANSFER_B2B, merchant1, { from: admin })
         expect(await this.merchantRegistry.hasRole(TRANSFER_B2B, merchant1)).to.equal(true)
         
@@ -109,7 +109,7 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
         expect(await this.token.balanceOf(recipientAddress)).to.be.bignumber.equal(new BN(0))
       })
 
-      it("prevents to transfer from associated smart accounts if merchant has not B2B premission", async function () {
+      it("prevents to transfer from associated smart accounts if merchant has not B2B permission", async function () {
         // Get smart account addresses	
         const senderAddress = getAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
         const recipientAddress = getAccountAddress(merchant2, ORDER_ID_1, this.wallet.address)
@@ -123,14 +123,14 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
         await this.merchantRegistry.setMerchant(merchant1, merchantOwner1, CONTENT_HASH, { from: admin })
         expect(await this.merchantRegistry.owner(merchant1)).to.equal(merchantOwner1)
 
-        // Hss not premission for B2B
+        // Hss not permission for B2B
         expect(await this.merchantRegistry.hasRole(TRANSFER_B2B, merchant1)).to.equal(false)
 
         // Try to transfer from smart account before merchant owner is set
         expect(await this.token.balanceOf(recipientAddress)).to.be.bignumber.equal(new BN(0))
         await expectRevert(
           this.wallet.transferB2B(this.token.address, merchant1, ORDER_ID_1, merchant2, ORDER_ID_1, new BN(1), { from: merchantOwner1 }),
-          'ZippieSmartWalletERC20: Sender missing required premission to tranfer B2'
+          'ZippieSmartWalletERC20: Sender missing required permission to tranfer B2'
         )
         expect(await this.token.balanceOf(recipientAddress)).to.be.bignumber.equal(new BN(0))
       })
@@ -153,7 +153,7 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
         await this.token.transfer(senderAddress2, new BN(1), { from: owner })
         expect(await this.token.balanceOf(senderAddress2)).to.be.bignumber.equal(new BN(1))
 
-        // Set premission for B2B (same merchant account)
+        // Set permission for B2B (same merchant account)
         await this.merchantRegistry.grantRole(TRANSFER_B2B, merchant1, { from: admin })
         expect(await this.merchantRegistry.hasRole(TRANSFER_B2B, merchant1)).to.equal(true)
         
@@ -176,7 +176,7 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
         await this.merchantRegistry.setMerchant(merchant1, merchantOwner1, CONTENT_HASH, { from: admin })
         expect(await this.merchantRegistry.owner(merchant1)).to.equal(merchantOwner1)
 
-        // Set premission for B2B
+        // Set permission for B2B
         await this.merchantRegistry.grantRole(TRANSFER_B2B, merchant1, { from: admin })
         expect(await this.merchantRegistry.hasRole(TRANSFER_B2B, merchant1)).to.equal(true)
 
@@ -215,7 +215,7 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
         await this.merchantRegistry.setMerchant(merchant1, merchantOwner1, CONTENT_HASH, { from: admin })
         expect(await this.merchantRegistry.owner(merchant1)).to.equal(merchantOwner1)
 
-        // Set premission for B2B
+        // Set permission for B2B
         await this.merchantRegistry.grantRole(TRANSFER_B2B, merchant1, { from: admin })
         expect(await this.merchantRegistry.hasRole(TRANSFER_B2B, merchant1)).to.equal(true)
         
@@ -243,7 +243,7 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
         await this.merchantRegistry.setMerchant(merchant1, merchantOwner1, CONTENT_HASH, { from: admin })
         expect(await this.merchantRegistry.owner(merchant1)).to.equal(merchantOwner1)
 
-        // Set premission for B2B
+        // Set permission for B2B
         await this.merchantRegistry.grantRole(TRANSFER_B2B, merchant1, { from: admin })
         expect(await this.merchantRegistry.hasRole(TRANSFER_B2B, merchant1)).to.equal(true)
 
@@ -296,7 +296,7 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
     })
 
     describe('transferB2C', function() {
-      it("allows merchant owner to transfer from associated smart accounts if merchant has B2C premission", async function () {
+      it("allows merchant owner to transfer from associated smart accounts if merchant has B2C permission", async function () {
         // Get smart account addresses	
         const senderAddress = getAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
 
@@ -309,7 +309,7 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
         await this.merchantRegistry.setMerchant(merchant1, merchantOwner1, CONTENT_HASH, { from: admin })
         expect(await this.merchantRegistry.owner(merchant1)).to.equal(merchantOwner1)
 
-        // Set premission for B2C
+        // Set permission for B2C
         await this.merchantRegistry.grantRole(TRANSFER_B2C, merchant1, { from: admin })
         expect(await this.merchantRegistry.hasRole(TRANSFER_B2C, merchant1)).to.equal(true)
         
@@ -371,7 +371,7 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
         expect(await this.token.balanceOf(recipientConsumer)).to.be.bignumber.equal(new BN(0))
       })
 
-      it("prevents to transfer from associated smart accounts if merchant has not B2B premission", async function () {
+      it("prevents to transfer from associated smart accounts if merchant has not B2B permission", async function () {
         // Get smart account addresses	
         const senderAddress = getAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
 
@@ -384,14 +384,14 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
         await this.merchantRegistry.setMerchant(merchant1, merchantOwner1, CONTENT_HASH, { from: admin })
         expect(await this.merchantRegistry.owner(merchant1)).to.equal(merchantOwner1)
 
-        // Hss not premission for B2C
+        // Hss not permission for B2C
         expect(await this.merchantRegistry.hasRole(TRANSFER_B2C, merchant1)).to.equal(false)
 
         // Try to transfer from smart account before merchant owner is set
         expect(await this.token.balanceOf(recipientConsumer)).to.be.bignumber.equal(new BN(0))
         await expectRevert(
           this.wallet.transferB2C(this.token.address, merchant1, ORDER_ID_1, recipientConsumer, new BN(1), { from: merchantOwner1 }),
-          'ZippieSmartWalletERC20: Sender missing required premission to tranfer B2'
+          'ZippieSmartWalletERC20: Sender missing required permission to tranfer B2'
         )
         expect(await this.token.balanceOf(recipientConsumer)).to.be.bignumber.equal(new BN(0))
       })
@@ -413,7 +413,7 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
         await this.token.transfer(senderAddress2, new BN(1), { from: owner })
         expect(await this.token.balanceOf(senderAddress2)).to.be.bignumber.equal(new BN(1))
 
-        // Set premission for B2C (same merchant account)
+        // Set permission for B2C (same merchant account)
         await this.merchantRegistry.grantRole(TRANSFER_B2C, merchant1, { from: admin })
         expect(await this.merchantRegistry.hasRole(TRANSFER_B2C, merchant1)).to.equal(true)
         
@@ -435,7 +435,7 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
         await this.merchantRegistry.setMerchant(merchant1, merchantOwner1, CONTENT_HASH, { from: admin })
         expect(await this.merchantRegistry.owner(merchant1)).to.equal(merchantOwner1)
 
-        // Set premission for B2C
+        // Set permission for B2C
         await this.merchantRegistry.grantRole(TRANSFER_B2C, merchant1, { from: admin })
         expect(await this.merchantRegistry.hasRole(TRANSFER_B2C, merchant1)).to.equal(true)
 
@@ -473,7 +473,7 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
         await this.merchantRegistry.setMerchant(merchant1, merchantOwner1, CONTENT_HASH, { from: admin })
         expect(await this.merchantRegistry.owner(merchant1)).to.equal(merchantOwner1)
 
-        // Set premission for B2C
+        // Set permission for B2C
         await this.merchantRegistry.grantRole(TRANSFER_B2C, merchant1, { from: admin })
         expect(await this.merchantRegistry.hasRole(TRANSFER_B2C, merchant1)).to.equal(true)
         
@@ -500,7 +500,7 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
         await this.merchantRegistry.setMerchant(merchant1, merchantOwner1, CONTENT_HASH, { from: admin })
         expect(await this.merchantRegistry.owner(merchant1)).to.equal(merchantOwner1)
 
-        // Set premission for B2C
+        // Set permission for B2C
         await this.merchantRegistry.grantRole(TRANSFER_B2C, merchant1, { from: admin })
         expect(await this.merchantRegistry.hasRole(TRANSFER_B2C, merchant1)).to.equal(true)
 
@@ -552,7 +552,7 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
       })
     })
     describe('transferB2B & transferB2C', function() {
-      it("allows merchant owner to transfer from associated smart accounts if merchant has B2B and B2C premission", async function () {
+      it("allows merchant owner to transfer from associated smart accounts if merchant has B2B and B2C permission", async function () {
         // Get smart account addresses	
         const senderAddress = getAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
         const recipientAddress = getAccountAddress(merchant2, ORDER_ID_1, this.wallet.address)
@@ -566,11 +566,11 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
         await this.merchantRegistry.setMerchant(merchant1, merchantOwner1, CONTENT_HASH, { from: admin })
         expect(await this.merchantRegistry.owner(merchant1)).to.equal(merchantOwner1)
 
-        // Set premission for B2B
+        // Set permission for B2B
         await this.merchantRegistry.grantRole(TRANSFER_B2B, merchant1, { from: admin })
         expect(await this.merchantRegistry.hasRole(TRANSFER_B2B, merchant1)).to.equal(true)
 
-        // Set premission for B2C
+        // Set permission for B2C
         await this.merchantRegistry.grantRole(TRANSFER_B2C, merchant1, { from: admin })
         expect(await this.merchantRegistry.hasRole(TRANSFER_B2C, merchant1)).to.equal(true)
         

@@ -1,5 +1,8 @@
 pragma solidity ^0.6.0;
 
+/**
+ * @title ZippieMerchantRegistry interface
+ */
 interface IZippieMerchantRegistry {
     function setMerchant(address merchantId, address owner, bytes calldata contentHash) 
         external returns (bool);
@@ -10,6 +13,6 @@ interface IZippieMerchantRegistry {
     function contentHash(address merchantId) 
         external view returns(bytes memory);
 
-    function hasPremission(bytes32 premission, address merchantId)
+    function hasPermission(bytes32 permission, address merchantId)
         external view returns(bool);
 }

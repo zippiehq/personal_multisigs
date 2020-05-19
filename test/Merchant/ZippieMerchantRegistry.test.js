@@ -41,11 +41,11 @@ contract("ZippieMerchantRegistry", ([admin, merchantOwner1, merchant1, merchantO
 
         // Let "admin" grant role "PREMISSION_1" to "merchant1"
         expect(await this.merchantRegistry.hasRole(PREMISSION_1, merchant1)).to.equal(false)
-        expect(await this.merchantRegistry.hasPremission(PREMISSION_1, merchant1)).to.equal(false)
+        expect(await this.merchantRegistry.hasPermission(PREMISSION_1, merchant1)).to.equal(false)
         const receipt = await this.merchantRegistry.grantRole(PREMISSION_1, merchant1, { from: admin })
         expectEvent(receipt, 'RoleGranted', { account: merchant1, role: PREMISSION_1, sender: admin })
         expect(await this.merchantRegistry.hasRole(PREMISSION_1, merchant1)).to.equal(true)
-        expect(await this.merchantRegistry.hasPremission(PREMISSION_1, merchant1)).to.equal(true)
+        expect(await this.merchantRegistry.hasPermission(PREMISSION_1, merchant1)).to.equal(true)
         expect(await this.merchantRegistry.getRoleMemberCount(PREMISSION_1)).to.bignumber.equal('1')
 
         // Let "admin" grant role "PREMISSION_1" to "merchant1" again (multiple grants)
@@ -69,11 +69,11 @@ contract("ZippieMerchantRegistry", ([admin, merchantOwner1, merchant1, merchantO
         // Let "admin" grant role "PREMISSION_1" to "merchant2"
         expect(await this.merchantRegistry.getRoleMemberCount(PREMISSION_1)).to.bignumber.equal('1')
         expect(await this.merchantRegistry.hasRole(PREMISSION_1, merchant2)).to.equal(false)
-        expect(await this.merchantRegistry.hasPremission(PREMISSION_1, merchant2)).to.equal(false)
+        expect(await this.merchantRegistry.hasPermission(PREMISSION_1, merchant2)).to.equal(false)
         const receipt4 = await this.merchantRegistry.grantRole(PREMISSION_1, merchant2, { from: admin })
         expectEvent(receipt4, 'RoleGranted', { account: merchant2, role: PREMISSION_1, sender: admin })
         expect(await this.merchantRegistry.hasRole(PREMISSION_1, merchant2)).to.equal(true)
-        expect(await this.merchantRegistry.hasPremission(PREMISSION_1, merchant2)).to.equal(true)
+        expect(await this.merchantRegistry.hasPermission(PREMISSION_1, merchant2)).to.equal(true)
         expect(await this.merchantRegistry.getRoleMemberCount(PREMISSION_1)).to.bignumber.equal('2')
       })
   
@@ -84,14 +84,14 @@ contract("ZippieMerchantRegistry", ([admin, merchantOwner1, merchant1, merchantO
 
         // Let "other" try to grant role "PREMISSION_1" to "merchant1"
         expect(await this.merchantRegistry.hasRole(PREMISSION_1, merchant1)).to.equal(false)
-        expect(await this.merchantRegistry.hasPremission(PREMISSION_1, merchant1)).to.equal(false)
+        expect(await this.merchantRegistry.hasPermission(PREMISSION_1, merchant1)).to.equal(false)
         expect(await this.merchantRegistry.getRoleMemberCount(PREMISSION_1)).to.bignumber.equal('0')
         await expectRevert(
           this.merchantRegistry.grantRole(PREMISSION_1, merchant1, { from: other }),
           'AccessControl: sender must be an admin to grant'
         )
         expect(await this.merchantRegistry.hasRole(PREMISSION_1, merchant1)).to.equal(false)
-        expect(await this.merchantRegistry.hasPremission(PREMISSION_1, merchant1)).to.equal(false)
+        expect(await this.merchantRegistry.hasPermission(PREMISSION_1, merchant1)).to.equal(false)
         expect(await this.merchantRegistry.getRoleMemberCount(PREMISSION_1)).to.bignumber.equal('0')
       })
 
@@ -103,13 +103,13 @@ contract("ZippieMerchantRegistry", ([admin, merchantOwner1, merchant1, merchantO
         // Grant role "PREMISSION_1" to "merchant1"
         await this.merchantRegistry.grantRole(PREMISSION_1, merchant1, { from: admin })
         expect(await this.merchantRegistry.hasRole(PREMISSION_1, merchant1)).to.equal(true)
-        expect(await this.merchantRegistry.hasPremission(PREMISSION_1, merchant1)).to.equal(true)
+        expect(await this.merchantRegistry.hasPermission(PREMISSION_1, merchant1)).to.equal(true)
 
         // Revoke role "PREMISSION_1" from "merchant1"
         const receipt = await this.merchantRegistry.revokeRole(PREMISSION_1, merchant1, { from: admin })
         expectEvent(receipt, 'RoleRevoked', { account: merchant1, role: PREMISSION_1, sender: admin })
         expect(await this.merchantRegistry.hasRole(PREMISSION_1, merchant1)).to.equal(false)
-        expect(await this.merchantRegistry.hasPremission(PREMISSION_1, merchant1)).to.equal(false)
+        expect(await this.merchantRegistry.hasPermission(PREMISSION_1, merchant1)).to.equal(false)
 
         // Revoke role "PREMISSION_1" from "merchant1" again (multiple grants)
         await this.merchantRegistry.revokeRole(PREMISSION_1, merchant1, { from: admin })
@@ -128,7 +128,7 @@ contract("ZippieMerchantRegistry", ([admin, merchantOwner1, merchant1, merchantO
         // Grant role "PREMISSION_1" to "merchant1"
         await this.merchantRegistry.grantRole(PREMISSION_1, merchant1, { from: admin })
         expect(await this.merchantRegistry.hasRole(PREMISSION_1, merchant1)).to.equal(true)
-        expect(await this.merchantRegistry.hasPremission(PREMISSION_1, merchant1)).to.equal(true)
+        expect(await this.merchantRegistry.hasPermission(PREMISSION_1, merchant1)).to.equal(true)
         expect(await this.merchantRegistry.getRoleMemberCount(PREMISSION_1)).to.bignumber.equal('1')
 
         // Check so "other" don't have the admin role 
@@ -141,7 +141,7 @@ contract("ZippieMerchantRegistry", ([admin, merchantOwner1, merchant1, merchantO
           'AccessControl: sender must be an admin to revoke'
         )
         expect(await this.merchantRegistry.hasRole(PREMISSION_1, merchant1)).to.equal(true)
-        expect(await this.merchantRegistry.hasPremission(PREMISSION_1, merchant1)).to.equal(true)
+        expect(await this.merchantRegistry.hasPermission(PREMISSION_1, merchant1)).to.equal(true)
         expect(await this.merchantRegistry.getRoleMemberCount(PREMISSION_1)).to.bignumber.equal('1')
       })
 
@@ -149,7 +149,7 @@ contract("ZippieMerchantRegistry", ([admin, merchantOwner1, merchant1, merchantO
         // Grant role "PREMISSION_1" to "merchant1"
         await this.merchantRegistry.grantRole(PREMISSION_1, merchant1, { from: admin })
         expect(await this.merchantRegistry.hasRole(PREMISSION_1, merchant1)).to.equal(true)
-        expect(await this.merchantRegistry.hasPremission(PREMISSION_1, merchant1)).to.equal(true)
+        expect(await this.merchantRegistry.hasPermission(PREMISSION_1, merchant1)).to.equal(true)
         expect(await this.merchantRegistry.getRoleMemberCount(PREMISSION_1)).to.bignumber.equal('1')
 
         // Try to renounce "PREMISSION_1" to "merchant1" (from "merchant1")
@@ -163,7 +163,7 @@ contract("ZippieMerchantRegistry", ([admin, merchantOwner1, merchant1, merchantO
           'ZippieMerchantRegistry: renounceRole has been disabled'
         )
         expect(await this.merchantRegistry.hasRole(PREMISSION_1, merchant1)).to.equal(true)
-        expect(await this.merchantRegistry.hasPremission(PREMISSION_1, merchant1)).to.equal(true)
+        expect(await this.merchantRegistry.hasPermission(PREMISSION_1, merchant1)).to.equal(true)
         expect(await this.merchantRegistry.getRoleMemberCount(PREMISSION_1)).to.bignumber.equal('1')
       })
 
@@ -192,11 +192,11 @@ contract("ZippieMerchantRegistry", ([admin, merchantOwner1, merchant1, merchantO
 
         // Let "admin" grant role "PREMISSION_1" to "merchant1"
         expect(await this.merchantRegistry.hasRole(PREMISSION_1, merchant1)).to.equal(false)
-        expect(await this.merchantRegistry.hasPremission(PREMISSION_1, merchant1)).to.equal(false)
+        expect(await this.merchantRegistry.hasPermission(PREMISSION_1, merchant1)).to.equal(false)
         const receipt1 = await this.merchantRegistry.grantRole(PREMISSION_1, merchant1, { from: admin })
         expectEvent(receipt1, 'RoleGranted', { account: merchant1, role: PREMISSION_1, sender: admin })
         expect(await this.merchantRegistry.hasRole(PREMISSION_1, merchant1)).to.equal(true)
-        expect(await this.merchantRegistry.hasPremission(PREMISSION_1, merchant1)).to.equal(true)
+        expect(await this.merchantRegistry.hasPermission(PREMISSION_1, merchant1)).to.equal(true)
         expect(await this.merchantRegistry.getRoleMemberCount(PREMISSION_1)).to.bignumber.equal('1')
 
         // Change admin role for "PREMISSION_1" to "PREMISSION_1_ADMIN"
@@ -208,7 +208,7 @@ contract("ZippieMerchantRegistry", ([admin, merchantOwner1, merchant1, merchantO
 
         // Let "admin" try to grant role "PREMISSION_1" to "merchant2"
         expect(await this.merchantRegistry.hasRole(PREMISSION_1, merchant2)).to.equal(false)
-        expect(await this.merchantRegistry.hasPremission(PREMISSION_1, merchant2)).to.equal(false)
+        expect(await this.merchantRegistry.hasPermission(PREMISSION_1, merchant2)).to.equal(false)
         await expectRevert(
           this.merchantRegistry.grantRole(PREMISSION_1, merchant2, { from: admin }),
           'AccessControl: sender must be an admin to grant'
