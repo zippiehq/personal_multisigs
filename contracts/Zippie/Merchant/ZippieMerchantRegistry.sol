@@ -5,18 +5,22 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 
 contract ZippieMerchantRegistry is IZippieMerchantRegistry, AccessControl {
 
-    // XXX: use struct Record ?
-    mapping (address => address) private _merchantOwners;
-    // XXX: add msg to event ?
-    event MerchantOwnershipChanged(address indexed merchant, address indexed previousOwner, address indexed newOwner);
+    struct Merchant {
+        address owner;
+        bytes contentHash;
+    }
+
+    mapping (address => Merchant) private _merchantOwners;
+    event MerchantChanged(address indexed merchant, address indexed owner, bytes contentHash);
 
     constructor() public {
       _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
-    function setMerchantOwner(
+    function setMerchant(
         address merchant, 
-        address newOwner
+        address owner,
+        bytes memory contentHash
     ) 
         public 
         override 
@@ -27,12 +31,13 @@ contract ZippieMerchantRegistry is IZippieMerchantRegistry, AccessControl {
           "ZippieMerchantRegistry: Caller is not admin"
         );
         
-        emit MerchantOwnershipChanged(merchant, _merchantOwners[merchant], newOwner);
-        _merchantOwners[merchant] = newOwner;
+        emit MerchantChanged(merchant, owner, contentHash);
+        _merchantOwners[merchant].owner = owner;
+        _merchantOwners[merchant].contentHash = contentHash;
         return true;
     }
 
-    function merchantOwner( 
+    function owner( 
         address merchant
     ) 
         public 
@@ -40,10 +45,20 @@ contract ZippieMerchantRegistry is IZippieMerchantRegistry, AccessControl {
         view 
         returns (address) 
     {
-        return _merchantOwners[merchant];
+        return _merchantOwners[merchant].owner;
     }
 
-    // XXX: remove ?
+    function contentHash( 
+        address merchant
+    ) 
+        public 
+        override
+        view 
+        returns (bytes memory) 
+    {
+        return _merchantOwners[merchant].contentHash;
+    }
+
     function hasPremission(
       bytes32 premission,
       address merchant

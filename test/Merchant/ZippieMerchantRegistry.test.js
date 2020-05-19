@@ -4,11 +4,11 @@ const ZippieMerchantRegistry = artifacts.require("ZippieMerchantRegistry")
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 const DEFAULT_ADMIN_ROLE = '0x0000000000000000000000000000000000000000000000000000000000000000'
-
 const PREMISSION_1 = web3.utils.sha3("PREMISSION_1")
 const PREMISSION_2 = web3.utils.sha3("PREMISSION_2")
-
 const PREMISSION_1_ADMIN = web3.utils.sha3("PREMISSION_1_ADMIN")
+const CONTENT_HASH_1 = '0x0000000000000000000000000000000000000000000000000000000000000001'
+const CONTENT_HASH_2 = '0x0000000000000000000000000000000000000000000000000000000000000002'
 
 
 contract("ZippieMerchantRegistry", ([admin, merchantOwner1, merchant1, merchantOwner2, merchant2, other]) => {
@@ -229,34 +229,39 @@ contract("ZippieMerchantRegistry", ([admin, merchantOwner1, merchant1, merchantO
     })
 
     describe('Merchant Owner functions', function () {
-      it("allows admin to set merchant owner", async function () {
+      it("allows admin to set merchant owner (and content hash)", async function () {
         // Check "admin" has admin role 
         expect(await this.merchantRegistry.hasRole(DEFAULT_ADMIN_ROLE, admin)).to.equal(true)
-        expect(await this.merchantRegistry.merchantOwner(merchant1)).to.equal(ZERO_ADDRESS)
+        expect(await this.merchantRegistry.owner(merchant1)).to.equal(ZERO_ADDRESS)
 
         // Set merchant owner for "merchant1" to "merchantOwner1"
-        const receipt1 = await this.merchantRegistry.setMerchantOwner(merchant1, merchantOwner1, { from: admin })
-        expectEvent(receipt1, 'MerchantOwnershipChanged', { merchant: merchant1, previousOwner: ZERO_ADDRESS, newOwner: merchantOwner1})
-        expect(await this.merchantRegistry.merchantOwner(merchant1)).to.equal(merchantOwner1)
+        expect(await this.merchantRegistry.contentHash(merchant1)).to.equal(null)
+        const receipt1 = await this.merchantRegistry.setMerchant(merchant1, merchantOwner1, CONTENT_HASH_1, { from: admin })
+        expectEvent(receipt1, 'MerchantChanged', { merchant: merchant1, owner: merchantOwner1, contentHash: CONTENT_HASH_1 })
+        expect(await this.merchantRegistry.owner(merchant1)).to.equal(merchantOwner1)
+        expect(await this.merchantRegistry.contentHash(merchant1)).to.equal(CONTENT_HASH_1)
 
         // Set merchant owner for "merchant2" to "merchantOwner1" (two merchants with same owner)
-        const receipt2 = await this.merchantRegistry.setMerchantOwner(merchant2, merchantOwner1, { from: admin })
-        expectEvent(receipt2, 'MerchantOwnershipChanged', { merchant: merchant2, previousOwner: ZERO_ADDRESS, newOwner: merchantOwner1})
-        expect(await this.merchantRegistry.merchantOwner(merchant2)).to.equal(merchantOwner1)
+        expect(await this.merchantRegistry.contentHash(merchant2)).to.equal(null)
+        const receipt2 = await this.merchantRegistry.setMerchant(merchant2, merchantOwner1, CONTENT_HASH_1, { from: admin })
+        expectEvent(receipt2, 'MerchantChanged', { merchant: merchant2, owner: merchantOwner1, contentHash: CONTENT_HASH_1 })
+        expect(await this.merchantRegistry.owner(merchant2)).to.equal(merchantOwner1)
+        expect(await this.merchantRegistry.contentHash(merchant2)).to.equal(CONTENT_HASH_1)
 
         // Change merchant owner for "merchant2" to "merchantOwner2" 
-        const receipt3 = await this.merchantRegistry.setMerchantOwner(merchant2, merchantOwner2, { from: admin })
-        expectEvent(receipt3, 'MerchantOwnershipChanged', { merchant: merchant2, previousOwner: merchantOwner1, newOwner: merchantOwner2})
-        expect(await this.merchantRegistry.merchantOwner(merchant2)).to.equal(merchantOwner2)
+        const receipt3 = await this.merchantRegistry.setMerchant(merchant2, merchantOwner2, CONTENT_HASH_2, { from: admin })
+        expectEvent(receipt3, 'MerchantChanged', { merchant: merchant2, owner: merchantOwner2, contentHash: CONTENT_HASH_2 })
+        expect(await this.merchantRegistry.owner(merchant2)).to.equal(merchantOwner2)
+        expect(await this.merchantRegistry.contentHash(merchant2)).to.equal(CONTENT_HASH_2)
       })
   
-      it("prevents non-admins to set merchant owner", async function () {
+      it("prevents non-admins to set merchant owner (and content hash)", async function () {
         // Check so "other" don't have the admin role 
         expect(await this.merchantRegistry.hasRole(DEFAULT_ADMIN_ROLE, other)).to.equal(false)
 
         // Let "other" try to set merchant owner
         await expectRevert(
-          this.merchantRegistry.setMerchantOwner(merchant1, merchantOwner1, { from: other }),
+          this.merchantRegistry.setMerchant(merchant1, merchantOwner1, CONTENT_HASH_1, { from: other }),
           'ZippieMerchantRegistry: Caller is not admin'
         )
       })

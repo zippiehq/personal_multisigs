@@ -40,12 +40,12 @@ contract ZippieSmartWalletERC20 is ZippieAccount {
         );
 
         require(
-            IZippieMerchantRegistry(_zippieMerchantRegistry).merchantOwner(senderMerchant) != address(0), 
+            IZippieMerchantRegistry(_zippieMerchantRegistry).owner(senderMerchant) != address(0), 
             "ZippieSmartWalletERC20: Merchant owner not set"
         );
 
         require(
-            IZippieMerchantRegistry(_zippieMerchantRegistry).merchantOwner(senderMerchant) == msg.sender, 
+            IZippieMerchantRegistry(_zippieMerchantRegistry).owner(senderMerchant) == msg.sender, 
             "ZippieSmartWalletERC20: Sender not merchant owner"
         );
 
@@ -109,12 +109,12 @@ contract ZippieSmartWalletERC20 is ZippieAccount {
         );
 
         require(
-            IZippieMerchantRegistry(_zippieMerchantRegistry).merchantOwner(senderMerchant) != address(0), 
+            IZippieMerchantRegistry(_zippieMerchantRegistry).owner(senderMerchant) != address(0), 
             "ZippieSmartWalletERC20: Merchant owner not set"
         );
 
         require(
-            IZippieMerchantRegistry(_zippieMerchantRegistry).merchantOwner(senderMerchant) == msg.sender, 
+            IZippieMerchantRegistry(_zippieMerchantRegistry).owner(senderMerchant) == msg.sender, 
             "ZippieSmartWalletERC20: Sender not merchant owner"
         );
 
