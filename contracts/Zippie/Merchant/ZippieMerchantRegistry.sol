@@ -75,20 +75,20 @@ contract ZippieMerchantRegistry is IZippieMerchantRegistry, AccessControl {
         _setRoleAdmin(roleId, adminRoleId);
     }
 
-    // function revokeRole(
-    //   bytes32 role, 
-    //   address account
-    // ) 
-    //   public 
-    //   override 
-    // {
-    //   require(
-    //       role != DEFAULT_ADMIN_ROLE,
-    //       "ZippieMerchantRegistry: cannot revoke default admin role"
-    //   );
+    function revokeRole(
+      bytes32 role, 
+      address account
+    ) 
+      public 
+      override 
+    {
+      require(
+          role != DEFAULT_ADMIN_ROLE,
+          "ZippieMerchantRegistry: cannot revoke default admin role"
+      );
 
-    //   super.revokeRole(role, account);
-    // }
+      super.revokeRole(role, account);
+    }
 
     function renounceRole(
       bytes32, 

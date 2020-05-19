@@ -114,12 +114,14 @@ contract("ZippieMerchantRegistry", ([admin, merchantOwner1, merchant1, merchantO
         // Revoke role "PREMISSION_1" from "merchant1" again (multiple grants)
         await this.merchantRegistry.revokeRole(PREMISSION_1, merchant1, { from: admin })
 
-        // Revoke "admin" default admin role
-        // XXX: Don't allow to loose default admin
+        // Try to revoke "DEFAULT_ADMIN_ROLE" role from "admin"
         expect(await this.merchantRegistry.getRoleMemberCount(DEFAULT_ADMIN_ROLE)).to.bignumber.equal('1')
-        await this.merchantRegistry.revokeRole(DEFAULT_ADMIN_ROLE, admin, { from: admin })
-        expect(await this.merchantRegistry.hasRole(DEFAULT_ADMIN_ROLE, other)).to.equal(false)
-        expect(await this.merchantRegistry.getRoleMemberCount(DEFAULT_ADMIN_ROLE)).to.bignumber.equal('0')
+        await expectRevert(
+          this.merchantRegistry.revokeRole(DEFAULT_ADMIN_ROLE, admin, { from: admin }),
+          'ZippieMerchantRegistry: cannot revoke default admin role'
+        )
+        expect(await this.merchantRegistry.hasRole(DEFAULT_ADMIN_ROLE, admin)).to.equal(true)
+        expect(await this.merchantRegistry.getRoleMemberCount(DEFAULT_ADMIN_ROLE)).to.bignumber.equal('1')
       })
 
       it("prevents non-admin to revoke roles", async function () {
