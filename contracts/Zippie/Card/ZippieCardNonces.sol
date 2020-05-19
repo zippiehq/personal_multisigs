@@ -1,4 +1,4 @@
-pragma solidity ^0.5.10;
+pragma solidity ^0.6.0;
 
 import "./IZippieCardNonces.sol";
 
@@ -23,6 +23,7 @@ contract ZippieCardNonces is IZippieCardNonces {
     ) 
         public 
         view 
+        override
         returns (bool) 
     {
         return _usedNonces[signer][nonce];
@@ -46,6 +47,7 @@ contract ZippieCardNonces is IZippieCardNonces {
         bytes32 s
     ) 
         public 
+        override
         returns(bool) 
     {
         require(
