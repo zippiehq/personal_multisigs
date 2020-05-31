@@ -5,7 +5,7 @@ const ZippieSmartWalletERC20 = artifacts.require("ZippieSmartWalletERC20")
 const BasicERC20Mock = artifacts.require("BasicERC20Mock")
 const { 
   ZERO_ADDRESS,
-  getAccountAddress,  
+  getSmartWalletAccountAddress,  
 } = require('./HelpFunctions')
 
 const ORDER_ID_1 = "0x0000000000000000000000000000000000000000000000000000000000000001"
@@ -26,8 +26,8 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
     describe('transferB2B', function() {
       it("allows merchant owner to transfer from associated smart accounts if merchant has B2B permission", async function () {
         // Get smart account addresses	
-        const senderAddress = getAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
-        const recipientAddress = getAccountAddress(merchant2, ORDER_ID_1, this.wallet.address)
+        const senderAddress = getSmartWalletAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
+        const recipientAddress = getSmartWalletAccountAddress(merchant2, ORDER_ID_1, this.wallet.address)
 
         // Do ERC20 transfer to smart account
         const { logs } = await this.token.transfer(senderAddress, new BN(1), { from: owner })
@@ -65,8 +65,8 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
 
       it("prevents merchant non-owners to transfer from associated smart accounts", async function () {
         // Get smart account addresses	
-        const senderAddress = getAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
-        const recipientAddress = getAccountAddress(merchant2, ORDER_ID_1, this.wallet.address)
+        const senderAddress = getSmartWalletAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
+        const recipientAddress = getSmartWalletAccountAddress(merchant2, ORDER_ID_1, this.wallet.address)
 
         // Do ERC20 transfer to smart account
         const { logs } = await this.token.transfer(senderAddress, new BN(1), { from: owner })
@@ -89,8 +89,8 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
 
       it("prevents to transfer from associated smart accounts before merchant owner is set", async function () {
         // Get smart account addresses	
-        const senderAddress = getAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
-        const recipientAddress = getAccountAddress(merchant2, ORDER_ID_1, this.wallet.address)
+        const senderAddress = getSmartWalletAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
+        const recipientAddress = getSmartWalletAccountAddress(merchant2, ORDER_ID_1, this.wallet.address)
 
         // Do ERC20 transfer to smart account
         const { logs } = await this.token.transfer(senderAddress, new BN(1), { from: owner })
@@ -111,8 +111,8 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
 
       it("prevents to transfer from associated smart accounts if merchant has not B2B permission", async function () {
         // Get smart account addresses	
-        const senderAddress = getAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
-        const recipientAddress = getAccountAddress(merchant2, ORDER_ID_1, this.wallet.address)
+        const senderAddress = getSmartWalletAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
+        const recipientAddress = getSmartWalletAccountAddress(merchant2, ORDER_ID_1, this.wallet.address)
 
         // Do ERC20 transfer to smart account
         const { logs } = await this.token.transfer(senderAddress, new BN(1), { from: owner })
@@ -137,9 +137,9 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
 
       it("allows a merchant owner to manage multiple smart account using same merchant account but different orderIds", async function () {
         // Get smart accounts
-        const senderAddress1 = getAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
-        const senderAddress2 = getAccountAddress(merchant1, ORDER_ID_2, this.wallet.address)
-        const recipientAddress = getAccountAddress(merchant2, ORDER_ID_1, this.wallet.address)
+        const senderAddress1 = getSmartWalletAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
+        const senderAddress2 = getSmartWalletAccountAddress(merchant1, ORDER_ID_2, this.wallet.address)
+        const recipientAddress = getSmartWalletAccountAddress(merchant2, ORDER_ID_1, this.wallet.address)
 
         expect(senderAddress1).to.not.equal(senderAddress2)
 
@@ -169,8 +169,8 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
 
       it("allows merchant owner to transfer from a associated smart account multiple times", async function () {
         // Get smart account addresses	
-        const senderAddress = getAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
-        const recipientAddress = getAccountAddress(merchant2, ORDER_ID_1, this.wallet.address)
+        const senderAddress = getSmartWalletAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
+        const recipientAddress = getSmartWalletAccountAddress(merchant2, ORDER_ID_1, this.wallet.address)
 
         // Set merchant owner "merchant"
         await this.merchantRegistry.setMerchant(merchant1, merchantOwner1, CONTENT_HASH, { from: admin })
@@ -203,8 +203,8 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
 
       it("rejects to transfer payment tokens from associated smart accounts if amount exceeds balance", async function () {
         // Get smart account addresses	
-        const senderAddress = getAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
-        const recipientAddress = getAccountAddress(merchant2, ORDER_ID_1, this.wallet.address)
+        const senderAddress = getSmartWalletAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
+        const recipientAddress = getSmartWalletAccountAddress(merchant2, ORDER_ID_1, this.wallet.address)
 
         // Do ERC20 transfer to smart account
         const { logs } = await this.token.transfer(senderAddress, new BN(1), { from: owner })
@@ -231,8 +231,8 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
 
       it("deploys and kills a new smart account contract when payment transfer is done first time", async function () {
         // Get smart account addresses	
-        const senderAddress = getAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
-        const recipientAddress = getAccountAddress(merchant2, ORDER_ID_1, this.wallet.address)
+        const senderAddress = getSmartWalletAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
+        const recipientAddress = getSmartWalletAccountAddress(merchant2, ORDER_ID_1, this.wallet.address)
         
         // Check account address calculation
         const salt = web3.utils.soliditySha3(merchant1, ORDER_ID_1)
@@ -298,7 +298,7 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
     describe('transferB2C', function() {
       it("allows merchant owner to transfer from associated smart accounts if merchant has B2C permission", async function () {
         // Get smart account addresses	
-        const senderAddress = getAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
+        const senderAddress = getSmartWalletAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
 
         // Do ERC20 transfer to smart account
         const { logs } = await this.token.transfer(senderAddress, new BN(1), { from: owner })
@@ -329,7 +329,7 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
 
       it("prevents merchant non-owners to transfer from associated smart accounts", async function () {
         // Get smart account addresses	
-        const senderAddress = getAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
+        const senderAddress = getSmartWalletAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
 
         // Do ERC20 transfer to smart account
         const { logs } = await this.token.transfer(senderAddress, new BN(1), { from: owner })
@@ -352,7 +352,7 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
 
       it("prevents to transfer from associated smart accounts before merchant owner is set", async function () {
         // Get smart account addresses	
-        const senderAddress = getAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
+        const senderAddress = getSmartWalletAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
 
         // Do ERC20 transfer to smart account
         const { logs } = await this.token.transfer(senderAddress, new BN(1), { from: owner })
@@ -373,7 +373,7 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
 
       it("prevents to transfer from associated smart accounts if merchant has not B2B permission", async function () {
         // Get smart account addresses	
-        const senderAddress = getAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
+        const senderAddress = getSmartWalletAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
 
         // Do ERC20 transfer to smart account
         const { logs } = await this.token.transfer(senderAddress, new BN(1), { from: owner })
@@ -398,8 +398,8 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
 
       it("allows a merchant owner to manage multiple smart account using same merchant account but different orderIds", async function () {
         // Get smart accounts
-        const senderAddress1 = getAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
-        const senderAddress2 = getAccountAddress(merchant1, ORDER_ID_2, this.wallet.address)
+        const senderAddress1 = getSmartWalletAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
+        const senderAddress2 = getSmartWalletAccountAddress(merchant1, ORDER_ID_2, this.wallet.address)
 
         expect(senderAddress1).to.not.equal(senderAddress2)
 
@@ -429,7 +429,7 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
 
       it("allows merchant owner to transfer from a associated smart account multiple times", async function () {
         // Get smart account addresses	
-        const senderAddress = getAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
+        const senderAddress = getSmartWalletAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
 
         // Set merchant owner "merchant"
         await this.merchantRegistry.setMerchant(merchant1, merchantOwner1, CONTENT_HASH, { from: admin })
@@ -462,7 +462,7 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
 
       it("rejects to transfer payment tokens from associated smart accounts if amount exceeds balance", async function () {
         // Get smart account addresses	
-        const senderAddress = getAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
+        const senderAddress = getSmartWalletAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
 
         // Do ERC20 transfer to smart account
         const { logs } = await this.token.transfer(senderAddress, new BN(1), { from: owner })
@@ -489,7 +489,7 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
 
       it("deploys and kills a new smart account contract when payment transfer is done first time", async function () {
         // Get smart account addresses	
-        const senderAddress = getAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
+        const senderAddress = getSmartWalletAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
         
         // Check account address calculation
         const salt = web3.utils.soliditySha3(merchant1, ORDER_ID_1)
@@ -554,8 +554,8 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
     describe('transferB2B & transferB2C', function() {
       it("allows merchant owner to transfer from associated smart accounts if merchant has B2B and B2C permission", async function () {
         // Get smart account addresses	
-        const senderAddress = getAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
-        const recipientAddress = getAccountAddress(merchant2, ORDER_ID_1, this.wallet.address)
+        const senderAddress = getSmartWalletAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
+        const recipientAddress = getSmartWalletAccountAddress(merchant2, ORDER_ID_1, this.wallet.address)
 
         // Do ERC20 transfer to smart account
         const { logs } = await this.token.transfer(senderAddress, new BN(2), { from: owner })
