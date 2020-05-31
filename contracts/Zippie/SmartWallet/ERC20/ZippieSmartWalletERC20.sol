@@ -1,7 +1,9 @@
 pragma solidity ^0.6.0;
+pragma experimental ABIEncoderV2;
 
 import "../../Account/ZippieAccount.sol";
 import "../../Merchant/IZippieMerchantRegistry.sol";
+import "../../Wallet/ERC20/IZippieWalletERC20.sol";
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -19,6 +21,7 @@ contract ZippieSmartWalletERC20 is ZippieAccount {
 
     event TransferB2B(address indexed token, address indexed senderMerchant, bytes32 senderOrderId, address sender, address indexed recipientMerchant, bytes32 recipientOrderId, address recipient, uint256 amount);
     event TransferB2C(address indexed token, address indexed senderMerchant, bytes32 senderOrderId, address sender, address recipient, uint256 amount);
+    event TransferC2B(address indexed token, address sender, address indexed recipientMerchant, bytes32 recipientOrderId, address recipient, uint256 amount);
 
     /**
      * @dev Constructs a new Zippie Smart Wallet using provided Zippie Merchant Registry
@@ -31,7 +34,8 @@ contract ZippieSmartWalletERC20 is ZippieAccount {
         }
 
 
-    /** @dev Transfer ERC20 tokens from merchant smart account
+    /** 
+      * @dev Transfer ERC20 tokens from merchant smart account
       * to other merchant smart account
       * @param token ERC20 token to transfer
       * @param senderMerchant sending merchant account address
@@ -110,7 +114,8 @@ contract ZippieSmartWalletERC20 is ZippieAccount {
         return true;
     }
 
-    /** @dev Transfer ERC20 tokens from merchant smart account
+    /** 
+      * @dev Transfer ERC20 tokens from merchant smart account
       * to consumer (any address)
       * @param token ERC20 token to transfer
       * @param senderMerchant sending merchant account address
@@ -177,6 +182,71 @@ contract ZippieSmartWalletERC20 is ZippieAccount {
             amount
         );
 
+        return true;
+    }
+
+    /**  
+      * @dev See ZippieWalletWalletERC20
+      */
+    struct BlankCheck {
+        address[] addresses;
+        address[] signers;
+        uint8[] m; 
+        uint8[] v; 
+        bytes32[] r; 
+        bytes32[] s; 
+        uint256 amount; 
+        bytes32[] cardNonces;
+    }
+
+    /**  
+      * @dev Redeem ZippieWalletWalletERC20 blank check to merchant smart account 
+      * @param payment ZippieWalletWalletERC20 blank check
+      * @param recipientMerchant recipient merchant account address
+      * @param recipientOrderId recipient merchant orderId
+      * @return true if transfer successful
+      */
+    function redeemBlankCheckToMerchant(
+        BlankCheck memory payment,
+        address recipientMerchant,
+        bytes32 recipientOrderId, 
+        address wallet
+    ) 
+        public 
+        returns (bool)
+    {
+        require(
+            payment.addresses[1] == getAccountAddress(keccak256(abi.encodePacked(recipientMerchant, recipientOrderId))),
+            'ZippieSmartWalletERC20: Invalid recipient address'
+        );
+
+        require(
+            IZippieWalletERC20(wallet).redeemBlankCheck(
+                payment.addresses, 
+                payment.signers, 
+                payment.m,
+                payment.v, 
+                payment.r, 
+                payment.s, 
+                payment.amount, 
+                payment.cardNonces
+            ),
+            'ZippieSmartWalletERC20: Transfer failed'
+        );
+
+        address sender = IZippieWalletERC20(wallet).getAccountAddress(
+            keccak256(abi.encodePacked(payment.signers, payment.m))
+        );
+
+        emit TransferC2B(
+            payment.addresses[0], 
+            sender,
+            recipientMerchant,
+            recipientOrderId, 
+            payment.addresses[1],
+            payment.amount
+        );
+            
         return true;
     }
 }

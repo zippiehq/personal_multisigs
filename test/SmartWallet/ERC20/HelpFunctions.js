@@ -5,10 +5,10 @@ const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 
 module.exports = {
 	ZERO_ADDRESS,
-	getAccountAddress,
+	getSmartWalletAccountAddress,
 }
 
-function getAccountAddress(merchantId, orderId, walletAddress) {
+function getSmartWalletAccountAddress(merchantId, orderId, walletAddress) {
 	const bytecode = accountBytecode
 	const bytecodeHash = web3.utils.sha3(bytecode)
 	const salt = web3.utils.soliditySha3(merchantId, orderId)
