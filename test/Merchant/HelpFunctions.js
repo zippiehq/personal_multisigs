@@ -7,6 +7,7 @@ module.exports = {
 	ZERO_ADDRESS,
 	getSmartWalletAccountAddress,
 	getTransferB2BSignature,
+	getTransferB2CSignature,
 	getRSV,
 }
 
@@ -19,10 +20,15 @@ function getSmartWalletAccountAddress(merchantId, orderId, walletAddress) {
 	return web3.utils.toChecksumAddress(accountAddress)
 }
 
-async function getTransferB2BSignature(ownerAccount, token, senderMerchant, senderOrderId, recipientMerchant, recipientOrderId, amount) {
-	// sign by multisig signer
+async function getTransferB2BSignature(signerAccount, token, senderMerchant, senderOrderId, recipientMerchant, recipientOrderId, amount) {
 	const transferHash = web3.utils.soliditySha3('transferB2B', token, senderMerchant, senderOrderId, recipientMerchant, recipientOrderId, amount)
-	const transferSignature = await web3.eth.sign(transferHash, ownerAccount);
+	const transferSignature = await web3.eth.sign(transferHash, signerAccount);
+	return getRSV(transferSignature.slice(2))
+}
+
+async function getTransferB2CSignature(signerAccount, token, senderMerchant, senderOrderId, recipient, amount) {
+	const transferHash = web3.utils.soliditySha3('transferB2C', token, senderMerchant, senderOrderId, recipient, amount)
+	const transferSignature = await web3.eth.sign(transferHash, signerAccount);
 	return getRSV(transferSignature.slice(2))
 }
 
