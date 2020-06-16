@@ -4,9 +4,9 @@ pragma experimental ABIEncoderV2;
 import "../Utils/ZippieUtils.sol";
 import "../SmartWallet/ERC20/IZippieSmartWalletERC20.sol";
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract ZippieMerchantOwner is Ownable {
+contract ZippieMerchantOwner is AccessControl {
 
     struct TransferB2B {
         address token;
@@ -31,6 +31,10 @@ contract ZippieMerchantOwner is Ownable {
         bytes32 s;
     }
 
+    constructor(address owner) public {
+      _setupRole(DEFAULT_ADMIN_ROLE, owner);
+    }
+
     function transferB2B(
         TransferB2B memory transfer,
         Signature memory signature,
@@ -52,8 +56,11 @@ contract ZippieMerchantOwner is Ownable {
         );
 
         require(
-            owner() == ecrecover(signedHash, signature.v, signature.r, signature.s), 
-            "Invalid signature"
+            hasRole(
+                keccak256("transferB2B"),
+                ecrecover(signedHash, signature.v, signature.r, signature.s)
+            ), 
+            "ZippieMerchantOwner: Signer missing required permission to tranfer B2B"
         );
 
         require(
@@ -91,8 +98,11 @@ contract ZippieMerchantOwner is Ownable {
         );
 
         require(
-            owner() == ecrecover(signedHash, signature.v, signature.r, signature.s), 
-            "Invalid signature"
+            hasRole(
+                keccak256("transferB2C"),
+                ecrecover(signedHash, signature.v, signature.r, signature.s)
+            ), 
+            "ZippieMerchantOwner: Signer missing required permission to tranfer B2C"
         );
 
         require(
