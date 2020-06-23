@@ -4,6 +4,14 @@ const ZippieMerchantRegistry = artifacts.require("ZippieMerchantRegistry")
 const ZippieSmartWalletERC20 = artifacts.require("ZippieSmartWalletERC20")
 const ZippieMerchantOwner = artifacts.require("ZippieMerchantOwner")
 const BasicERC20Mock = artifacts.require("BasicERC20Mock")
+
+const ENS = artifacts.require("@ensdomains/ens/ENSRegistry");
+const FIFSRegistrar = artifacts.require("@ensdomains/ens/FIFSRegistrar");
+const ReverseRegistrar = artifacts.require("@ensdomains/ens/ReverseRegistrar");
+const PublicResolver = artifacts.require("@ensdomains/resolver/PublicResolver");
+const utils = require('web3-utils');
+const namehash = require('eth-ens-namehash');
+
 const { 
   ZERO_ADDRESS,
   getSmartWalletAccountAddress,  
@@ -20,13 +28,35 @@ const TRANSFER_B2C = web3.utils.sha3("TRANSFER_B2C")
 const PREMISSION_B2B = web3.utils.sha3("transferB2B")
 const PREMISSION_B2C = web3.utils.sha3("transferB2C")
 
-contract("ZippieMerchantOwner", ([owner, admin, merchantOwner1, merchant1, merchantOwner2, merchant2, other, recipientConsumer]) => {
+contract("ZippieMerchantOwner", ([owner, operator, admin, merchantOwner1, merchant1, merchantOwner2, merchant2, other, recipientConsumer]) => {
 
   beforeEach(async function () {
+    this.ens = await ENS.new({ from: owner });
+    this.resolver = await PublicResolver.new(this.ens.address, { from: owner });
+    this.registrar = await FIFSRegistrar.new(this.ens.address, namehash.hash('merchant'), { from: owner });
+    this.reverseRegistrar = await ReverseRegistrar.new(this.ens.address, this.resolver.address, { from: owner })
+    await this.ens.setSubnodeOwner("0x0000000000000000000000000000000000000000", utils.sha3("resolver"), owner, { from: owner });
+    await this.ens.setResolver(namehash.hash("resolver"), this.resolver.address, { from: owner });
+    await this.resolver.methods['setAddr(bytes32,address)'](namehash.hash("resolver"), this.resolver.address, { from: owner });
+    await this.ens.setSubnodeOwner("0x0000000000000000000000000000000000000000", utils.sha3('merchant'), this.registrar.address, { from: owner });
+    await this.ens.setSubnodeOwner("0x0000000000000000000000000000000000000000", utils.sha3("reverse"), owner, { from: owner });
+    await this.ens.setSubnodeOwner(namehash.hash("reverse"), utils.sha3("addr"), this.reverseRegistrar.address, { from: owner });
+    
     this.merchantRegistry = await ZippieMerchantRegistry.new({ from: admin })
     this.wallet = await ZippieSmartWalletERC20.new(this.merchantRegistry.address, { from: owner })
     this.token = await BasicERC20Mock.new(owner, { from: owner })
-    this.merchantOwner = await ZippieMerchantOwner.new(owner, { from: owner })
+
+    this.merchantOwner = await ZippieMerchantOwner.new(
+      owner,
+      operator,
+      merchant1, 
+      this.ens.address, 
+      this.registrar.address,
+      this.resolver.address, 
+      web3.utils.sha3('app'), 
+      namehash.hash('app.merchant'),
+      { from: owner }
+    )
   })
 
   describe('ZippieSmartWalletERC20', function() {
@@ -40,9 +70,9 @@ contract("ZippieMerchantOwner", ([owner, admin, merchantOwner1, merchant1, merch
       expectEvent.inLogs(logs, "Transfer", { from: owner, to: senderAddress, value: new BN(1) })
       expect(await this.token.balanceOf(senderAddress)).to.be.bignumber.equal(new BN(1))
 
-      expect(await this.merchantOwner.hasRole(PREMISSION_B2B, owner)).to.equal(false)
-      const receipt = await this.merchantOwner.grantRole(PREMISSION_B2B, owner, { from: owner })
-      expectEvent(receipt, 'RoleGranted', { account: owner, role: PREMISSION_B2B, sender: owner })
+      // expect(await this.merchantOwner.hasRole(PREMISSION_B2B, owner)).to.equal(false)
+      // const receipt = await this.merchantOwner.grantRole(PREMISSION_B2B, owner, { from: owner })
+      // expectEvent(receipt, 'RoleGranted', { account: owner, role: PREMISSION_B2B, sender: owner })
       expect(await this.merchantOwner.hasRole(PREMISSION_B2B, owner)).to.equal(true)
 
       // Set merchant owner
@@ -89,9 +119,9 @@ contract("ZippieMerchantOwner", ([owner, admin, merchantOwner1, merchant1, merch
       expectEvent.inLogs(logs, "Transfer", { from: owner, to: senderAddress, value: new BN(1) })
       expect(await this.token.balanceOf(senderAddress)).to.be.bignumber.equal(new BN(1))
 
-      expect(await this.merchantOwner.hasRole(PREMISSION_B2C, owner)).to.equal(false)
-      const receipt = await this.merchantOwner.grantRole(PREMISSION_B2C, owner, { from: owner })
-      expectEvent(receipt, 'RoleGranted', { account: owner, role: PREMISSION_B2C, sender: owner })
+      // expect(await this.merchantOwner.hasRole(PREMISSION_B2C, owner)).to.equal(false)
+      // const receipt = await this.merchantOwner.grantRole(PREMISSION_B2C, owner, { from: owner })
+      // expectEvent(receipt, 'RoleGranted', { account: owner, role: PREMISSION_B2C, sender: owner })
       expect(await this.merchantOwner.hasRole(PREMISSION_B2C, owner)).to.equal(true)
 
       // Set merchant owner

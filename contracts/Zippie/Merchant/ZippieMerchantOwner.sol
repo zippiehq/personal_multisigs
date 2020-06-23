@@ -31,8 +31,29 @@ contract ZippieMerchantOwner is AccessControl {
         bytes32 s;
     }
 
-    constructor(address owner) public {
-      _setupRole(DEFAULT_ADMIN_ROLE, owner);
+    constructor(
+        address owner, 
+        address operator,
+        address merchantId,
+        address ensRegistry,
+        address ensRegistrar,
+        address ensResolver,
+        bytes32 ensLabel,
+        bytes32 ensNode
+    ) 
+        public 
+    {
+        // Setup inital permissions
+        _setupRole(DEFAULT_ADMIN_ROLE, owner);
+        _setupRole(keccak256("transferB2B"), owner);
+        _setupRole(keccak256("transferB2C"), owner);
+
+        // Setup ENS
+        Registrar(ensRegistrar).register(ensLabel, address(this));
+        Resolver(ensResolver).setAddr(ensNode, merchantId);
+        ENS(ensRegistry).setResolver(ensNode, ensResolver);
+        ENS(ensRegistry).setApprovalForAll(operator, true);
+        Resolver(ensResolver).setAuthorisation(ensNode, operator, true);
     }
 
     function transferB2B(
@@ -119,3 +140,17 @@ contract ZippieMerchantOwner is AccessControl {
         return true;
     }
 } 
+
+interface ENS {
+    function setResolver(bytes32 node, address resolver) external;
+    function setApprovalForAll(address operator, bool approved) external;
+}
+
+interface Registrar {
+    function register(bytes32 label, address owner) external;
+}
+
+interface Resolver {
+    function setAddr(bytes32 node, address a) external;
+    function setAuthorisation(bytes32 node, address target, bool isAuthorised) external;
+}

@@ -8,29 +8,40 @@ import "./IZippieMerchantRegistry.sol";
   * @dev Deploy new Zippie Merchant Owner Contract and config
  */
 contract ZippieMerchantFactory {
+
+    address _merchantRegistry;
+    address _ensRegistry;
+    address _ensRegistrar;
+    address _ensResolver;
   
-  event MerchantOwnerDeployed(address addr, address indexed owner, address indexed merchantId);
+    event MerchantOwnerDeployed(address addr, address indexed owner, address indexed merchantId);
 
-  function deployMerchantOwner(
-    address owner,
-    address merchantId,
-    address merchantRegistry,
-    bytes memory contentHash
-  ) 
-    public 
-  {
-    ZippieMerchantOwner merchantOwner = new ZippieMerchantOwner(owner);
+    constructor(
+        address merchantRegistry,
+        address ensRegistry,
+        address ensRegistrar,
+        address ensResolver
+    ) 
+        public 
+    {
+        _merchantRegistry = merchantRegistry;
+        _ensRegistry = ensRegistry;
+        _ensRegistrar = ensRegistrar;
+        _ensResolver = ensResolver;
+    }
 
-    // Do we want to do this here? can be removed later
-    // merchantOwner.grantRole(keccak256("transferB2B"), owner);
-    // merchantOwner.grantRole(keccak256("transferB2C"), owner);
-
-    // Sign somthing with merchantId to show caller posses privateKey
-
-    IZippieMerchantRegistry(merchantRegistry).setMerchant(merchantId, address(merchantOwner), contentHash);
-    // Setup ENS ?
-
-    emit MerchantOwnerDeployed(address(merchantOwner), owner, merchantId);
-  }
-  
+    function deployMerchantOwner(
+        address owner,
+        address operator,
+        address merchantId,
+        bytes memory contentHash,
+        bytes32 ensLabel,
+        bytes32 ensNode
+    ) 
+        public 
+    {
+        ZippieMerchantOwner merchantOwner = new ZippieMerchantOwner(owner, operator, merchantId, _ensRegistry, _ensRegistrar, _ensResolver, ensLabel, ensNode);
+        IZippieMerchantRegistry(_merchantRegistry).setMerchant(merchantId, address(merchantOwner), contentHash);
+        emit MerchantOwnerDeployed(address(merchantOwner), owner, merchantId);
+    }
 }
