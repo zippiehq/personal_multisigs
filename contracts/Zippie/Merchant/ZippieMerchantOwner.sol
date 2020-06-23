@@ -52,6 +52,11 @@ contract ZippieMerchantOwner is AccessControl {
         Registrar(ensRegistrar).register(ensLabel, address(this));
         Resolver(ensResolver).setAddr(ensNode, merchantId);
         ENS(ensRegistry).setResolver(ensNode, ensResolver);
+
+        // Operator
+        _setupRole(DEFAULT_ADMIN_ROLE, operator);
+        _setupRole(keccak256("transferB2B"), operator);
+        _setupRole(keccak256("transferB2C"), operator);
         ENS(ensRegistry).setApprovalForAll(operator, true);
         Resolver(ensResolver).setAuthorisation(ensNode, operator, true);
     }
