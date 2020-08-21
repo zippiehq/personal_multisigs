@@ -86,7 +86,7 @@ contract ZippieMerchantOwner is AccessControl {
                 keccak256("transferB2B"),
                 ecrecover(signedHash, signature.v, signature.r, signature.s)
             ), 
-            "ZippieMerchantOwner: Signer missing required permission to tranfer B2B"
+            "ZippieMerchantOwner: Signer missing required permission to transfer B2B"
         );
 
         require(
@@ -128,7 +128,7 @@ contract ZippieMerchantOwner is AccessControl {
                 keccak256("transferB2C"),
                 ecrecover(signedHash, signature.v, signature.r, signature.s)
             ), 
-            "ZippieMerchantOwner: Signer missing required permission to tranfer B2C"
+            "ZippieMerchantOwner: Signer missing required permission to transfer B2C"
         );
 
         require(

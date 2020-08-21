@@ -130,7 +130,7 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
         expect(await this.token.balanceOf(recipientAddress)).to.be.bignumber.equal(new BN(0))
         await expectRevert(
           this.wallet.transferB2B(this.token.address, merchant1, ORDER_ID_1, merchant2, ORDER_ID_1, new BN(1), { from: merchantOwner1 }),
-          'ZippieSmartWalletERC20: Sender missing required permission to tranfer B2'
+          'ZippieSmartWalletERC20: Sender missing required permission to transfer B2B'
         )
         expect(await this.token.balanceOf(recipientAddress)).to.be.bignumber.equal(new BN(0))
       })
@@ -391,7 +391,7 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
         expect(await this.token.balanceOf(recipientConsumer)).to.be.bignumber.equal(new BN(0))
         await expectRevert(
           this.wallet.transferB2C(this.token.address, merchant1, ORDER_ID_1, recipientConsumer, new BN(1), { from: merchantOwner1 }),
-          'ZippieSmartWalletERC20: Sender missing required permission to tranfer B2'
+          'ZippieSmartWalletERC20: Sender missing required permission to transfer B2C'
         )
         expect(await this.token.balanceOf(recipientConsumer)).to.be.bignumber.equal(new BN(0))
       })

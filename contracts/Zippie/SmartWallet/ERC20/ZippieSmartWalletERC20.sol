@@ -73,7 +73,7 @@ contract ZippieSmartWalletERC20 is ZippieAccount {
 
         require(
             IZippieMerchantRegistry(_zippieMerchantRegistry).hasPermission(TRANSFER_B2B, senderMerchant), 
-            "ZippieSmartWalletERC20: Sender missing required permission to tranfer B2B"
+            "ZippieSmartWalletERC20: Sender missing required permission to transfer B2B"
         );
 
         // get smart account address for sender
@@ -151,7 +151,7 @@ contract ZippieSmartWalletERC20 is ZippieAccount {
 
         require(
             IZippieMerchantRegistry(_zippieMerchantRegistry).hasPermission(TRANSFER_B2C, senderMerchant), 
-            "ZippieSmartWalletERC20: Sender missing required permission to tranfer B2C"
+            "ZippieSmartWalletERC20: Sender missing required permission to transfer B2C"
         );
 
         // get smart account address for sender
