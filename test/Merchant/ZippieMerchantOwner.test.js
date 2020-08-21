@@ -2,8 +2,10 @@ const { BN, constants, expectEvent, expectRevert } = require("openzeppelin-test-
 const { expect } = require('chai')
 const ZippieMerchantRegistry = artifacts.require("ZippieMerchantRegistry")
 const ZippieSmartWalletERC20 = artifacts.require("ZippieSmartWalletERC20")
+const ZippieSmartWalletERC721 = artifacts.require("ZippieSmartWalletERC721")
 const ZippieMerchantOwner = artifacts.require("ZippieMerchantOwner")
 const BasicERC20Mock = artifacts.require("BasicERC20Mock")
+const BasicERC721Mock = artifacts.require("BasicERC721Mock")
 
 const ENS = artifacts.require("@ensdomains/ens/ENSRegistry");
 const FIFSRegistrar = artifacts.require("@ensdomains/ens/FIFSRegistrar");
@@ -17,6 +19,9 @@ const {
   getSmartWalletAccountAddress,  
   getTransferB2BSignature,
   getTransferB2CSignature,
+  getSmartWalletAccountAddressErc721,
+	getTransferB2BSignatureErc721,
+	getTransferB2CSignatureErc721,
 } = require('./HelpFunctions')
 
 const ORDER_ID_1 = "0x0000000000000000000000000000000000000000000000000000000000000001"
@@ -45,6 +50,9 @@ contract("ZippieMerchantOwner", ([owner, operator, admin, merchantOwner1, mercha
     this.merchantRegistry = await ZippieMerchantRegistry.new({ from: admin })
     this.wallet = await ZippieSmartWalletERC20.new(this.merchantRegistry.address, { from: owner })
     this.token = await BasicERC20Mock.new(owner, { from: owner })
+
+    this.walletErc721 = await ZippieSmartWalletERC721.new(this.merchantRegistry.address, { from: owner })
+    this.tokenErc721 = await BasicERC721Mock.new(owner, { from: owner })
 
     this.merchantOwner = await ZippieMerchantOwner.new(
       owner,
@@ -323,6 +331,260 @@ contract("ZippieMerchantOwner", ([owner, operator, admin, merchantOwner1, mercha
       )
 
       expect(await this.token.balanceOf(recipientConsumer)).to.be.bignumber.equal(new BN(0))
+    })
+  })
+
+  describe('ZippieSmartWalletERC721', function() {
+    it("allows owner to transferB2B from smart wallet", async function () {
+      // Get smart account addresses	
+      const senderAddress = getSmartWalletAccountAddressErc721(merchant1, ORDER_ID_1, this.walletErc721.address)
+      const recipientAddress = getSmartWalletAccountAddressErc721(merchant2, ORDER_ID_1, this.walletErc721.address)
+
+      // Do ERC721 transfer to smart account
+      const { logs } = await this.tokenErc721.transferFrom(owner, senderAddress, "1", { from: owner })
+      expectEvent.inLogs(logs, "Transfer", { from: owner, to: senderAddress, tokenId: "1" })
+      expect(await this.tokenErc721.balanceOf(senderAddress)).to.be.bignumber.equal(new BN(1))
+      expect(await this.tokenErc721.ownerOf("1")).to.equal(senderAddress)
+
+      // Check permission
+      expect(await this.merchantOwner.hasRole(PREMISSION_B2B, owner)).to.equal(true)
+
+      // Set merchant owner
+      const receipt1 = await this.merchantRegistry.setMerchant(merchant1, this.merchantOwner.address, CONTENT_HASH, { from: admin })
+      expectEvent(receipt1, 'MerchantChanged', { 
+        merchant: merchant1,
+        owner: this.merchantOwner.address,
+        contentHash: CONTENT_HASH
+      })
+      expect(await this.merchantRegistry.owner(merchant1)).to.equal(this.merchantOwner.address)
+
+      // Set permission for B2B
+      await this.merchantRegistry.grantRole(TRANSFER_B2B, merchant1, { from: admin })
+      expect(await this.merchantRegistry.hasRole(TRANSFER_B2B, merchant1)).to.equal(true)
+      
+      // TransferB2B using owner contract and sign as meta transaction
+      expect(await this.tokenErc721.balanceOf(recipientAddress)).to.be.bignumber.equal(new BN(0))
+      const { v, r, s } = await getTransferB2BSignatureErc721(owner, this.tokenErc721.address, merchant1, ORDER_ID_1, merchant2, ORDER_ID_1, "1")
+      const receipt2 = await this.merchantOwner.transferB2B_ERC721(
+        { token: this.tokenErc721.address, senderMerchant: merchant1, senderOrderId: ORDER_ID_1, recipientMerchant: merchant2, recipientOrderId: ORDER_ID_1, tokenId: "1" },
+        { v: v, r: r, s: s },
+        this.walletErc721.address,
+        { from: other }
+      )
+
+      // Check events for transferB2B
+      assert(receipt2.receipt.rawLogs.some(log => { 
+        return log.topics[0] === web3.utils.sha3("TransferB2B(address,address,bytes32,address,address,bytes32,address,uint256)")
+         && log.topics[1] === web3.utils.padLeft(this.tokenErc721.address.toLowerCase(), 64)
+         && log.topics[2] === web3.utils.padLeft(merchant1.toLowerCase(), 64)
+         && log.topics[3] === web3.utils.padLeft(merchant2.toLowerCase(), 64)
+      }) === true, "missing TransferB2B event")
+
+      expect(await this.tokenErc721.balanceOf(recipientAddress)).to.be.bignumber.equal(new BN(1))
+      expect(await this.tokenErc721.ownerOf("1")).to.equal(recipientAddress)
+
+    })
+
+    it("allows owner to transferB2C from smart wallet", async function () {
+      // Get smart account addresses	
+      const senderAddress = getSmartWalletAccountAddressErc721(merchant1, ORDER_ID_1, this.walletErc721.address)
+
+      // Do ERC721 transfer to smart account
+      const { logs } = await this.tokenErc721.transferFrom(owner, senderAddress, "1", { from: owner })
+      expectEvent.inLogs(logs, "Transfer", { from: owner, to: senderAddress, tokenId: "1" })
+      expect(await this.tokenErc721.balanceOf(senderAddress)).to.be.bignumber.equal(new BN(1))
+      expect(await this.tokenErc721.ownerOf("1")).to.equal(senderAddress)
+
+      // Check permission
+      expect(await this.merchantOwner.hasRole(PREMISSION_B2C, owner)).to.equal(true)
+
+      // Set merchant owner
+      const receipt1 = await this.merchantRegistry.setMerchant(merchant1, this.merchantOwner.address, CONTENT_HASH, { from: admin })
+      expectEvent(receipt1, 'MerchantChanged', { 
+        merchant: merchant1,
+        owner: this.merchantOwner.address,
+        contentHash: CONTENT_HASH
+      })
+      expect(await this.merchantRegistry.owner(merchant1)).to.equal(this.merchantOwner.address)
+
+      // Set permission for B2C
+      await this.merchantRegistry.grantRole(TRANSFER_B2C, merchant1, { from: admin })
+      expect(await this.merchantRegistry.hasRole(TRANSFER_B2C, merchant1)).to.equal(true)
+      
+      // TransferB2C using owner contract and sign as meta transaction
+      expect(await this.tokenErc721.balanceOf(recipientConsumer)).to.be.bignumber.equal(new BN(0))
+      const { v, r, s } = await getTransferB2CSignatureErc721(owner, this.tokenErc721.address, merchant1, ORDER_ID_1, recipientConsumer, "1")
+      const receipt2 = await this.merchantOwner.transferB2C_ERC721(
+        { token: this.tokenErc721.address, senderMerchant: merchant1, senderOrderId: ORDER_ID_1, recipient: recipientConsumer, tokenId: "1" },
+        { v: v, r: r, s: s },
+        this.walletErc721.address,
+        { from: other }
+      )
+
+      // Check events for transferB2B
+      assert(receipt2.receipt.rawLogs.some(log => { 
+        return log.topics[0] === web3.utils.sha3("TransferB2C(address,address,bytes32,address,address,uint256)")
+         && log.topics[1] === web3.utils.padLeft(this.tokenErc721.address.toLowerCase(), 64)
+         && log.topics[2] === web3.utils.padLeft(merchant1.toLowerCase(), 64)
+      }) === true, "missing TransferB2C event")
+      expect(await this.tokenErc721.balanceOf(recipientConsumer)).to.be.bignumber.equal(new BN(1))
+      expect(await this.tokenErc721.ownerOf("1")).to.equal(recipientConsumer)
+    })
+
+    it("allows operator to transferB2B from smart wallet", async function () {
+      // Get smart account addresses	
+      const senderAddress = getSmartWalletAccountAddressErc721(merchant1, ORDER_ID_1, this.walletErc721.address)
+      const recipientAddress = getSmartWalletAccountAddressErc721(merchant2, ORDER_ID_1, this.walletErc721.address)
+
+      // Do ERC721 transfer to smart account
+      const { logs } = await this.tokenErc721.transferFrom(owner, senderAddress, "1", { from: owner })
+      expectEvent.inLogs(logs, "Transfer", { from: owner, to: senderAddress, tokenId: "1" })
+      expect(await this.tokenErc721.balanceOf(senderAddress)).to.be.bignumber.equal(new BN(1))
+      expect(await this.tokenErc721.ownerOf("1")).to.equal(senderAddress)
+
+      // Check permission
+      expect(await this.merchantOwner.hasRole(PREMISSION_B2B, operator)).to.equal(true)
+
+      // Set merchant owner
+      const receipt1 = await this.merchantRegistry.setMerchant(merchant1, this.merchantOwner.address, CONTENT_HASH, { from: admin })
+      expectEvent(receipt1, 'MerchantChanged', { 
+        merchant: merchant1,
+        owner: this.merchantOwner.address,
+        contentHash: CONTENT_HASH
+      })
+      expect(await this.merchantRegistry.owner(merchant1)).to.equal(this.merchantOwner.address)
+
+      // Set permission for B2B
+      await this.merchantRegistry.grantRole(TRANSFER_B2B, merchant1, { from: admin })
+      expect(await this.merchantRegistry.hasRole(TRANSFER_B2B, merchant1)).to.equal(true)
+    
+      // TransferB2B using owner contract and sign as meta transaction
+      expect(await this.tokenErc721.balanceOf(recipientAddress)).to.be.bignumber.equal(new BN(0))
+      const { v, r, s } = await getTransferB2BSignatureErc721(operator, this.tokenErc721.address, merchant1, ORDER_ID_1, merchant2, ORDER_ID_1, "1")
+      const receipt2 = await this.merchantOwner.transferB2B_ERC721(
+        { token: this.tokenErc721.address, senderMerchant: merchant1, senderOrderId: ORDER_ID_1, recipientMerchant: merchant2, recipientOrderId: ORDER_ID_1, tokenId: "1" },
+        { v: v, r: r, s: s },
+        this.walletErc721.address,
+        { from: other }
+      )
+
+      // Check events for transferB2B
+      assert(receipt2.receipt.rawLogs.some(log => { 
+        return log.topics[0] === web3.utils.sha3("TransferB2B(address,address,bytes32,address,address,bytes32,address,uint256)")
+         && log.topics[1] === web3.utils.padLeft(this.tokenErc721.address.toLowerCase(), 64)
+         && log.topics[2] === web3.utils.padLeft(merchant1.toLowerCase(), 64)
+         && log.topics[3] === web3.utils.padLeft(merchant2.toLowerCase(), 64)
+      }) === true, "missing TransferB2B event")
+
+      expect(await this.tokenErc721.balanceOf(recipientAddress)).to.be.bignumber.equal(new BN(1))
+      expect(await this.tokenErc721.ownerOf("1")).to.equal(recipientAddress)
+    })
+
+    it("allows operator to transferB2C from smart wallet", async function () {
+      // Get smart account addresses	
+      const senderAddress = getSmartWalletAccountAddressErc721(merchant1, ORDER_ID_1, this.walletErc721.address)
+
+      // Do ERC721 transfer to smart account
+      const { logs } = await this.tokenErc721.transferFrom(owner, senderAddress, "1", { from: owner })
+      expectEvent.inLogs(logs, "Transfer", { from: owner, to: senderAddress, tokenId: "1" })
+      expect(await this.tokenErc721.balanceOf(senderAddress)).to.be.bignumber.equal(new BN(1))
+      expect(await this.tokenErc721.ownerOf("1")).to.equal(senderAddress)
+
+      // Check permission
+      expect(await this.merchantOwner.hasRole(PREMISSION_B2C, operator)).to.equal(true)
+
+      // Set merchant owner
+      const receipt1 = await this.merchantRegistry.setMerchant(merchant1, this.merchantOwner.address, CONTENT_HASH, { from: admin })
+      expectEvent(receipt1, 'MerchantChanged', { 
+        merchant: merchant1,
+        owner: this.merchantOwner.address,
+        contentHash: CONTENT_HASH
+      })
+      expect(await this.merchantRegistry.owner(merchant1)).to.equal(this.merchantOwner.address)
+
+      // Set permission for B2C
+      await this.merchantRegistry.grantRole(TRANSFER_B2C, merchant1, { from: admin })
+      expect(await this.merchantRegistry.hasRole(TRANSFER_B2C, merchant1)).to.equal(true)
+      
+      // TransferB2C using owner contract and sign as meta transaction
+      expect(await this.tokenErc721.balanceOf(recipientConsumer)).to.be.bignumber.equal(new BN(0))
+      const { v, r, s } = await getTransferB2CSignatureErc721(operator, this.tokenErc721.address, merchant1, ORDER_ID_1, recipientConsumer, "1")
+      const receipt2 = await this.merchantOwner.transferB2C_ERC721(
+        { token: this.tokenErc721.address, senderMerchant: merchant1, senderOrderId: ORDER_ID_1, recipient: recipientConsumer, tokenId: "1" },
+        { v: v, r: r, s: s },
+        this.walletErc721.address,
+        { from: other }
+      )
+
+      // Check events for transferB2B
+      assert(receipt2.receipt.rawLogs.some(log => { 
+        return log.topics[0] === web3.utils.sha3("TransferB2C(address,address,bytes32,address,address,uint256)")
+         && log.topics[1] === web3.utils.padLeft(this.tokenErc721.address.toLowerCase(), 64)
+         && log.topics[2] === web3.utils.padLeft(merchant1.toLowerCase(), 64)
+      }) === true, "missing TransferB2C event")
+      expect(await this.tokenErc721.balanceOf(recipientConsumer)).to.be.bignumber.equal(new BN(1))
+      expect(await this.tokenErc721.ownerOf("1")).to.equal(recipientConsumer)
+    })
+
+    it("prevents transferB2B from smart wallet if signer is missing permission", async function () {
+      // Get smart account addresses	
+      const senderAddress = getSmartWalletAccountAddressErc721(merchant1, ORDER_ID_1, this.wallet.address)
+      const recipientAddress = getSmartWalletAccountAddressErc721(merchant2, ORDER_ID_1, this.wallet.address)
+
+      // Do ERC721 transfer to smart account
+      const { logs } = await this.tokenErc721.transferFrom(owner, senderAddress, "1", { from: owner })
+      expectEvent.inLogs(logs, "Transfer", { from: owner, to: senderAddress, tokenId: "1" })
+      expect(await this.tokenErc721.balanceOf(senderAddress)).to.be.bignumber.equal(new BN(1))
+      expect(await this.tokenErc721.ownerOf("1")).to.equal(senderAddress)
+
+      // Check permission
+      expect(await this.merchantOwner.hasRole(PREMISSION_B2B, other)).to.equal(false)
+      
+      // TransferB2B using owner contract and sign as meta transaction
+      expect(await this.token.balanceOf(recipientAddress)).to.be.bignumber.equal(new BN(0))
+      const { v, r, s } = await getTransferB2BSignatureErc721(other, this.token.address, merchant1, ORDER_ID_1, merchant2, ORDER_ID_1, "1")
+      await expectRevert(
+        this.merchantOwner.transferB2B_ERC721(
+          { token: this.token.address, senderMerchant: merchant1, senderOrderId: ORDER_ID_1, recipientMerchant: merchant2, recipientOrderId: ORDER_ID_1, tokenId: "1" },
+          { v: v, r: r, s: s },
+          this.wallet.address,
+          { from: other }
+        ),
+        'ZippieMerchantOwner: Signer missing required permission to transfer B2B'
+      )
+
+      expect(await this.token.balanceOf(recipientAddress)).to.be.bignumber.equal(new BN(0))
+      expect(await this.tokenErc721.ownerOf("1")).to.equal(senderAddress)
+    })
+
+    it("prevents transferB2C from smart wallet if signer is missing permission", async function () {
+      // Get smart account addresses	
+      const senderAddress = getSmartWalletAccountAddressErc721(merchant1, ORDER_ID_1, this.wallet.address)
+
+      // Do ERC721 transfer to smart account
+      const { logs } = await this.tokenErc721.transferFrom(owner, senderAddress, "1", { from: owner })
+      expectEvent.inLogs(logs, "Transfer", { from: owner, to: senderAddress, tokenId: "1" })
+      expect(await this.tokenErc721.balanceOf(senderAddress)).to.be.bignumber.equal(new BN(1))
+      expect(await this.tokenErc721.ownerOf("1")).to.equal(senderAddress)
+
+      // Check permission
+      expect(await this.merchantOwner.hasRole(PREMISSION_B2C, other)).to.equal(false)
+      
+      // TransferB2C using owner contract and sign as meta transaction
+      expect(await this.token.balanceOf(recipientConsumer)).to.be.bignumber.equal(new BN(0))
+      const { v, r, s } = await getTransferB2CSignatureErc721(other, this.token.address, merchant1, ORDER_ID_1, recipientConsumer, "1")
+      await expectRevert(
+        this.merchantOwner.transferB2C_ERC721(
+          { token: this.token.address, senderMerchant: merchant1, senderOrderId: ORDER_ID_1, recipient: recipientConsumer, tokenId: "1" },
+          { v: v, r: r, s: s },
+          this.wallet.address,
+          { from: other }
+        ),
+        'ZippieMerchantOwner: Signer missing required permission to transfer B2C'
+      )
+
+      expect(await this.token.balanceOf(recipientConsumer)).to.be.bignumber.equal(new BN(0))
+      expect(await this.tokenErc721.ownerOf("1")).to.equal(senderAddress)
     })
   })
 })

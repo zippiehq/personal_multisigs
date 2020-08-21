@@ -3,6 +3,9 @@ pragma experimental ABIEncoderV2;
 
 import "../Utils/ZippieUtils.sol";
 import "../SmartWallet/ERC20/IZippieSmartWalletERC20.sol";
+import "../SmartWallet/ERC721/IZippieSmartWalletERC721.sol";
+import "../Token/ERC20/IZippieTokenERC20.sol";
+import "../Token/ERC721/IZippieTokenERC721.sol";
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
@@ -23,6 +26,23 @@ contract ZippieMerchantOwner is AccessControl {
         bytes32 senderOrderId;
         address recipient;
         uint256 amount;
+    }
+
+    struct TransferB2B_ERC721 {
+        address token;
+        address senderMerchant;
+        bytes32 senderOrderId;
+        address recipientMerchant;
+        bytes32 recipientOrderId;
+        uint256 tokenId;
+    }
+
+    struct TransferB2C_ERC721 {
+        address token;
+        address senderMerchant;
+        bytes32 senderOrderId;
+        address recipient;
+        uint256 tokenId;
     }
 
     struct Signature {
@@ -144,7 +164,91 @@ contract ZippieMerchantOwner is AccessControl {
 
         return true;
     }
-} 
+
+    function transferB2B_ERC721(
+        TransferB2B_ERC721 memory transfer,
+        Signature memory signature,
+        address smartWallet
+    ) 
+        public 
+        returns (bool)
+    {
+        bytes32 signedHash = ZippieUtils.toEthSignedMessageHash(
+            keccak256(abi.encodePacked(
+                "transferB2B", 
+                transfer.token,
+                transfer.senderMerchant,
+                transfer.senderOrderId,
+                transfer.recipientMerchant,
+                transfer.recipientOrderId,
+                transfer.tokenId
+            ))
+        );
+
+        require(
+            hasRole(
+                keccak256("transferB2B"),
+                ecrecover(signedHash, signature.v, signature.r, signature.s)
+            ), 
+            "ZippieMerchantOwner: Signer missing required permission to transfer B2B"
+        );
+
+        require(
+            IZippieSmartWalletERC721(smartWallet).transferB2B(
+                transfer.token,
+                transfer.senderMerchant,
+                transfer.senderOrderId,
+                transfer.recipientMerchant,
+                transfer.recipientOrderId,
+                transfer.tokenId
+            ),
+            'ZippieMerchantOwner: TransferB2B ERC721 failed'
+        );
+
+        return true;
+    }
+
+    function transferB2C_ERC721(
+        TransferB2C_ERC721 memory transfer,
+        Signature memory signature,
+        address smartWallet
+    ) 
+        public 
+        returns (bool)
+    {
+        bytes32 signedHash = ZippieUtils.toEthSignedMessageHash(
+            keccak256(abi.encodePacked(
+                "transferB2C", 
+                transfer.token,
+                transfer.senderMerchant,
+                transfer.senderOrderId,
+                transfer.recipient,
+                transfer.tokenId
+            ))
+        );
+
+        require(
+            hasRole(
+                keccak256("transferB2C"),
+                ecrecover(signedHash, signature.v, signature.r, signature.s)
+            ), 
+            "ZippieMerchantOwner: Signer missing required permission to transfer B2C"
+        );
+
+        require(
+            IZippieSmartWalletERC721(smartWallet).transferB2C(
+                transfer.token,
+                transfer.senderMerchant,
+                transfer.senderOrderId,
+                transfer.recipient,
+                transfer.tokenId
+            ),
+            'ZippieMerchantOwner: TransferB2C ERC721 failed'
+        );
+
+        return true;
+    }
+}
 
 interface ENS {
     function setResolver(bytes32 node, address resolver) external;
