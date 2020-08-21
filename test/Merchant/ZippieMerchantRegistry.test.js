@@ -257,11 +257,20 @@ contract("ZippieMerchantRegistry", ([admin, merchantOwner1, merchant1, merchantO
         expect(await this.merchantRegistry.contentHash(merchant2)).to.equal(CONTENT_HASH_2)
       })
   
-      it("prevents non-admins to set merchant owner (and content hash)", async function () {
+      it("prevents non-admins to change merchant owner (and content hash) is set already", async function () {
         // Check so "other" don't have the admin role 
         expect(await this.merchantRegistry.hasRole(DEFAULT_ADMIN_ROLE, other)).to.equal(false)
 
-        // Let "other" try to set merchant owner
+        // Check so merchant owner not set yet
+        expect(await this.merchantRegistry.contentHash(merchant1)).to.equal(null)
+
+        //Let "other" try to set merchant owner
+        this.merchantRegistry.setMerchant(merchant1, merchantOwner1, CONTENT_HASH_1, { from: other }),
+
+        // Check so merchant owner is set already
+        expect(await this.merchantRegistry.owner(merchant1)).to.equal(merchantOwner1)
+
+        //Let "other" try to set merchant owner again 
         await expectRevert(
           this.merchantRegistry.setMerchant(merchant1, merchantOwner1, CONTENT_HASH_1, { from: other }),
           'ZippieMerchantRegistry: Caller is not admin'
