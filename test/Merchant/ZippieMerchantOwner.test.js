@@ -4,8 +4,8 @@ const ZippieMerchantRegistry = artifacts.require("ZippieMerchantRegistry")
 const ZippieSmartWalletERC20 = artifacts.require("ZippieSmartWalletERC20")
 const ZippieSmartWalletERC721 = artifacts.require("ZippieSmartWalletERC721")
 const ZippieMerchantOwner = artifacts.require("ZippieMerchantOwner")
-const BasicERC20Mock = artifacts.require("BasicERC20Mock")
-const BasicERC721Mock = artifacts.require("BasicERC721Mock")
+const ZippieTokenERC20 = artifacts.require("ZippieTokenERC20")
+const ZippieTokenERC721 = artifacts.require("ZippieTokenERC721")
 
 const ENS = artifacts.require("@ensdomains/ens/ENSRegistry");
 const FIFSRegistrar = artifacts.require("@ensdomains/ens/FIFSRegistrar");
@@ -21,7 +21,9 @@ const {
   getTransferB2CSignature,
   getSmartWalletAccountAddressErc721,
 	getTransferB2BSignatureErc721,
-	getTransferB2CSignatureErc721,
+  getTransferB2CSignatureErc721,
+  getMintTokenSignature,
+  getMintTokenSignatureErc721,
 } = require('./HelpFunctions')
 
 const ORDER_ID_1 = "0x0000000000000000000000000000000000000000000000000000000000000001"
@@ -32,6 +34,7 @@ const TRANSFER_B2C = web3.utils.sha3("TRANSFER_B2C")
 
 const PREMISSION_B2B = web3.utils.sha3("transferB2B")
 const PREMISSION_B2C = web3.utils.sha3("transferB2C")
+const PREMISSION_MINT = web3.utils.sha3("mintToken")
 
 contract("ZippieMerchantOwner", ([owner, operator, admin, merchantOwner1, merchant1, merchantOwner2, merchant2, other, recipientConsumer]) => {
 
@@ -48,12 +51,7 @@ contract("ZippieMerchantOwner", ([owner, operator, admin, merchantOwner1, mercha
     await this.ens.setSubnodeOwner(namehash.hash("reverse"), utils.sha3("addr"), this.reverseRegistrar.address, { from: owner });
     
     this.merchantRegistry = await ZippieMerchantRegistry.new({ from: admin })
-    this.wallet = await ZippieSmartWalletERC20.new(this.merchantRegistry.address, { from: owner })
-    this.token = await BasicERC20Mock.new(owner, { from: owner })
-
-    this.walletErc721 = await ZippieSmartWalletERC721.new(this.merchantRegistry.address, { from: owner })
-    this.tokenErc721 = await BasicERC721Mock.new(owner, { from: owner })
-
+    
     this.merchantOwner = await ZippieMerchantOwner.new(
       owner,
       operator,
@@ -65,6 +63,15 @@ contract("ZippieMerchantOwner", ([owner, operator, admin, merchantOwner1, mercha
       namehash.hash('app.merchant'),
       { from: owner }
     )
+
+    this.wallet = await ZippieSmartWalletERC20.new(this.merchantRegistry.address, { from: owner })
+    this.token = await ZippieTokenERC20.new(this.merchantOwner.address, operator, "ZIPPIE-ERC20", "ZIPPIE-ERC20", 6, { from: admin })
+    await this.token.mint(owner, new BN(1), { from: operator })
+
+    this.walletErc721 = await ZippieSmartWalletERC721.new(this.merchantRegistry.address, { from: owner })
+    this.tokenErc721 = await ZippieTokenERC721.new(this.merchantOwner.address, operator, "Zippie-ERC721", "ZIPPIE-ERC721", "baseURI", { from: admin })
+    await this.tokenErc721.mint(owner, "1", "", { from: operator })
+      
   })
 
   describe('AccessControl', function() {
@@ -585,6 +592,192 @@ contract("ZippieMerchantOwner", ([owner, operator, admin, merchantOwner1, mercha
 
       expect(await this.token.balanceOf(recipientConsumer)).to.be.bignumber.equal(new BN(0))
       expect(await this.tokenErc721.ownerOf("1")).to.equal(senderAddress)
+    })
+  })
+
+  describe('ZippieTokenERC20', function() {
+    it("allows owner to mint tokens", async function () {
+      // Get smart account addresses	
+      const senderAddress = getSmartWalletAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
+
+      // Check permission
+      expect(await this.merchantOwner.hasRole(PREMISSION_MINT, owner)).to.equal(true)
+
+      // Set merchant owner
+      const receipt1 = await this.merchantRegistry.setMerchant(merchant1, this.merchantOwner.address, CONTENT_HASH, { from: admin })
+      expectEvent(receipt1, 'MerchantChanged', { 
+        merchant: merchant1,
+        owner: this.merchantOwner.address,
+        contentHash: CONTENT_HASH
+      })
+      expect(await this.merchantRegistry.owner(merchant1)).to.equal(this.merchantOwner.address)
+      
+      // Mint token using owner contract and sign as meta transaction
+      expect(await this.token.balanceOf(senderAddress)).to.be.bignumber.equal(new BN(0))
+      const { v, r, s } = await getMintTokenSignature(owner, this.token.address, senderAddress, new BN(1))
+      const receipt2 = await this.merchantOwner.mintToken(this.token.address, senderAddress, new BN(1), { v: v, r: r, s: s }, { from: other })
+
+      // Check events for transfer (mint)
+      assert(receipt2.receipt.rawLogs.some(log => { 
+        return log.topics[0] === web3.utils.sha3("Transfer(address,address,uint256)")
+         && log.topics[1] === '0x0000000000000000000000000000000000000000000000000000000000000000'
+         && log.topics[2] === web3.utils.padLeft(senderAddress.toLowerCase(), 64)
+         && log.data === '0x0000000000000000000000000000000000000000000000000000000000000001'
+      }) === true, "missing Transfer event")
+
+      expect(await this.token.balanceOf(senderAddress)).to.be.bignumber.equal(new BN(1))
+    })
+
+    it("allows operator to mint tokens", async function () {
+      // Get smart account addresses	
+      const senderAddress = getSmartWalletAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
+
+      // Check permission
+      expect(await this.merchantOwner.hasRole(PREMISSION_MINT, operator)).to.equal(true)
+
+      // Set merchant owner
+      const receipt1 = await this.merchantRegistry.setMerchant(merchant1, this.merchantOwner.address, CONTENT_HASH, { from: admin })
+      expectEvent(receipt1, 'MerchantChanged', { 
+        merchant: merchant1,
+        owner: this.merchantOwner.address,
+        contentHash: CONTENT_HASH
+      })
+      expect(await this.merchantRegistry.owner(merchant1)).to.equal(this.merchantOwner.address)
+      
+      // Mint token using owner contract and sign as meta transaction
+      expect(await this.token.balanceOf(senderAddress)).to.be.bignumber.equal(new BN(0))
+      const { v, r, s } = await getMintTokenSignature(operator, this.token.address, senderAddress, new BN(1))
+      const receipt2 = await this.merchantOwner.mintToken(this.token.address, senderAddress, new BN(1), { v: v, r: r, s: s }, { from: other })
+
+      // Check events for transfer (mint)
+      assert(receipt2.receipt.rawLogs.some(log => { 
+        return log.topics[0] === web3.utils.sha3("Transfer(address,address,uint256)")
+         && log.topics[1] === '0x0000000000000000000000000000000000000000000000000000000000000000'
+         && log.topics[2] === web3.utils.padLeft(senderAddress.toLowerCase(), 64)
+         && log.data === '0x0000000000000000000000000000000000000000000000000000000000000001'
+      }) === true, "missing Transfer event")
+
+      expect(await this.token.balanceOf(senderAddress)).to.be.bignumber.equal(new BN(1))
+    })
+
+    it("prevents minting tokens if signer is missing permission", async function () {
+      // Get smart account addresses	
+      const senderAddress = getSmartWalletAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
+
+      // Check permission
+      expect(await this.merchantOwner.hasRole(PREMISSION_MINT, other)).to.equal(false)
+
+      // Set merchant owner
+      const receipt1 = await this.merchantRegistry.setMerchant(merchant1, this.merchantOwner.address, CONTENT_HASH, { from: admin })
+      expectEvent(receipt1, 'MerchantChanged', { 
+        merchant: merchant1,
+        owner: this.merchantOwner.address,
+        contentHash: CONTENT_HASH
+      })
+      expect(await this.merchantRegistry.owner(merchant1)).to.equal(this.merchantOwner.address)
+      
+      // Mint token using owner contract and sign as meta transaction
+      expect(await this.token.balanceOf(senderAddress)).to.be.bignumber.equal(new BN(0))
+      const { v, r, s } = await getMintTokenSignature(other, this.token.address, senderAddress, new BN(1))
+      await expectRevert(
+        this.merchantOwner.mintToken(this.token.address, senderAddress, new BN(1), { v: v, r: r, s: s }, { from: other }),
+        'ZippieMerchantOwner: Signer missing required permission to mint tokens'
+      )
+
+      expect(await this.token.balanceOf(senderAddress)).to.be.bignumber.equal(new BN(0))
+    })
+  })
+
+  describe('ZippieTokenERC721', function() {
+    it("allows owner to mint tokens", async function () {
+      // Get smart account addresses	
+      const senderAddress = getSmartWalletAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
+
+      // Check permission
+      expect(await this.merchantOwner.hasRole(PREMISSION_MINT, owner)).to.equal(true)
+
+      // Set merchant owner
+      const receipt1 = await this.merchantRegistry.setMerchant(merchant1, this.merchantOwner.address, CONTENT_HASH, { from: admin })
+      expectEvent(receipt1, 'MerchantChanged', { 
+        merchant: merchant1,
+        owner: this.merchantOwner.address,
+        contentHash: CONTENT_HASH
+      })
+      expect(await this.merchantRegistry.owner(merchant1)).to.equal(this.merchantOwner.address)
+      
+      // Mint token using owner contract and sign as meta transaction
+      expect(await this.token.balanceOf(senderAddress)).to.be.bignumber.equal(new BN(0))
+      const { v, r, s } = await getMintTokenSignatureErc721(owner, this.tokenErc721.address, senderAddress, "2", "tokenURI")
+      const receipt2 = await this.merchantOwner.mintToken_ERC721(this.tokenErc721.address, senderAddress, "2", "tokenURI", { v: v, r: r, s: s }, { from: other })
+
+      // Check events for transfer (mint)
+      assert(receipt2.receipt.rawLogs.some(log => { 
+        return log.topics[0] === web3.utils.sha3("Transfer(address,address,uint256)")
+         && log.topics[1] === '0x0000000000000000000000000000000000000000000000000000000000000000'
+         && log.topics[2] === web3.utils.padLeft(senderAddress.toLowerCase(), 64)
+         && log.topics[3] === '0x0000000000000000000000000000000000000000000000000000000000000002'
+      }) === true, "missing Transfer event")
+
+      expect(await this.tokenErc721.balanceOf(senderAddress)).to.be.bignumber.equal(new BN(1))
+    })
+
+    it("allows operator to mint tokens", async function () {
+      // Get smart account addresses	
+      const senderAddress = getSmartWalletAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
+
+      // Check permission
+      expect(await this.merchantOwner.hasRole(PREMISSION_MINT, operator)).to.equal(true)
+
+      // Set merchant owner
+      const receipt1 = await this.merchantRegistry.setMerchant(merchant1, this.merchantOwner.address, CONTENT_HASH, { from: admin })
+      expectEvent(receipt1, 'MerchantChanged', { 
+        merchant: merchant1,
+        owner: this.merchantOwner.address,
+        contentHash: CONTENT_HASH
+      })
+      expect(await this.merchantRegistry.owner(merchant1)).to.equal(this.merchantOwner.address)
+      
+      // Mint token using owner contract and sign as meta transaction
+      expect(await this.token.balanceOf(senderAddress)).to.be.bignumber.equal(new BN(0))
+      const { v, r, s } = await getMintTokenSignatureErc721(operator, this.tokenErc721.address, senderAddress, "2", "tokenURI")
+      const receipt2 = await this.merchantOwner.mintToken_ERC721(this.tokenErc721.address, senderAddress, "2", "tokenURI", { v: v, r: r, s: s }, { from: other })
+
+      // Check events for transfer (mint)
+      assert(receipt2.receipt.rawLogs.some(log => { 
+        return log.topics[0] === web3.utils.sha3("Transfer(address,address,uint256)")
+         && log.topics[1] === '0x0000000000000000000000000000000000000000000000000000000000000000'
+         && log.topics[2] === web3.utils.padLeft(senderAddress.toLowerCase(), 64)
+         && log.topics[3] === '0x0000000000000000000000000000000000000000000000000000000000000002'
+      }) === true, "missing Transfer event")
+
+      expect(await this.tokenErc721.balanceOf(senderAddress)).to.be.bignumber.equal(new BN(1))
+    })
+
+    it("prevents minting tokens if signer is missing permission", async function () {
+      // Get smart account addresses	
+      const senderAddress = getSmartWalletAccountAddress(merchant1, ORDER_ID_1, this.wallet.address)
+
+      // Check permission
+      expect(await this.merchantOwner.hasRole(PREMISSION_MINT, other)).to.equal(false)
+
+      // Set merchant owner
+      const receipt1 = await this.merchantRegistry.setMerchant(merchant1, this.merchantOwner.address, CONTENT_HASH, { from: admin })
+      expectEvent(receipt1, 'MerchantChanged', { 
+        merchant: merchant1,
+        owner: this.merchantOwner.address,
+        contentHash: CONTENT_HASH
+      })
+      expect(await this.merchantRegistry.owner(merchant1)).to.equal(this.merchantOwner.address)
+      
+      // Mint token using owner contract and sign as meta transaction
+      expect(await this.token.balanceOf(senderAddress)).to.be.bignumber.equal(new BN(0))
+      const { v, r, s } = await getMintTokenSignatureErc721(other, this.tokenErc721.address, senderAddress, "2", "tokenURI")
+      await expectRevert(
+        this.merchantOwner.mintToken_ERC721(this.tokenErc721.address, senderAddress, "2", "tokenURI", { v: v, r: r, s: s }, { from: other }),
+        'ZippieMerchantOwner: Signer missing required permission to mint tokens'
+      )
+
+      expect(await this.tokenErc721.balanceOf(senderAddress)).to.be.bignumber.equal(new BN(0))
     })
   })
 })

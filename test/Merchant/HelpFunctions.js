@@ -12,6 +12,8 @@ module.exports = {
 	getSmartWalletAccountAddressErc721,
 	getTransferB2BSignatureErc721,
 	getTransferB2CSignatureErc721,
+	getMintTokenSignature,
+	getMintTokenSignatureErc721,
 	getRSV,
 }
 
@@ -55,6 +57,18 @@ async function getTransferB2CSignatureErc721(signerAccount, token, senderMerchan
 	const transferHash = web3.utils.soliditySha3('transferB2C', token, senderMerchant, senderOrderId, recipient, tokenId)
 	const transferSignature = await web3.eth.sign(transferHash, signerAccount);
 	return getRSV(transferSignature.slice(2))
+}
+
+async function getMintTokenSignature(signerAccount, token, to, amount) {
+	const mintHash = web3.utils.soliditySha3('mintToken', token, to, amount)
+	const mintSignature = await web3.eth.sign(mintHash, signerAccount);
+	return getRSV(mintSignature.slice(2))
+}
+
+async function getMintTokenSignatureErc721(signerAccount, token, to, tokenId, tokenURI) {
+	const mintHash = web3.utils.soliditySha3('mintToken_ERC721', token, to, tokenId, tokenURI)
+	const mintSignature = await web3.eth.sign(mintHash, signerAccount);
+	return getRSV(mintSignature.slice(2))
 }
 
 function getRSV(str) {

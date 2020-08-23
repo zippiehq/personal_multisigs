@@ -67,6 +67,7 @@ contract ZippieMerchantOwner is AccessControl {
         _setupRole(DEFAULT_ADMIN_ROLE, owner);
         _setupRole(keccak256("transferB2B"), owner);
         _setupRole(keccak256("transferB2C"), owner);
+        _setupRole(keccak256("mintToken"), owner);
 
         // Setup ENS
         Registrar(ensRegistrar).register(ensLabel, address(this));
@@ -77,6 +78,7 @@ contract ZippieMerchantOwner is AccessControl {
         _setupRole(DEFAULT_ADMIN_ROLE, operator);
         _setupRole(keccak256("transferB2B"), operator);
         _setupRole(keccak256("transferB2C"), operator);
+        _setupRole(keccak256("mintToken"), operator);
         ENS(ensRegistry).setApprovalForAll(operator, true);
         Resolver(ensResolver).setAuthorisation(ensNode, operator, true);
     }
@@ -248,7 +250,71 @@ contract ZippieMerchantOwner is AccessControl {
 
         return true;
     }
-}
+
+    function mintToken(
+        address token,
+        address to, 
+        uint256 amount,
+        Signature memory signature
+    ) 
+        public 
+        returns (bool)
+    {
+        bytes32 signedHash = ZippieUtils.toEthSignedMessageHash(
+            keccak256(abi.encodePacked(
+                "mintToken", 
+                token,
+                to,
+                amount
+            ))
+        );
+
+        require(
+            hasRole(
+                keccak256("mintToken"),
+                ecrecover(signedHash, signature.v, signature.r, signature.s)
+            ), 
+            "ZippieMerchantOwner: Signer missing required permission to mint tokens"
+        );
+
+        IZippieTokenERC20(token).mint(to, amount);
+
+        return true;
+    }
+
+    function mintToken_ERC721(
+        address token,
+        address to, 
+        uint256 tokenId,
+        string memory tokenURI,
+        Signature memory signature
+    ) 
+        public 
+        returns (bool)
+    {
+        bytes32 signedHash = ZippieUtils.toEthSignedMessageHash(
+            keccak256(abi.encodePacked(
+                "mintToken_ERC721", 
+                token,
+                to,
+                tokenId,
+                tokenURI
+            ))
+        );
+
+        require(
+            hasRole(
+                keccak256("mintToken"),
+                ecrecover(signedHash, signature.v, signature.r, signature.s)
+            ), 
+            "ZippieMerchantOwner: Signer missing required permission to mint tokens"
+        );
+
+        IZippieTokenERC721(token).mint(to, tokenId, tokenURI);
+
+        return true;
+    }
+} 
 
 interface ENS {
     function setResolver(bytes32 node, address resolver) external;
