@@ -201,8 +201,7 @@ contract("ZippieMerchantRegistry", ([admin, merchantOwner1, merchant1, merchantO
 
         // Change admin role for "PREMISSION_1" to "PREMISSION_1_ADMIN"
         const receipt2 = await this.merchantRegistry.setRoleAdmin(PREMISSION_1, PREMISSION_1_ADMIN)
-        // XXX: merged to master but not released by OpenZeppelin yet
-        //expectEvent(receipt2, 'RoleAdminChanged', { role: PREMISSION_1, previousAdminRole: DEFAULT_ADMIN_ROLE, newAdminRole: PREMISSION_1_ADMIN})
+        expectEvent(receipt2, 'RoleAdminChanged', { role: PREMISSION_1, previousAdminRole: DEFAULT_ADMIN_ROLE, newAdminRole: PREMISSION_1_ADMIN})
         expect(await this.merchantRegistry.getRoleAdmin(PREMISSION_1)).to.equal(PREMISSION_1_ADMIN)
         expect(await this.merchantRegistry.hasRole(PREMISSION_1_ADMIN, admin)).to.equal(false)
 
