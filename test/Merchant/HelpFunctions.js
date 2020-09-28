@@ -7,6 +7,7 @@ const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 module.exports = {
 	ZERO_ADDRESS,
 	getSmartWalletAccountAddress,
+	getUpdateEnsContentHashSignature,
 	getTransferB2BSignature,
 	getTransferB2CSignature,
 	getSmartWalletAccountAddressErc721,
@@ -24,6 +25,12 @@ function getSmartWalletAccountAddress(merchantId, orderId, walletAddress) {
 	const accountHash = web3.utils.sha3(`0x${'ff'}${walletAddress.slice(2)}${salt.slice(2)}${bytecodeHash.slice(2)}`)
 	const accountAddress = `0x${accountHash.slice(-40)}`.toLowerCase()
 	return web3.utils.toChecksumAddress(accountAddress)
+}
+
+async function getUpdateEnsContentHashSignature(signerAccount, ensResolver, ensNode, contentHash) {
+	const hash = web3.utils.soliditySha3('updateEnsContentHash', ensResolver, ensNode, contentHash)
+	const signature = await web3.eth.sign(hash, signerAccount);
+	return getRSV(signature.slice(2))
 }
 
 async function getTransferB2BSignature(signerAccount, token, senderMerchant, senderOrderId, recipientMerchant, recipientOrderId, amount) {

@@ -17,6 +17,7 @@ const namehash = require('eth-ens-namehash');
 const { 
   ZERO_ADDRESS,
   getSmartWalletAccountAddress,  
+  getUpdateEnsContentHashSignature,
   getTransferB2BSignature,
   getTransferB2CSignature,
   getSmartWalletAccountAddressErc721,
@@ -35,6 +36,7 @@ const TRANSFER_B2C = web3.utils.sha3("TRANSFER_B2C")
 const PREMISSION_B2B = web3.utils.sha3("transferB2B")
 const PREMISSION_B2C = web3.utils.sha3("transferB2C")
 const PREMISSION_MINT = web3.utils.sha3("mintToken")
+const PREMISSION_ENS = web3.utils.sha3("adminENS")
 
 contract("ZippieMerchantOwner", ([owner, operator, admin, merchantOwner1, merchant1, merchantOwner2, merchant2, other, recipientConsumer]) => {
 
@@ -97,6 +99,41 @@ contract("ZippieMerchantOwner", ([owner, operator, admin, merchantOwner1, mercha
       const receipt2 = await this.merchantOwner.grantRole(PREMISSION_B2C, other, { from: operator })
       expectEvent(receipt2, 'RoleGranted', { account: other, role: PREMISSION_B2C, sender: operator })
       expect(await this.merchantOwner.hasRole(PREMISSION_B2C, other)).to.equal(true)
+    })
+  })
+
+  describe('ENS', function() {
+    it("allows owner to set ENS contenthash if owner of ENS name", async function () {
+      expect(await this.merchantOwner.hasRole(PREMISSION_ENS, owner)).to.equal(true)
+      expect(await this.ens.owner(namehash.hash('app.merchant'))).to.equal(this.merchantOwner.address)
+      expect(await this.resolver.contenthash(namehash.hash('app.merchant'))).to.be.equal(null)
+
+      const { v, r, s } = await getUpdateEnsContentHashSignature(owner, this.resolver.address, namehash.hash('app.merchant'), '0x01')
+      await this.merchantOwner.updateEnsContentHash(
+        this.resolver.address, namehash.hash('app.merchant'), '0x01',
+        { v: v, r: r, s: s },
+        { from: other }
+      )
+      expect(await this.resolver.contenthash(namehash.hash('app.merchant'))).to.be.equal('0x01')
+    })
+
+    it("allows owner to set ENS contenthash if authorised in ENS resolver", async function () {
+      expect(await this.merchantOwner.hasRole(PREMISSION_ENS, owner)).to.equal(true)
+      expect(await this.ens.owner(namehash.hash('app2.merchant'))).to.equal(ZERO_ADDRESS)
+      await this.registrar.register(web3.utils.sha3('app2'), owner, { from: owner }) 
+
+      await this.ens.setResolver(namehash.hash('app2.merchant'), this.resolver.address, { from: owner }) 
+      expect(await this.ens.owner(namehash.hash('app2.merchant'))).to.equal(owner)
+      expect(await this.ens.isApprovedForAll(owner, this.merchantOwner.address)).to.equal(false)
+
+      await this.resolver.setAuthorisation(namehash.hash('app2.merchant'), this.merchantOwner.address, true, { from: owner })
+      const { v, r, s } = await getUpdateEnsContentHashSignature(owner, this.resolver.address, namehash.hash('app2.merchant'), '0x02')
+      await this.merchantOwner.updateEnsContentHash(
+        this.resolver.address, namehash.hash('app2.merchant'), '0x02',
+        { v: v, r: r, s: s },
+        { from: other }
+      )
+      expect(await this.resolver.contenthash(namehash.hash('app2.merchant'))).to.be.equal('0x02')
     })
   })
 

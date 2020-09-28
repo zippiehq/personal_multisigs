@@ -68,6 +68,7 @@ contract ZippieMerchantOwner is AccessControl {
         _setupRole(keccak256("transferB2B"), owner);
         _setupRole(keccak256("transferB2C"), owner);
         _setupRole(keccak256("mintToken"), owner);
+        _setupRole(keccak256("adminENS"), owner);
 
         // Setup ENS
         Registrar(ensRegistrar).register(ensLabel, address(this));
@@ -79,6 +80,7 @@ contract ZippieMerchantOwner is AccessControl {
         _setupRole(keccak256("transferB2B"), operator);
         _setupRole(keccak256("transferB2C"), operator);
         _setupRole(keccak256("mintToken"), operator);
+        _setupRole(keccak256("adminENS"), operator);
         ENS(ensRegistry).setApprovalForAll(operator, true);
         Resolver(ensResolver).setAuthorisation(ensNode, operator, true);
     }
@@ -252,6 +254,7 @@ contract ZippieMerchantOwner is AccessControl {
     }
 
     function mintToken(
+        // merchantId?
         address token,
         address to, 
         uint256 amount,
@@ -314,11 +317,43 @@ contract ZippieMerchantOwner is AccessControl {
 
         return true;
     }
+
+    function updateEnsContentHash(
+        address ensResolver,
+        bytes32 ensNode,
+        bytes memory contentHash,
+        Signature memory signature
+    ) 
+        public 
+        returns (bool)
+    {
+        bytes32 signedHash = ZippieUtils.toEthSignedMessageHash(
+            keccak256(abi.encodePacked(
+                "updateEnsContentHash", 
+                ensResolver,
+                ensNode,
+                contentHash
+            ))
+        );
+
+        require(
+            hasRole(
+                keccak256("adminENS"),
+                ecrecover(signedHash, signature.v, signature.r, signature.s)
+            ), 
+            "ZippieMerchantOwner: Signer missing required permission to update ens contentHash"
+        );
+
+        Resolver(ensResolver).setContenthash(ensNode, contentHash);
+
+        return true;
+    }
 } 
 
 interface ENS {
     function setResolver(bytes32 node, address resolver) external;
     function setApprovalForAll(address operator, bool approved) external;
+    function owner(bytes32 node) external view returns (address);
 }
 
 interface Registrar {
@@ -328,4 +363,5 @@ interface Registrar {
 interface Resolver {
     function setAddr(bytes32 node, address a) external;
     function setAuthorisation(bytes32 node, address target, bool isAuthorised) external;
+    function setContenthash(bytes32 node, bytes calldata hash) external;
 }
