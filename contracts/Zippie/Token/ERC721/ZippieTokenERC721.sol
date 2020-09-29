@@ -27,6 +27,10 @@ contract ZippieTokenERC721 is Context, AccessControl, ERC721Burnable, ERC721Paus
         _setBaseURI(baseURI);
     }
 
+    function exists(uint256 tokenId) public view returns (bool) {
+        return _exists(tokenId);
+    }
+
     function mint(address to, uint256 tokenId, string memory tokenURI) public virtual {
         require(hasRole(MINTER_ROLE, _msgSender()), "ZippieTokenERC721: must have minter role to mint");
 
