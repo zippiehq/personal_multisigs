@@ -5,6 +5,7 @@ const ZippieTokenERC721 = artifacts.require("ZippieTokenERC721");
 const DEFAULT_ADMIN_ROLE = '0x0000000000000000000000000000000000000000000000000000000000000000'
 const MINTER_ROLE = web3.utils.keccak256("MINTER_ROLE")
 const PAUSER_ROLE = web3.utils.keccak256("PAUSER_ROLE")
+const APPROVER_ROLE = web3.utils.keccak256("APPROVER_ROLE")
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 
@@ -227,13 +228,122 @@ contract("ZippieTokenERC721", ([admin, operator, sender, receiver, other]) => {
   })
 
   describe('Transfers', function() {
-    it("allows token holders to transfer tokens", async function () {
+    it("allows approver approve transfers", async function () {
+      expect(await this.token.ownerOf("1")).to.be.equal(sender);
       expect(await this.token.balanceOf(sender)).to.be.bignumber.equal(new BN(1));
       expect(await this.token.balanceOf(receiver)).to.be.bignumber.equal(new BN(0));
-      const { logs } = await this.token.transferFrom(sender, receiver, "1", { from: sender });
-      expectEvent.inLogs(logs, "Transfer", { from: sender, to: receiver, tokenId: "1" });
+      const receipt1 = await this.token.transferFrom(sender, receiver, "1", { from: sender });
+      expectEvent(receipt1, "Transfer", { from: sender, to: this.token.address, tokenId: "1" });
+      expectEvent(receipt1, "NewTransfer", { from: sender, to: receiver, tokenId: "1" });
+      expect(await this.token.ownerOf("1")).to.be.equal(this.token.address);
       expect(await this.token.balanceOf(sender)).to.be.bignumber.equal(new BN(0));
+      expect(await this.token.balanceOf(this.token.address)).to.be.bignumber.equal(new BN(1));
+
+      expect(await this.token.hasRole(APPROVER_ROLE, admin)).to.be.equal(true);
+      const receipt2 = await this.token.approveTransferFrom(sender, receiver, "1", { from: admin });
+      expectEvent(receipt2, "Transfer", { from: this.token.address, to: receiver, tokenId: "1" });
+      expectEvent(receipt2, "ApprovedTransfer", { from: sender, to: receiver, tokenId: "1" });
+      expect(await this.token.ownerOf("1")).to.be.equal(receiver);
+      expect(await this.token.balanceOf(this.token.address)).to.be.bignumber.equal(new BN(0));
       expect(await this.token.balanceOf(receiver)).to.be.bignumber.equal(new BN(1));
+    });
+
+    it("allows approver to reject transfers", async function () {
+      expect(await this.token.ownerOf("1")).to.be.equal(sender);
+      expect(await this.token.balanceOf(sender)).to.be.bignumber.equal(new BN(1));
+      expect(await this.token.balanceOf(receiver)).to.be.bignumber.equal(new BN(0));
+      const receipt1 = await this.token.transferFrom(sender, receiver, "1", { from: sender });
+      expectEvent(receipt1, "Transfer", { from: sender, to: this.token.address, tokenId: "1" });
+      expectEvent(receipt1, "NewTransfer", { from: sender, to: receiver, tokenId: "1" });
+      expect(await this.token.ownerOf("1")).to.be.equal(this.token.address);
+      expect(await this.token.balanceOf(sender)).to.be.bignumber.equal(new BN(0));
+      expect(await this.token.balanceOf(this.token.address)).to.be.bignumber.equal(new BN(1));
+
+      expect(await this.token.hasRole(APPROVER_ROLE, admin)).to.be.equal(true);
+      const receipt2 = await this.token.rejectTransferFrom(sender, receiver, "1", { from: admin });
+      expectEvent(receipt2, "Transfer", { from: this.token.address, to: sender, tokenId: "1" });
+      expectEvent(receipt2, "RejectedTransfer", { from: sender, to: receiver, tokenId: "1" });
+      expect(await this.token.ownerOf("1")).to.be.equal(sender);
+      expect(await this.token.balanceOf(this.token.address)).to.be.bignumber.equal(new BN(0));
+      expect(await this.token.balanceOf(sender)).to.be.bignumber.equal(new BN(1));
+    });
+
+    it("reverts if approver is trying to send tokens to a different address when approving", async function () {
+      expect(await this.token.exists("1")).to.be.equal(true);
+      expect(await this.token.ownerOf("1")).to.be.equal(sender);
+      expect(await this.token.balanceOf(sender)).to.be.bignumber.equal(new BN(1));
+      expect(await this.token.balanceOf(receiver)).to.be.bignumber.equal(new BN(0));
+      const receipt1 = await this.token.transferFrom(sender, receiver, "1", { from: sender });
+      expectEvent(receipt1, "Transfer", { from: sender, to: this.token.address, tokenId: "1" });
+      expectEvent(receipt1, "NewTransfer", { from: sender, to: receiver, tokenId: "1" });
+      expect(await this.token.ownerOf("1")).to.be.equal(this.token.address);
+      expect(await this.token.balanceOf(sender)).to.be.bignumber.equal(new BN(0));
+      expect(await this.token.balanceOf(this.token.address)).to.be.bignumber.equal(new BN(1));
+
+      expect(await this.token.hasRole(APPROVER_ROLE, admin)).to.be.equal(true);
+      await expectRevert(this.token.approveTransferFrom(sender, other, "1", { from: admin }), 'ZippieTokenERC721: invalid address');
+      expect(await this.token.exists("1")).to.be.equal(true);
+      expect(await this.token.ownerOf("1")).to.be.equal(this.token.address);
+      expect(await this.token.balanceOf(this.token.address)).to.be.bignumber.equal(new BN(1));
+    });
+
+    it("reverts if approver is trying to send tokens to a different address when rejecting", async function () {
+      expect(await this.token.exists("1")).to.be.equal(true);
+      expect(await this.token.ownerOf("1")).to.be.equal(sender);
+      expect(await this.token.balanceOf(sender)).to.be.bignumber.equal(new BN(1));
+      expect(await this.token.balanceOf(receiver)).to.be.bignumber.equal(new BN(0));
+      const receipt1 = await this.token.transferFrom(sender, receiver, "1", { from: sender });
+      expectEvent(receipt1, "Transfer", { from: sender, to: this.token.address, tokenId: "1" });
+      expectEvent(receipt1, "NewTransfer", { from: sender, to: receiver, tokenId: "1" });
+      expect(await this.token.ownerOf("1")).to.be.equal(this.token.address);
+      expect(await this.token.balanceOf(sender)).to.be.bignumber.equal(new BN(0));
+      expect(await this.token.balanceOf(this.token.address)).to.be.bignumber.equal(new BN(1));
+
+      expect(await this.token.hasRole(APPROVER_ROLE, admin)).to.be.equal(true);
+      await expectRevert(this.token.rejectTransferFrom(other, receiver, "1", { from: admin }), 'ZippieTokenERC721: invalid address');
+      expect(await this.token.exists("1")).to.be.equal(true);
+      expect(await this.token.ownerOf("1")).to.be.equal(this.token.address);
+      expect(await this.token.balanceOf(this.token.address)).to.be.bignumber.equal(new BN(1));
+    });
+
+    it("reverts if approver is trying to transfer tokens in transit", async function () {
+      expect(await this.token.exists("1")).to.be.equal(true);
+      expect(await this.token.exists("2")).to.be.equal(false);
+      expect(await this.token.ownerOf("1")).to.be.equal(sender);
+      expect(await this.token.balanceOf(sender)).to.be.bignumber.equal(new BN(1));
+      expect(await this.token.balanceOf(receiver)).to.be.bignumber.equal(new BN(0));
+      const receipt1 = await this.token.transferFrom(sender, receiver, "1", { from: sender });
+      expectEvent(receipt1, "Transfer", { from: sender, to: this.token.address, tokenId: "1" });
+      expectEvent(receipt1, "NewTransfer", { from: sender, to: receiver, tokenId: "1" });
+      expect(await this.token.ownerOf("1")).to.be.equal(this.token.address);
+      expect(await this.token.balanceOf(sender)).to.be.bignumber.equal(new BN(0));
+      expect(await this.token.balanceOf(this.token.address)).to.be.bignumber.equal(new BN(1));
+
+      expect(await this.token.hasRole(APPROVER_ROLE, admin)).to.be.equal(true);
+      await expectRevert(this.token.transferFrom(this.token.address, other, "1", { from: admin }), 'ZippieTokenERC721: transfer caller is not owner nor approved');
+      expect(await this.token.exists("1")).to.be.equal(true);
+      expect(await this.token.ownerOf("1")).to.be.equal(this.token.address);
+      expect(await this.token.balanceOf(this.token.address)).to.be.bignumber.equal(new BN(1));
+    });
+  
+    it("reverts if approver is trying to burn tokens in transit", async function () {
+      expect(await this.token.exists("1")).to.be.equal(true);
+      expect(await this.token.exists("2")).to.be.equal(false);
+      expect(await this.token.ownerOf("1")).to.be.equal(sender);
+      expect(await this.token.balanceOf(sender)).to.be.bignumber.equal(new BN(1));
+      expect(await this.token.balanceOf(receiver)).to.be.bignumber.equal(new BN(0));
+      const receipt1 = await this.token.transferFrom(sender, receiver, "1", { from: sender });
+      expectEvent(receipt1, "Transfer", { from: sender, to: this.token.address, tokenId: "1" });
+      expectEvent(receipt1, "NewTransfer", { from: sender, to: receiver, tokenId: "1" });
+      expect(await this.token.ownerOf("1")).to.be.equal(this.token.address);
+      expect(await this.token.balanceOf(sender)).to.be.bignumber.equal(new BN(0));
+      expect(await this.token.balanceOf(this.token.address)).to.be.bignumber.equal(new BN(1));
+
+      expect(await this.token.hasRole(APPROVER_ROLE, admin)).to.be.equal(true);
+      await expectRevert(this.token.burn("1", { from: admin }), 'ERC721Burnable: caller is not owner nor approved');
+      expect(await this.token.exists("1")).to.be.equal(true);
+      expect(await this.token.ownerOf("1")).to.be.equal(this.token.address);
+      expect(await this.token.balanceOf(this.token.address)).to.be.bignumber.equal(new BN(1));
     });
   
     it("reverts if trying to transfer tokens to the zero address", async function () {
