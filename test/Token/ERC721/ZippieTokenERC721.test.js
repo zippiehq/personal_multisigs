@@ -240,9 +240,9 @@ contract("ZippieTokenERC721", ([admin, operator, sender, receiver, other]) => {
       expect(await this.token.balanceOf(this.token.address)).to.be.bignumber.equal(new BN(1));
 
       expect(await this.token.hasRole(APPROVER_ROLE, admin)).to.be.equal(true);
-      const receipt2 = await this.token.approveTransferFrom(sender, receiver, "1", { from: admin });
+      const receipt2 = await this.token.approveTransferFrom(sender, receiver, "1", '0x01', { from: admin });
       expectEvent(receipt2, "Transfer", { from: this.token.address, to: receiver, tokenId: "1" });
-      expectEvent(receipt2, "ApprovedTransfer", { from: sender, to: receiver, tokenId: "1" });
+      expectEvent(receipt2, "ApprovedTransfer", { from: sender, to: receiver, tokenId: "1", by: admin, metadata: '0x01' });
       expect(await this.token.ownerOf("1")).to.be.equal(receiver);
       expect(await this.token.balanceOf(this.token.address)).to.be.bignumber.equal(new BN(0));
       expect(await this.token.balanceOf(receiver)).to.be.bignumber.equal(new BN(1));
@@ -260,9 +260,9 @@ contract("ZippieTokenERC721", ([admin, operator, sender, receiver, other]) => {
       expect(await this.token.balanceOf(this.token.address)).to.be.bignumber.equal(new BN(1));
 
       expect(await this.token.hasRole(APPROVER_ROLE, admin)).to.be.equal(true);
-      const receipt2 = await this.token.rejectTransferFrom(sender, receiver, "1", { from: admin });
+      const receipt2 = await this.token.rejectTransferFrom(sender, receiver, "1", '0x01', { from: admin });
       expectEvent(receipt2, "Transfer", { from: this.token.address, to: sender, tokenId: "1" });
-      expectEvent(receipt2, "RejectedTransfer", { from: sender, to: receiver, tokenId: "1" });
+      expectEvent(receipt2, "RejectedTransfer", { from: sender, to: receiver, tokenId: "1", by: admin, metadata: '0x01' });
       expect(await this.token.ownerOf("1")).to.be.equal(sender);
       expect(await this.token.balanceOf(this.token.address)).to.be.bignumber.equal(new BN(0));
       expect(await this.token.balanceOf(sender)).to.be.bignumber.equal(new BN(1));
@@ -281,7 +281,7 @@ contract("ZippieTokenERC721", ([admin, operator, sender, receiver, other]) => {
       expect(await this.token.balanceOf(this.token.address)).to.be.bignumber.equal(new BN(1));
 
       expect(await this.token.hasRole(APPROVER_ROLE, admin)).to.be.equal(true);
-      await expectRevert(this.token.approveTransferFrom(sender, other, "1", { from: admin }), 'ZippieTokenERC721: invalid address');
+      await expectRevert(this.token.approveTransferFrom(sender, other, "1", '0x01', { from: admin }), 'ZippieTokenERC721: invalid address');
       expect(await this.token.exists("1")).to.be.equal(true);
       expect(await this.token.ownerOf("1")).to.be.equal(this.token.address);
       expect(await this.token.balanceOf(this.token.address)).to.be.bignumber.equal(new BN(1));
@@ -300,7 +300,7 @@ contract("ZippieTokenERC721", ([admin, operator, sender, receiver, other]) => {
       expect(await this.token.balanceOf(this.token.address)).to.be.bignumber.equal(new BN(1));
 
       expect(await this.token.hasRole(APPROVER_ROLE, admin)).to.be.equal(true);
-      await expectRevert(this.token.rejectTransferFrom(other, receiver, "1", { from: admin }), 'ZippieTokenERC721: invalid address');
+      await expectRevert(this.token.rejectTransferFrom(other, receiver, "1", '0x01', { from: admin }), 'ZippieTokenERC721: invalid address');
       expect(await this.token.exists("1")).to.be.equal(true);
       expect(await this.token.ownerOf("1")).to.be.equal(this.token.address);
       expect(await this.token.balanceOf(this.token.address)).to.be.bignumber.equal(new BN(1));

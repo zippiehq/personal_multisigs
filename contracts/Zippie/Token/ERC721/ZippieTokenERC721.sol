@@ -15,8 +15,8 @@ contract ZippieTokenERC721 is Context, AccessControl, ERC721Burnable, ERC721Paus
     mapping (uint256 => mapping(address => address)) public approvalQueue;
 
     event NewTransfer(uint256 indexed tokenId, address indexed from, address indexed to);
-    event ApprovedTransfer(uint256 indexed tokenId, address indexed from, address indexed to, address by);
-    event RejectedTransfer(uint256 indexed tokenId, address indexed from, address indexed to, address by);
+    event ApprovedTransfer(uint256 indexed tokenId, address indexed from, address indexed to, address by, bytes metadata);
+    event RejectedTransfer(uint256 indexed tokenId, address indexed from, address indexed to, address by, bytes metadata);
 
     constructor(address admin, address operator, string memory name, string memory symbol, string memory baseURI) public ERC721(name, symbol) {
         // Owner
@@ -68,21 +68,21 @@ contract ZippieTokenERC721 is Context, AccessControl, ERC721Burnable, ERC721Paus
         emit NewTransfer(tokenId, from, to);
     }
 
-    function approveTransferFrom(address from, address to, uint256 tokenId) public {
+    function approveTransferFrom(address from, address to, uint256 tokenId, bytes memory metadata) public {
         require(hasRole(APPROVER_ROLE, _msgSender()), "ZippieTokenERC721: must have approver role to approve transactions");
         require(approvalQueue[tokenId][from] == to, "ZippieTokenERC721: invalid address");
        
         _transfer(address(this), to, tokenId);
         delete approvalQueue[tokenId][from];
-        emit ApprovedTransfer(tokenId, from, to, _msgSender());
+        emit ApprovedTransfer(tokenId, from, to, _msgSender(), metadata);
     }
 
-    function rejectTransferFrom(address from, address to, uint256 tokenId) public {
+    function rejectTransferFrom(address from, address to, uint256 tokenId, bytes memory metadata) public {
         require(hasRole(APPROVER_ROLE, _msgSender()), "ZippieTokenERC721: must have approver role to approve transactions");
         require(approvalQueue[tokenId][from] == to, "ZippieTokenERC721: invalid address");
         
         _transfer(address(this), from, tokenId);
         delete approvalQueue[tokenId][from];
-        emit RejectedTransfer(tokenId, from, to, _msgSender());
+        emit RejectedTransfer(tokenId, from, to, _msgSender(), metadata);
     }
 }
