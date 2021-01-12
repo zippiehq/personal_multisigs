@@ -15,6 +15,8 @@ module.exports = {
 	getTransferB2CSignatureErc721,
 	getMintTokenSignature,
 	getMintTokenSignatureErc721,
+	getApproveTransferFromSignatureErc721,
+	getRejectTransferFromSignatureErc721,
 	getRSV,
 }
 
@@ -76,6 +78,18 @@ async function getMintTokenSignatureErc721(signerAccount, token, to, tokenId, to
 	const mintHash = web3.utils.soliditySha3('mintToken_ERC721', token, to, tokenId, tokenURI)
 	const mintSignature = await web3.eth.sign(mintHash, signerAccount);
 	return getRSV(mintSignature.slice(2))
+}
+
+async function getApproveTransferFromSignatureErc721(signerAccount, token, from, to, tokenId, metadata) {
+	const hash = web3.utils.soliditySha3('approveTransferFrom_ERC721', token, from, to, tokenId, metadata)
+	const signature = await web3.eth.sign(hash, signerAccount);
+	return getRSV(signature.slice(2))
+}
+
+async function getRejectTransferFromSignatureErc721(signerAccount, token, from, to, tokenId, metadata) {
+	const hash = web3.utils.soliditySha3('rejectTransferFrom_ERC721', token, from, to, tokenId, metadata)
+	const signature = await web3.eth.sign(hash, signerAccount);
+	return getRSV(signature.slice(2))
 }
 
 function getRSV(str) {

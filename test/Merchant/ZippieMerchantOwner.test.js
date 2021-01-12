@@ -25,6 +25,8 @@ const {
   getTransferB2CSignatureErc721,
   getMintTokenSignature,
   getMintTokenSignatureErc721,
+  getApproveTransferFromSignatureErc721,
+  getRejectTransferFromSignatureErc721,
 } = require('./HelpFunctions')
 
 const ORDER_ID_1 = "0x0000000000000000000000000000000000000000000000000000000000000001"
@@ -37,6 +39,8 @@ const PREMISSION_B2B = web3.utils.sha3("transferB2B")
 const PREMISSION_B2C = web3.utils.sha3("transferB2C")
 const PREMISSION_MINT = web3.utils.sha3("mintToken")
 const PREMISSION_ENS = web3.utils.sha3("adminENS")
+const PREMISSION_APPROVE = web3.utils.sha3("approveTransfer")
+
 
 contract("ZippieMerchantOwner", ([owner, operator, admin, merchantOwner1, merchant1, merchantOwner2, merchant2, other, recipientConsumer]) => {
 
@@ -386,7 +390,13 @@ contract("ZippieMerchantOwner", ([owner, operator, admin, merchantOwner1, mercha
 
       // Do ERC721 transfer to smart account
       const { logs } = await this.tokenErc721.transferFrom(owner, senderAddress, "1", { from: owner })
-      expectEvent.inLogs(logs, "Transfer", { from: owner, to: senderAddress, tokenId: "1" })
+      expectEvent.inLogs(logs, "Transfer", { from: owner, to: this.tokenErc721.address, tokenId: "1" })
+      expect(await this.tokenErc721.balanceOf(this.tokenErc721.address)).to.be.bignumber.equal(new BN(1))
+      expect(await this.tokenErc721.ownerOf("1")).to.equal(this.tokenErc721.address)
+
+      // Approve transfer
+      const approveSignature = await getApproveTransferFromSignatureErc721(owner, this.tokenErc721.address, owner, senderAddress, "1", "0x01")
+      await this.merchantOwner.approveTransferFrom_ERC721(this.tokenErc721.address, owner, senderAddress, "1", "0x01", approveSignature, { from: other })
       expect(await this.tokenErc721.balanceOf(senderAddress)).to.be.bignumber.equal(new BN(1))
       expect(await this.tokenErc721.ownerOf("1")).to.equal(senderAddress)
 
@@ -424,6 +434,11 @@ contract("ZippieMerchantOwner", ([owner, operator, admin, merchantOwner1, mercha
          && log.topics[3] === web3.utils.padLeft(merchant2.toLowerCase(), 64)
       }) === true, "missing TransferB2B event")
 
+
+      // Approve transfer
+      const approveSignature2 = await getApproveTransferFromSignatureErc721(owner, this.tokenErc721.address, senderAddress, recipientAddress, "1", "0x01")
+      await this.merchantOwner.approveTransferFrom_ERC721(this.tokenErc721.address, senderAddress, recipientAddress, "1", "0x01", approveSignature2, { from: other })
+
       expect(await this.tokenErc721.balanceOf(recipientAddress)).to.be.bignumber.equal(new BN(1))
       expect(await this.tokenErc721.ownerOf("1")).to.equal(recipientAddress)
 
@@ -435,7 +450,13 @@ contract("ZippieMerchantOwner", ([owner, operator, admin, merchantOwner1, mercha
 
       // Do ERC721 transfer to smart account
       const { logs } = await this.tokenErc721.transferFrom(owner, senderAddress, "1", { from: owner })
-      expectEvent.inLogs(logs, "Transfer", { from: owner, to: senderAddress, tokenId: "1" })
+      expectEvent.inLogs(logs, "Transfer", { from: owner, to: this.tokenErc721.address, tokenId: "1" })
+      expect(await this.tokenErc721.balanceOf(this.tokenErc721.address)).to.be.bignumber.equal(new BN(1))
+      expect(await this.tokenErc721.ownerOf("1")).to.equal(this.tokenErc721.address)
+
+      // Approve transfer
+      const approveSignature = await getApproveTransferFromSignatureErc721(owner, this.tokenErc721.address, owner, senderAddress, "1", "0x01")
+      await this.merchantOwner.approveTransferFrom_ERC721(this.tokenErc721.address, owner, senderAddress, "1", "0x01", approveSignature, { from: other })
       expect(await this.tokenErc721.balanceOf(senderAddress)).to.be.bignumber.equal(new BN(1))
       expect(await this.tokenErc721.ownerOf("1")).to.equal(senderAddress)
 
@@ -471,6 +492,11 @@ contract("ZippieMerchantOwner", ([owner, operator, admin, merchantOwner1, mercha
          && log.topics[1] === web3.utils.padLeft(this.tokenErc721.address.toLowerCase(), 64)
          && log.topics[2] === web3.utils.padLeft(merchant1.toLowerCase(), 64)
       }) === true, "missing TransferB2C event")
+
+      // Approve transfer
+      const approveSignature2 = await getApproveTransferFromSignatureErc721(owner, this.tokenErc721.address, senderAddress, recipientConsumer, "1", "0x01")
+      await this.merchantOwner.approveTransferFrom_ERC721(this.tokenErc721.address, senderAddress, recipientConsumer, "1", "0x01", approveSignature2, { from: other })
+
       expect(await this.tokenErc721.balanceOf(recipientConsumer)).to.be.bignumber.equal(new BN(1))
       expect(await this.tokenErc721.ownerOf("1")).to.equal(recipientConsumer)
     })
@@ -482,9 +508,16 @@ contract("ZippieMerchantOwner", ([owner, operator, admin, merchantOwner1, mercha
 
       // Do ERC721 transfer to smart account
       const { logs } = await this.tokenErc721.transferFrom(owner, senderAddress, "1", { from: owner })
-      expectEvent.inLogs(logs, "Transfer", { from: owner, to: senderAddress, tokenId: "1" })
+      expectEvent.inLogs(logs, "Transfer", { from: owner, to: this.tokenErc721.address, tokenId: "1" })
+      expect(await this.tokenErc721.balanceOf(this.tokenErc721.address)).to.be.bignumber.equal(new BN(1))
+      expect(await this.tokenErc721.ownerOf("1")).to.equal(this.tokenErc721.address)
+
+      // Approve transfer
+      const approveSignature = await getApproveTransferFromSignatureErc721(owner, this.tokenErc721.address, owner, senderAddress, "1", "0x01")
+      await this.merchantOwner.approveTransferFrom_ERC721(this.tokenErc721.address, owner, senderAddress, "1", "0x01", approveSignature, { from: other })
       expect(await this.tokenErc721.balanceOf(senderAddress)).to.be.bignumber.equal(new BN(1))
       expect(await this.tokenErc721.ownerOf("1")).to.equal(senderAddress)
+
 
       // Check permission
       expect(await this.merchantOwner.hasRole(PREMISSION_B2B, operator)).to.equal(true)
@@ -520,6 +553,10 @@ contract("ZippieMerchantOwner", ([owner, operator, admin, merchantOwner1, mercha
          && log.topics[3] === web3.utils.padLeft(merchant2.toLowerCase(), 64)
       }) === true, "missing TransferB2B event")
 
+      // Approve transfer
+      const approveSignature2 = await getApproveTransferFromSignatureErc721(owner, this.tokenErc721.address, senderAddress, recipientAddress, "1", "0x01")
+      await this.merchantOwner.approveTransferFrom_ERC721(this.tokenErc721.address, senderAddress, recipientAddress, "1", "0x01", approveSignature2, { from: other })
+
       expect(await this.tokenErc721.balanceOf(recipientAddress)).to.be.bignumber.equal(new BN(1))
       expect(await this.tokenErc721.ownerOf("1")).to.equal(recipientAddress)
     })
@@ -530,7 +567,13 @@ contract("ZippieMerchantOwner", ([owner, operator, admin, merchantOwner1, mercha
 
       // Do ERC721 transfer to smart account
       const { logs } = await this.tokenErc721.transferFrom(owner, senderAddress, "1", { from: owner })
-      expectEvent.inLogs(logs, "Transfer", { from: owner, to: senderAddress, tokenId: "1" })
+      expectEvent.inLogs(logs, "Transfer", { from: owner, to: this.tokenErc721.address, tokenId: "1" })
+      expect(await this.tokenErc721.balanceOf(this.tokenErc721.address)).to.be.bignumber.equal(new BN(1))
+      expect(await this.tokenErc721.ownerOf("1")).to.equal(this.tokenErc721.address)
+
+      // Approve transfer
+      const approveSignature = await getApproveTransferFromSignatureErc721(owner, this.tokenErc721.address, owner, senderAddress, "1", "0x01")
+      await this.merchantOwner.approveTransferFrom_ERC721(this.tokenErc721.address, owner, senderAddress, "1", "0x01", approveSignature, { from: other })
       expect(await this.tokenErc721.balanceOf(senderAddress)).to.be.bignumber.equal(new BN(1))
       expect(await this.tokenErc721.ownerOf("1")).to.equal(senderAddress)
 
@@ -566,6 +609,11 @@ contract("ZippieMerchantOwner", ([owner, operator, admin, merchantOwner1, mercha
          && log.topics[1] === web3.utils.padLeft(this.tokenErc721.address.toLowerCase(), 64)
          && log.topics[2] === web3.utils.padLeft(merchant1.toLowerCase(), 64)
       }) === true, "missing TransferB2C event")
+
+      // Approve transfer
+      const approveSignature2 = await getApproveTransferFromSignatureErc721(owner, this.tokenErc721.address, senderAddress, recipientConsumer, "1", "0x01")
+      await this.merchantOwner.approveTransferFrom_ERC721(this.tokenErc721.address, senderAddress, recipientConsumer, "1", "0x01", approveSignature2, { from: other })
+
       expect(await this.tokenErc721.balanceOf(recipientConsumer)).to.be.bignumber.equal(new BN(1))
       expect(await this.tokenErc721.ownerOf("1")).to.equal(recipientConsumer)
     })
@@ -577,7 +625,13 @@ contract("ZippieMerchantOwner", ([owner, operator, admin, merchantOwner1, mercha
 
       // Do ERC721 transfer to smart account
       const { logs } = await this.tokenErc721.transferFrom(owner, senderAddress, "1", { from: owner })
-      expectEvent.inLogs(logs, "Transfer", { from: owner, to: senderAddress, tokenId: "1" })
+      expectEvent.inLogs(logs, "Transfer", { from: owner, to: this.tokenErc721.address, tokenId: "1" })
+      expect(await this.tokenErc721.balanceOf(this.tokenErc721.address)).to.be.bignumber.equal(new BN(1))
+      expect(await this.tokenErc721.ownerOf("1")).to.equal(this.tokenErc721.address)
+
+      // Approve transfer
+      const approveSignature = await getApproveTransferFromSignatureErc721(owner, this.tokenErc721.address, owner, senderAddress, "1", "0x01")
+      await this.merchantOwner.approveTransferFrom_ERC721(this.tokenErc721.address, owner, senderAddress, "1", "0x01", approveSignature, { from: other })
       expect(await this.tokenErc721.balanceOf(senderAddress)).to.be.bignumber.equal(new BN(1))
       expect(await this.tokenErc721.ownerOf("1")).to.equal(senderAddress)
 
@@ -607,7 +661,13 @@ contract("ZippieMerchantOwner", ([owner, operator, admin, merchantOwner1, mercha
 
       // Do ERC721 transfer to smart account
       const { logs } = await this.tokenErc721.transferFrom(owner, senderAddress, "1", { from: owner })
-      expectEvent.inLogs(logs, "Transfer", { from: owner, to: senderAddress, tokenId: "1" })
+      expectEvent.inLogs(logs, "Transfer", { from: owner, to: this.tokenErc721.address, tokenId: "1" })
+      expect(await this.tokenErc721.balanceOf(this.tokenErc721.address)).to.be.bignumber.equal(new BN(1))
+      expect(await this.tokenErc721.ownerOf("1")).to.equal(this.tokenErc721.address)
+
+      // Approve transfer
+      const approveSignature = await getApproveTransferFromSignatureErc721(owner, this.tokenErc721.address, owner, senderAddress, "1", "0x01")
+      await this.merchantOwner.approveTransferFrom_ERC721(this.tokenErc721.address, owner, senderAddress, "1", "0x01", approveSignature, { from: other })
       expect(await this.tokenErc721.balanceOf(senderAddress)).to.be.bignumber.equal(new BN(1))
       expect(await this.tokenErc721.ownerOf("1")).to.equal(senderAddress)
 
@@ -815,6 +875,101 @@ contract("ZippieMerchantOwner", ([owner, operator, admin, merchantOwner1, mercha
       )
 
       expect(await this.tokenErc721.balanceOf(senderAddress)).to.be.bignumber.equal(new BN(0))
+    })
+
+    it("allows owner to approve ERC721 transfers", async function () {
+      // Get smart account addresses	
+      const senderAddress = getSmartWalletAccountAddressErc721(merchant1, ORDER_ID_1, this.walletErc721.address)
+
+      // Do ERC721 transfer to smart account
+      const { logs } = await this.tokenErc721.transferFrom(owner, senderAddress, "1", { from: owner })
+      expectEvent.inLogs(logs, "Transfer", { from: owner, to: this.tokenErc721.address, tokenId: "1" })
+      expect(await this.tokenErc721.balanceOf(this.tokenErc721.address)).to.be.bignumber.equal(new BN(1))
+      expect(await this.tokenErc721.ownerOf("1")).to.equal(this.tokenErc721.address)
+
+      // Check permission
+      expect(await this.merchantOwner.hasRole(PREMISSION_APPROVE, owner)).to.equal(true)
+
+      // Set merchant owner
+      const receipt1 = await this.merchantRegistry.setMerchant(merchant1, this.merchantOwner.address, CONTENT_HASH, { from: admin })
+      expectEvent(receipt1, 'MerchantChanged', { 
+        merchant: merchant1,
+        owner: this.merchantOwner.address,
+        contentHash: CONTENT_HASH
+      })
+      expect(await this.merchantRegistry.owner(merchant1)).to.equal(this.merchantOwner.address)
+      
+      // Mint token using owner contract and sign as meta transaction
+      expect(await this.token.balanceOf(senderAddress)).to.be.bignumber.equal(new BN(0))
+      const { v, r, s } = await getApproveTransferFromSignatureErc721(owner, this.tokenErc721.address, owner, senderAddress, "1", "0x01")
+      const receipt2 = await this.merchantOwner.approveTransferFrom_ERC721(this.tokenErc721.address, owner, senderAddress, "1", "0x01", { v: v, r: r, s: s }, { from: other })
+
+      // Check events for transfer (mint)
+      //event ApprovedTransfer(uint256 indexed tokenId, address indexed from, address indexed to, address by, bytes metadata);
+      //expectEvent(receipt2, "ApprovedTransfer", { tokenId: "1", from: owner, to: senderAddress, by: owner, metadata: "0x01" })
+
+      assert(receipt2.receipt.rawLogs.some(log => { 
+        return log.topics[0] === web3.utils.sha3("ApprovedTransfer(uint256,address,address,address,bytes)")
+        && log.topics[1] === '0x0000000000000000000000000000000000000000000000000000000000000001'
+        && log.topics[2] === web3.utils.padLeft(owner.toLowerCase(), 64)
+        && log.topics[3] === web3.utils.padLeft(senderAddress.toLowerCase(), 64)
+      }) === true, "missing ApprovedTransfer event")
+
+      assert(receipt2.receipt.rawLogs.some(log => { 
+        return log.topics[0] === web3.utils.sha3("Transfer(address,address,uint256)")
+         && log.topics[1] === web3.utils.padLeft(this.tokenErc721.address.toLowerCase(), 64)
+         && log.topics[2] === web3.utils.padLeft(senderAddress.toLowerCase(), 64)
+         && log.topics[3] === '0x0000000000000000000000000000000000000000000000000000000000000001'
+      }) === true, "missing Transfer event")
+
+      expect(await this.tokenErc721.balanceOf(senderAddress)).to.be.bignumber.equal(new BN(1))
+      expect(await this.tokenErc721.ownerOf("1")).to.equal(senderAddress)
+    })
+
+    it("allows owner to reject ERC721 transfers", async function () {
+      // Get smart account addresses	
+      const senderAddress = getSmartWalletAccountAddressErc721(merchant1, ORDER_ID_1, this.walletErc721.address)
+
+      // Do ERC721 transfer to smart account
+      const { logs } = await this.tokenErc721.transferFrom(owner, senderAddress, "1", { from: owner })
+      expectEvent.inLogs(logs, "Transfer", { from: owner, to: this.tokenErc721.address, tokenId: "1" })
+      expect(await this.tokenErc721.balanceOf(this.tokenErc721.address)).to.be.bignumber.equal(new BN(1))
+      expect(await this.tokenErc721.ownerOf("1")).to.equal(this.tokenErc721.address)
+
+      // Check permission
+      expect(await this.merchantOwner.hasRole(PREMISSION_APPROVE, owner)).to.equal(true)
+
+      // Set merchant owner
+      const receipt1 = await this.merchantRegistry.setMerchant(merchant1, this.merchantOwner.address, CONTENT_HASH, { from: admin })
+      expectEvent(receipt1, 'MerchantChanged', { 
+        merchant: merchant1,
+        owner: this.merchantOwner.address,
+        contentHash: CONTENT_HASH
+      })
+      expect(await this.merchantRegistry.owner(merchant1)).to.equal(this.merchantOwner.address)
+      
+      // Mint token using owner contract and sign as meta transaction
+      expect(await this.token.balanceOf(senderAddress)).to.be.bignumber.equal(new BN(0))
+      const { v, r, s } = await getRejectTransferFromSignatureErc721(owner, this.tokenErc721.address, owner, senderAddress, "1", "0x01")
+      const receipt2 = await this.merchantOwner.rejectTransferFrom_ERC721(this.tokenErc721.address, owner, senderAddress, "1", "0x01", { v: v, r: r, s: s }, { from: other })
+
+      assert(receipt2.receipt.rawLogs.some(log => { 
+        return log.topics[0] === web3.utils.sha3("RejectedTransfer(uint256,address,address,address,bytes)")
+        && log.topics[1] === '0x0000000000000000000000000000000000000000000000000000000000000001'
+        && log.topics[2] === web3.utils.padLeft(owner.toLowerCase(), 64)
+        && log.topics[3] === web3.utils.padLeft(senderAddress.toLowerCase(), 64)
+      }) === true, "missing RejectedTransfer event")
+
+      // Check events for transfer (mint)
+      assert(receipt2.receipt.rawLogs.some(log => { 
+        return log.topics[0] === web3.utils.sha3("Transfer(address,address,uint256)")
+         && log.topics[1] === web3.utils.padLeft(this.tokenErc721.address.toLowerCase(), 64)
+         && log.topics[2] === web3.utils.padLeft(owner.toLowerCase(), 64)
+         && log.topics[3] === '0x0000000000000000000000000000000000000000000000000000000000000001'
+      }) === true, "missing Transfer event")
+
+      expect(await this.tokenErc721.balanceOf(owner)).to.be.bignumber.equal(new BN(1))
+      expect(await this.tokenErc721.ownerOf("1")).to.equal(owner)
     })
   })
 })

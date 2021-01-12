@@ -69,6 +69,7 @@ contract ZippieMerchantOwner is AccessControl {
         _setupRole(keccak256("transferB2C"), owner);
         _setupRole(keccak256("mintToken"), owner);
         _setupRole(keccak256("adminENS"), owner);
+        _setupRole(keccak256("approveTransfer"), owner);
 
         // Setup ENS
         Registrar(ensRegistrar).register(ensLabel, address(this));
@@ -81,6 +82,7 @@ contract ZippieMerchantOwner is AccessControl {
         _setupRole(keccak256("transferB2C"), operator);
         _setupRole(keccak256("mintToken"), operator);
         _setupRole(keccak256("adminENS"), operator);
+        _setupRole(keccak256("approveTransfer"), operator);
         ENS(ensRegistry).setApprovalForAll(operator, true);
         Resolver(ensResolver).setAuthorisation(ensNode, operator, true);
     }
@@ -314,6 +316,76 @@ contract ZippieMerchantOwner is AccessControl {
         );
 
         IZippieTokenERC721(token).mint(to, tokenId, tokenURI);
+
+        return true;
+    }
+
+    function approveTransferFrom_ERC721(
+        address token,
+        address from, 
+        address to,
+        uint256 tokenId,
+        bytes memory metadata,
+        Signature memory signature
+    ) 
+        public 
+        returns (bool)
+    {
+        bytes32 signedHash = ZippieUtils.toEthSignedMessageHash(
+            keccak256(abi.encodePacked(
+                "approveTransferFrom_ERC721", 
+                token,
+                from,
+                to,
+                tokenId,
+                metadata
+            ))
+        );
+
+        require(
+            hasRole(
+                keccak256("approveTransfer"),
+                ecrecover(signedHash, signature.v, signature.r, signature.s)
+            ), 
+            "ZippieMerchantOwner: Signer missing required permission to approve transfers"
+        );
+
+        IZippieTokenERC721(token).approveTransferFrom(from, to, tokenId, metadata);
+
+        return true;
+    }
+
+    function rejectTransferFrom_ERC721(
+        address token,
+        address from, 
+        address to,
+        uint256 tokenId,
+        bytes memory metadata,
+        Signature memory signature
+    ) 
+        public 
+        returns (bool)
+    {
+        bytes32 signedHash = ZippieUtils.toEthSignedMessageHash(
+            keccak256(abi.encodePacked(
+                "rejectTransferFrom_ERC721", 
+                token,
+                from,
+                to,
+                tokenId,
+                metadata
+            ))
+        );
+
+        require(
+            hasRole(
+                keccak256("approveTransfer"),
+                ecrecover(signedHash, signature.v, signature.r, signature.s)
+            ), 
+            "ZippieMerchantOwner: Signer missing required permission to approve transfers"
+        );
+
+        IZippieTokenERC721(token).rejectTransferFrom(from, to, tokenId, metadata);
 
         return true;
     }
