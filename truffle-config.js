@@ -32,5 +32,8 @@ module.exports = {
                 },
             }
         }
-    }
+    },
+    mocha: {
+        timeout: 120000, // prevents tests from failing when pc is under heavy load
+    },
 };

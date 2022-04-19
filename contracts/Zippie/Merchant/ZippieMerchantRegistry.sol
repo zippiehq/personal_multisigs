@@ -41,10 +41,13 @@ contract ZippieMerchantRegistry is IZippieMerchantRegistry, AccessControl {
         override 
         returns (bool) 
     {
-        require(
-          hasRole(DEFAULT_ADMIN_ROLE, msg.sender), 
-          "ZippieMerchantRegistry: Caller is not admin"
-        );
+        if (_merchantOwners[merchant].owner != address(0)) {
+          // Only Admin is allowed to change owner after set first time
+          require(
+            hasRole(DEFAULT_ADMIN_ROLE, msg.sender), 
+            "ZippieMerchantRegistry: Caller is not admin"
+          );
+        }
         
         emit MerchantChanged(merchant, owner, contentHash);
         _merchantOwners[merchant].owner = owner;
