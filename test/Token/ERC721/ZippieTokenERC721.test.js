@@ -13,7 +13,7 @@ contract("ZippieTokenERC721", ([admin, operator, sender, receiver, other]) => {
 
   beforeEach(async function () {
     this.token = await ZippieTokenERC721.new(admin, operator, "Zippie-ERC721", "ZIPPIE-ERC721", "baseURI", { from: admin });
-    this.token.mint(sender, "1", "tokenURI", { from: admin })
+    await this.token.mint(sender, "1", "tokenURI", { from: admin })
   });
   
   describe('AdminRole', function() {

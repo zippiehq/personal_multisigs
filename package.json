@@ -9,11 +9,12 @@
   "author": "Zippie",
   "license": "MIT",
   "devDependencies": {
+    "@openzeppelin/cli": "^2.8.0",
     "@truffle/hdwallet-provider": "^1.0.33",
     "chai": "^4.2.0",
     "ganache-cli": "^6.9.1",
     "openzeppelin-test-helpers": "^0.5.1",
-    "truffle": "^5.1.18",
+    "truffle": "^5.1.41",
     "truffle-flattener": "^1.4.2"
   },
   "dependencies": {

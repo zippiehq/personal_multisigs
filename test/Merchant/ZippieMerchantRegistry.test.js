@@ -264,7 +264,7 @@ contract("ZippieMerchantRegistry", ([admin, merchantOwner1, merchant1, merchantO
         expect(await this.merchantRegistry.contentHash(merchant1)).to.equal(null)
 
         //Let "other" try to set merchant owner
-        this.merchantRegistry.setMerchant(merchant1, merchantOwner1, CONTENT_HASH_1, { from: other }),
+        await this.merchantRegistry.setMerchant(merchant1, merchantOwner1, CONTENT_HASH_1, { from: other }),
 
         // Check so merchant owner is set already
         expect(await this.merchantRegistry.owner(merchant1)).to.equal(merchantOwner1)
