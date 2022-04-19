@@ -1,4 +1,4 @@
-pragma solidity ^0.6.0;
+pragma solidity ^0.8.0;
 
 import "./IZippieAccount.sol";
 
@@ -24,7 +24,7 @@ contract ZippieAccount {
       return 
           bytes32ToAddress(
               keccak256(abi.encodePacked(
-                  byte(0xff), 
+                  bytes1(0xff), 
                   address(this), 
                   salt, 
                   keccak256(_zippieAccountBytecode)

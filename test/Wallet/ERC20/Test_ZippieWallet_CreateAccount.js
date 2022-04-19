@@ -116,10 +116,11 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 				return log.topics[0] === web3.utils.sha3("Approval(address,address,uint256)") 
 				&& log.data === '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' 
 			}) === true, "missing Approval event")
-			assert(tx.receipt.rawLogs.some(log => { 
-				return log.topics[0] === web3.utils.sha3("Approval(address,address,uint256)") 
-				&& log.data !== '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' 
-			}) === true, "missing Approval event")
+			// https://github.com/OpenZeppelin/openzeppelin-contracts/pull/3085
+			// assert(tx.receipt.rawLogs.some(log => { 
+			// 	return log.topics[0] === web3.utils.sha3("Approval(address,address,uint256)") 
+			// 	&& log.data !== '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' 
+			// }) === true, "missing Approval event")
 
 
 			balanceOfSender = await basicToken.balanceOf(accountAddress)
@@ -149,10 +150,11 @@ contract("ZippieWallet (using CREATE2 to approve ERC20 transfers for accounts)",
 				return log.topics[0] === web3.utils.sha3("Approval(address,address,uint256)") 
 				&& log.data === '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' 
 			}) === false, "unexpected Approval event")
-			assert(tx2.receipt.rawLogs.some(log => { 
-				return log.topics[0] === web3.utils.sha3("Approval(address,address,uint256)") 
-				&& log.data !== '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' 
-			}) === true, "missing Approval event")
+        	// https://github.com/OpenZeppelin/openzeppelin-contracts/pull/3085
+			// assert(tx2.receipt.rawLogs.some(log => { 
+			// 	return log.topics[0] === web3.utils.sha3("Approval(address,address,uint256)") 
+			// 	&& log.data !== '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' 
+			// }) === true, "missing Approval event")
 
 			balanceOfSender = await basicToken.balanceOf(accountAddress)
 			balanceOfRecipient = await basicToken.balanceOf(recipientAccounts[0])

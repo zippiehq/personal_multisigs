@@ -1,14 +1,14 @@
-pragma solidity ^0.6.0;
+pragma solidity ^0.8.0;
 
 import "./IZippieMerchantRegistry.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/access/AccessControlEnumerable.sol";
 
 /**
   * @title Zippie Merchant Registry
   * @notice Manage Zippie Merchants owners and permissions
   * @dev Using OpenZeppelin AccessControl for permsissions
  */
-contract ZippieMerchantRegistry is IZippieMerchantRegistry, AccessControl {
+contract ZippieMerchantRegistry is IZippieMerchantRegistry, AccessControlEnumerable {
 
     struct Merchant {
         address owner;
