@@ -1,16 +1,21 @@
-pragma solidity ^0.6.0;
+pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/GSN/Context.sol";
+import "@openzeppelin/contracts/access/AccessControlEnumerable.sol";
+import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721Burnable.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721Pausable.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Pausable.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 
-contract ZippieTokenERC721 is Context, AccessControl, ERC721Burnable, ERC721Pausable {
+contract ZippieTokenERC721 is Context, AccessControlEnumerable, ERC721Enumerable, ERC721Burnable, ERC721Pausable, ERC721URIStorage {
 
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant APPROVER_ROLE = keccak256("APPROVER_ROLE");
+
+    string private _baseTokenURI;
 
     mapping (uint256 => mapping(address => address)) public approvalQueue;
 
@@ -19,6 +24,8 @@ contract ZippieTokenERC721 is Context, AccessControl, ERC721Burnable, ERC721Paus
     event RejectedTransfer(uint256 indexed tokenId, address indexed from, address indexed to, address by, bytes metadata);
 
     constructor(address admin, address operator, string memory name, string memory symbol, string memory baseURI) public ERC721(name, symbol) {
+        _baseTokenURI = baseURI;
+        
         // Owner
         _setupRole(DEFAULT_ADMIN_ROLE, admin);
         _setupRole(MINTER_ROLE, admin);
@@ -30,8 +37,14 @@ contract ZippieTokenERC721 is Context, AccessControl, ERC721Burnable, ERC721Paus
         _setupRole(MINTER_ROLE, operator);
         _setupRole(PAUSER_ROLE, operator);
         _setupRole(APPROVER_ROLE, operator);
+    }
 
-        _setBaseURI(baseURI);
+    function _baseURI() internal view virtual override returns (string memory) {
+        return _baseTokenURI;
+    }
+
+    function baseURI() public view returns (string memory) {
+        return _baseURI();
     }
 
     function exists(uint256 tokenId) public view returns (bool) {
@@ -55,7 +68,7 @@ contract ZippieTokenERC721 is Context, AccessControl, ERC721Burnable, ERC721Paus
         _unpause();
     }
 
-    function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal virtual override(ERC721, ERC721Pausable) {
+    function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal virtual override(ERC721, ERC721Enumerable, ERC721Pausable) {
         super._beforeTokenTransfer(from, to, tokenId);
     }
 
@@ -84,5 +97,27 @@ contract ZippieTokenERC721 is Context, AccessControl, ERC721Burnable, ERC721Paus
         _transfer(address(this), from, tokenId);
         delete approvalQueue[tokenId][from];
         emit RejectedTransfer(tokenId, from, to, _msgSender(), metadata);
+    }
+
+    function _burn(uint256 tokenId) internal override(ERC721, ERC721URIStorage) {
+        super._burn(tokenId);
+    }
+
+    function tokenURI(uint256 tokenId)
+        public
+        view
+        override(ERC721, ERC721URIStorage)
+        returns (string memory)
+    {
+        return super.tokenURI(tokenId);
+    }
+
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        override(ERC721, ERC721Enumerable, AccessControlEnumerable)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
     }
 }

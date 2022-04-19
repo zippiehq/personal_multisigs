@@ -1,4 +1,4 @@
-pragma solidity ^0.6.0;
+pragma solidity ^0.8.0;
 
 import "../../Account/IZippieAccount.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -22,6 +22,6 @@ contract ZippieAccountERC20 is IZippieAccount {
   function approve(address token) public override {
     require(msg.sender == owner);
     require(IERC20(token).approve(msg.sender, 2**256-1), "Approve failed");
-    selfdestruct(tx.origin); // Sponsor (any available ETH will be sent here)
+    selfdestruct(payable(tx.origin)); // Sponsor (any available ETH will be sent here)
   }
 }

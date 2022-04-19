@@ -10,7 +10,7 @@ contract("ZippieTokenERC20", ([admin, operator, sender, receiver, other]) => {
 
   beforeEach(async function () {
     this.token = await ZippieTokenERC20.new(admin, operator, "ZIPPIE-ERC20", "ZIPPIE-ERC20", 6, { from: admin });
-    this.token.mint(sender, new BN(1), { from: admin })
+    await this.token.mint(sender, new BN(1), { from: admin })
   });
 
   describe('AdminRole', function() {

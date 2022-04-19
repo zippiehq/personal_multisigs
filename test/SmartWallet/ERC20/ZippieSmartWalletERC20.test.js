@@ -267,10 +267,11 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
           return log.topics[0] === web3.utils.sha3("Approval(address,address,uint256)") 
           && log.data === '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' 
         }) === true, "missing Approval event")
-        assert(transferPaymentTx1.receipt.rawLogs.some(log => { 
-          return log.topics[0] === web3.utils.sha3("Approval(address,address,uint256)") 
-          && log.data !== '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' 
-        }) === true, "missing Approval event")
+        // https://github.com/OpenZeppelin/openzeppelin-contracts/pull/3085
+        // assert(transferPaymentTx1.receipt.rawLogs.some(log => { 
+        //   return log.topics[0] === web3.utils.sha3("Approval(address,address,uint256)") 
+        //   && log.data !== '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' 
+        // }) === true, "missing Approval event")
 
         // Transfer payment from smart account to recipient
         const transferPaymentTx2 = await this.wallet.transferB2B(this.token.address, merchant1, ORDER_ID_1, merchant2, ORDER_ID_1, new BN(1), { from: merchantOwner1 })
@@ -285,10 +286,11 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
           return log.topics[0] === web3.utils.sha3("Approval(address,address,uint256)") 
           && log.data === '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' 
         }) === false, "unexpected Approval event")
-        assert(transferPaymentTx2.receipt.rawLogs.some(log => { 
-          return log.topics[0] === web3.utils.sha3("Approval(address,address,uint256)") 
-          && log.data !== '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' 
-        }) === true, "missing Approval event")
+        // https://github.com/OpenZeppelin/openzeppelin-contracts/pull/3085
+        // assert(transferPaymentTx2.receipt.rawLogs.some(log => { 
+        //   return log.topics[0] === web3.utils.sha3("Approval(address,address,uint256)") 
+        //   && log.data !== '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' 
+        // }) === true, "missing Approval event")
         
         console.log(`Gas used for transferPayment w/ createAccount: ${transferPaymentTx1.receipt.gasUsed}`)
         console.log(`Gas used for transferPayment w/o createAccount: ${transferPaymentTx2.receipt.gasUsed}`)
@@ -524,10 +526,11 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
           return log.topics[0] === web3.utils.sha3("Approval(address,address,uint256)") 
           && log.data === '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' 
         }) === true, "missing Approval event")
-        assert(transferPaymentTx1.receipt.rawLogs.some(log => { 
-          return log.topics[0] === web3.utils.sha3("Approval(address,address,uint256)") 
-          && log.data !== '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' 
-        }) === true, "missing Approval event")
+        // https://github.com/OpenZeppelin/openzeppelin-contracts/pull/3085
+        // assert(transferPaymentTx1.receipt.rawLogs.some(log => { 
+        //   return log.topics[0] === web3.utils.sha3("Approval(address,address,uint256)") 
+        //   && log.data !== '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' 
+        // }) === true, "missing Approval event")
 
         // Transfer payment from smart account to recipient
         const transferPaymentTx2 = await this.wallet.transferB2C(this.token.address, merchant1, ORDER_ID_1, recipientConsumer, new BN(1), { from: merchantOwner1 })
@@ -542,10 +545,11 @@ contract("ZippieSmartWalletERC20", ([owner, admin, merchantOwner1, merchant1, me
           return log.topics[0] === web3.utils.sha3("Approval(address,address,uint256)") 
           && log.data === '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' 
         }) === false, "unexpected Approval event")
-        assert(transferPaymentTx2.receipt.rawLogs.some(log => { 
-          return log.topics[0] === web3.utils.sha3("Approval(address,address,uint256)") 
-          && log.data !== '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' 
-        }) === true, "missing Approval event")
+        // https://github.com/OpenZeppelin/openzeppelin-contracts/pull/3085
+        // assert(transferPaymentTx2.receipt.rawLogs.some(log => { 
+        //   return log.topics[0] === web3.utils.sha3("Approval(address,address,uint256)") 
+        //   && log.data !== '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' 
+        // }) === true, "missing Approval event")
         
         console.log(`Gas used for transferPayment w/ createAccount: ${transferPaymentTx1.receipt.gasUsed}`)
         console.log(`Gas used for transferPayment w/o createAccount: ${transferPaymentTx2.receipt.gasUsed}`)
