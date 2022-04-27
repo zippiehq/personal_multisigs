@@ -13,3 +13,9 @@ ganache-cli -a 101 -m zippie
 truffle test
 ```
 
+## Run locally
+
+```bash
+ganache-cli -a 101 -m zippie
+truffle deploy
+```

@@ -19,7 +19,8 @@ module.exports = function(deployer, network, accounts) {
         })
         .then(function(BasicERC20MockInstance) {
             basicERC20 = BasicERC20MockInstance;
-            return deployer.deploy(BasicERC721Mock, accounts[0]);
+            //return deployer.deploy(BasicERC721Mock, accounts[0]);
+            return deployer.deploy(BasicERC721Mock, '0x1d27c3d920e780abefa6d516620015403bf84cc4');
         })
         .then(function() {
             return BasicERC721Mock.deployed();
