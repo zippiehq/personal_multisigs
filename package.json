@@ -2,22 +2,21 @@
   "name": "zippie-solidity",
   "version": "1.0.0",
   "description": "Zippie Smart Contracts",
+  "main": "index.js",
   "scripts": {
-    "node": "ganache-cli -a 101 -m zippie",
-    "test": "truffle test"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Zippie",
-  "license": "MIT",
+  "author": "",
+  "license": "ISC",
   "devDependencies": {
-    "@openzeppelin/cli": "^2.8.0",
-    "@truffle/hdwallet-provider": "^2.0.8",
-    "chai": "^4.2.0",
-    "ganache-cli": "^6.12.2",
-    "openzeppelin-test-helpers": "^0.5.1",
-    "truffle": "^5.5.10",
-    "truffle-flattener": "^1.4.2"
+    "@nomiclabs/hardhat-ethers": "^2.0.6",
+    "@nomiclabs/hardhat-waffle": "^2.0.3",
+    "chai": "^4.3.6",
+    "ethereum-waffle": "^3.4.4",
+    "ethers": "^5.6.6",
+    "hardhat": "^2.9.5"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.5.0"
+    "@openzeppelin/contracts": "^4.6.0"
   }
 }

@@ -1,6 +1,5 @@
-var BasicERC721Mock = artifacts.require("./BasicERC721Mock.sol");
-var ZippieWallet = artifacts.require("./ZippieWalletERC721.sol");
-var ZippieCardNonces = artifacts.require("./ZippieCardNonces.sol");
+const { expect } = require("chai")
+const { ethers, waffle } = require("hardhat")
 
 const { 
 	createBlankCheck_1of1Signer_1of1Card,
@@ -8,64 +7,80 @@ const {
 	getAccountAddress,
 	soliditySha3_addresses_m,
 	ZERO_ADDRESS,
-} = require('./HelpFunctions');
+	MAX_AMOUNT,
+} = require('./HelpFunctions')
 
+describe("ERC721 - ZippieWallet (using CREATE2 to approve ERC721 transfers for accounts)", () => {
 
-contract("ZippieWalletERC721 (using CREATE2 to approve ERC721 transfers for accounts)", (accounts) => {
-	var basicToken;
-	var basicToken2;
-	var zippieCardNonces;
-	var zippieWallet;
-
-	// pay my gas server 
-	const sponsorAccounts = [
-		accounts[0],
-		accounts[99]
-	] 
+	let basicToken, basicToken2;
+	let zippieCardNonces;
+	let zippieWallet;
+	let accounts, signer, signer2, recipient, verificationKey, sponsor;
 	
-	// token account
-	const tokenAccounts = [
-		accounts[5]
-	]
-	
-	// signer (1of1)
-	const signerAccounts = [
-		accounts[0]
-	]
+	beforeEach(async () => {
+		accounts = await hre.ethers.getSigners()
+		signer = accounts[6].address // multisig signer (1of1)
+		signerAccount = accounts[6] // multisig signer (1of1)
+		signer2 = accounts[2].address // multisig signer (2of2)
+		signer2Account = accounts[2] // multisig signer (2of2)
+		recipient = accounts[2].address
+		recipientAccount = accounts[2]
+		verificationKey = accounts[4].address // random verification key
+		verificationKeyAccount = accounts[4] // random verification key
+		sponsor = accounts[0].address // Zippie PMG server
+		sponsorAccount = accounts[0] // Zippie PMG server
 
-	// random verification key
-	const verificationKeys = [
-		accounts[4], 
-		accounts[14],
-		accounts[15]
-	]
+		// pay my gas server 
+		sponsorAccounts = [
+			accounts[0],
+			accounts[19]
+		] 
+		
+		// token account
+		tokenAccounts = [
+			accounts[5]
+		]
+		
+		// signer (1of1)
+		signerAccounts = [
+			accounts[0]
+		]
 
-	// token recipient
-	const recipientAccounts = [
-		accounts[2]
-	]
+		// random verification key
+		verificationKeys = [
+			accounts[4], 
+			accounts[14],
+			accounts[15]
+		]
 
-	beforeEach(() => {
-		return BasicERC721Mock.new(tokenAccounts[0]).then(instance => {
-			basicToken = instance
-			return BasicERC721Mock.new(tokenAccounts[0]).then(instance => {
-				basicToken2 = instance
-				return ZippieCardNonces.new().then(instance => {
-					zippieCardNonces = instance
-					return ZippieWallet.new(zippieCardNonces.address).then(instance => {
-						zippieWallet = instance;
-					});
-				});
-			});
-		});
-	});
+		// token recipient
+		recipientAccounts = [
+			accounts[2]
+		]
+
+		const BasicERC721Mock = await ethers.getContractFactory("BasicERC721Mock")
+		basicToken = await BasicERC721Mock.deploy(sponsor)
+		await basicToken.deployed()
+
+		basicToken2 = await BasicERC721Mock.deploy(sponsor)
+		await basicToken2.deployed()
+
+		const ZippieCardNonces = await ethers.getContractFactory("ZippieCardNonces")
+		zippieCardNonces = await ZippieCardNonces.deploy()
+		await zippieCardNonces.deployed()
+
+		const ZippieWallet = await ethers.getContractFactory("ZippieWalletERC721")
+		zippieWallet = await ZippieWallet.deploy(zippieCardNonces.address)
+
+		await zippieWallet.deployed()
+	})
 
 	describe("test account creation with CREATE2", function() {		
 		it("redeemBlankCheck m[1,1,0,0]", async () => {
 			// Blank Check 1 (tokenId 1)
 			const bc1 = await createBlankCheck_1of1Signer_NoCard(
 				basicToken.address,
-				recipientAccounts[0],
+				recipientAccounts[0].address,
 				verificationKeys[0],
 				signerAccounts[0],
 				[1, 1, 0, 0],
@@ -75,7 +90,7 @@ contract("ZippieWalletERC721 (using CREATE2 to approve ERC721 transfers for acco
 			// Blank Check 2 (tokenId 2)
 			const bc2 = await createBlankCheck_1of1Signer_NoCard(
 				basicToken.address,
-				recipientAccounts[0],
+				recipientAccounts[0].address,
 				verificationKeys[1],
 				signerAccounts[0],
 				[1, 1, 0, 0],
@@ -97,98 +112,81 @@ contract("ZippieWalletERC721 (using CREATE2 to approve ERC721 transfers for acco
 
 			// BC1
 
-			// Send tokens to sender account
-			await basicToken.transferFrom(tokenAccounts[0], accountAddress, "1", {from: tokenAccounts[0]});
-
-			// Check token owner and operator approval before redeem
+			// Send tokens to account
+			await basicToken.transferFrom(sponsor, accountAddress, "1", { from: sponsor })
 			const ownerOfToken1Before = await basicToken.ownerOf("1")
-			assert(ownerOfToken1Before === accountAddress, "initial owner of token 1 is incorrect")
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[0]) === ZERO_ADDRESS, "check already marked as cashed before transfer")
+			expect(ownerOfToken1Before).to.equal(accountAddress)
+			expect(await zippieWallet.usedNonces(accountAddress, verificationKeys[0].address)).to.equal(ZERO_ADDRESS)
 			const approvalBefore = await basicToken.isApprovedForAll(accountAddress, zippieWallet.address)
-			assert(approvalBefore === false, "operator approval set before redeem")
+			expect(approvalBefore).to.equal(false)
 
 			// Redeem blank check and create account
-			const tx = await zippieWallet.redeemBlankCheck(bc1.addresses, bc1.signers, bc1.m, bc1.signatures.v, bc1.signatures.r, bc1.signatures.s, bc1.tokenId, bc1.cardNonces, {from: sponsorAccounts[0]})
-			console.log(`Gas used for redeemBlankCheck w/ createAccount m[1,1,0,0]: ${tx.receipt.gasUsed}`)
-			assert(tx.receipt.rawLogs.some(log => { 
-				return log.topics[0] === web3.utils.sha3("Transfer(address,address,uint256)") 
-			}) === true, "missing Transfer event")
-			assert(tx.receipt.rawLogs.some(log => { 
-				return log.topics[0] === web3.utils.sha3("ApprovalForAll(address,address,bool)") 
-				&& log.data === '0x0000000000000000000000000000000000000000000000000000000000000001' 
-			}) === true, "missing Approval event")
+			let tx = zippieWallet.redeemBlankCheck(bc1.addresses, bc1.signers, bc1.m, bc1.signatures.v, bc1.signatures.r, bc1.signatures.s, bc1.tokenId, bc1.cardNonces, {from: sponsorAccounts[0].address})
+			await expect(tx).to.emit(basicToken, 'Transfer').withArgs(accountAddress, recipientAccounts[0].address, "1")
+			await expect(tx).to.emit(basicToken, 'ApprovalForAll').withArgs(accountAddress, zippieWallet.address, true)
+			// tx = await tx.wait()
+			// console.log(`Gas used for redeemBlankCheck w/ createAccount m[1,1,0,0]: ${tx.gasUsed}`)
 
 			// Check owner and operator approval after redeem
 			const ownerOfToken1After = await basicToken.ownerOf("1")
-			assert(ownerOfToken1After === recipientAccounts[0], "token 1 owner after redeem is incorrect")
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[0]) === recipientAccounts[0], "check has not been marked as cashed after transfer")
+			expect(ownerOfToken1After).to.equal(recipientAccounts[0].address)
+			expect(await zippieWallet.usedNonces(accountAddress, verificationKeys[0].address)).to.equal(recipientAccounts[0].address)
 			const approvalAfter = await basicToken.isApprovedForAll(accountAddress, zippieWallet.address)
-			assert(approvalAfter === true, "operator approval not set after redeem")
+			expect(approvalAfter).to.equal(true)
 
-			try {
-				// try the same exact transfer
-				await zippieWallet.redeemBlankCheck(bc1.addresses, bc1.signers, bc1.m, bc1.signatures.v, bc1.signatures.r, bc1.signatures.s, bc1.tokenId, bc1.cardNonces, {from: sponsorAccounts[0]})
-				assert(false, "duplicate transfer went through, but should have failed!")
-			} catch(error) {
-				assert(error.reason == 'Nonce already used', error.reason)
-			}
+			await expect(zippieWallet.redeemBlankCheck(bc1.addresses, bc1.signers, bc1.m, bc1.signatures.v, bc1.signatures.r, bc1.signatures.s, bc1.tokenId, bc1.cardNonces, {from: sponsorAccounts[0].address}))
+				.to.be.revertedWith("Nonce already used")
 
 			// BC2
 
-			// Send tokens to sender account
-			await basicToken.transferFrom(tokenAccounts[0], accountAddress, "2", {from: tokenAccounts[0]});
-
-			// Check token owner before redeem
+			// Send tokens to account
+			await basicToken.transferFrom(sponsor, accountAddress, "2", { from: sponsor })
 			const ownerOfToken2Before = await basicToken.ownerOf("2")
-			assert(ownerOfToken2Before === accountAddress, "initial owner of token 2 is incorrect")
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[1]) === ZERO_ADDRESS, "check already marked as cashed before transfer")
+			expect(ownerOfToken2Before).to.equal(accountAddress)
+			expect(await zippieWallet.usedNonces(accountAddress, verificationKeys[1].address)).to.equal(ZERO_ADDRESS)
 
 			// Redeem second blank check (no create account, was done in previous call)
-			const tx2 = await zippieWallet.redeemBlankCheck(bc2.addresses, bc2.signers, bc2.m, bc2.signatures.v, bc2.signatures.r, bc2.signatures.s, bc2.tokenId, bc2.cardNonces, {from: sponsorAccounts[0]})
-			console.log(`Gas used for redeemBlankCheck w/o createAccount m[1,1,0,0]: ${tx2.receipt.gasUsed}`)
-			assert(tx2.receipt.rawLogs.some(log => { 
-				return log.topics[0] === web3.utils.sha3("Transfer(address,address,uint256)") 
-			}) === true, "missing Transfer event")
-			assert(tx2.receipt.rawLogs.some(log => {
-				return log.topics[0] === web3.utils.sha3("ApprovalForAll(address,address,bool)") 
-			}) === false, "unexpected Approval event")
+			let tx2 = zippieWallet.redeemBlankCheck(bc2.addresses, bc2.signers, bc2.m, bc2.signatures.v, bc2.signatures.r, bc2.signatures.s, bc2.tokenId, bc2.cardNonces, {from: sponsorAccounts[0].address})
+			await expect(tx2).to.emit(basicToken, 'Transfer').withArgs(accountAddress, recipientAccounts[0].address, "2")
+			await expect(tx2).to.not.emit(basicToken, 'ApprovalForAll')
+			// tx2 = await tx2.wait()
+			// console.log(`Gas used for redeemBlankCheck w/ createAccount m[1,1,0,0]: ${tx2.gasUsed}`)
 
 			// Check owner after redeem
 			const ownerOfToken2After = await basicToken.ownerOf("2")
-			assert(ownerOfToken2After === recipientAccounts[0], "token 2 owner after redeem is incorrect")
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[1]) === recipientAccounts[0], "check has not been marked as cashed after transfer")
-	
+			expect(ownerOfToken2After).to.equal(recipientAccounts[0].address)
+			expect(await zippieWallet.usedNonces(accountAddress, verificationKeys[1].address)).to.equal(recipientAccounts[0].address)
+			const approvalAfter2 = await basicToken.isApprovedForAll(accountAddress, zippieWallet.address)
+			expect(approvalAfter2).to.equal(true)
+
 			// BC3
 
-			// Send tokens to sender account
-			await basicToken.transferFrom(tokenAccounts[0], accountAddress, "3", {from: tokenAccounts[0]});
-
-			// Check token owner before redeem
+			// Send tokens to account
+			await basicToken.transferFrom(sponsor, accountAddress, "3", { from: sponsor })
 			const ownerOfToken3Before = await basicToken.ownerOf("3")
-			assert(ownerOfToken3Before === accountAddress, "initial owner of token 3 is incorrect")
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[2]) === ZERO_ADDRESS, "check already marked as cashed before transfer")
+			expect(ownerOfToken3Before).to.equal(accountAddress)
+			expect(await zippieWallet.usedNonces(accountAddress, verificationKeys[2].address)).to.equal(ZERO_ADDRESS)
 
-			// Redeem second blank check (no create account, was done in previous call)
-			const tx3 = await zippieWallet.redeemBlankCheck(bc3.addresses, bc3.signers, bc3.m, bc3.signatures.v, bc3.signatures.r, bc3.signatures.s, bc3.tokenId, bc3.cardNonces, {from: sponsorAccounts[0]})
-			console.log(`Gas used for redeemBlankCheck w/o transfer (i.e. cancel) m[1,1,0,0]: ${tx3.receipt.gasUsed}`)
-			assert(tx3.receipt.rawLogs.some(log => { 
-				return log.topics[0] === web3.utils.sha3("Transfer(address,address,uint256)") 
-			}) === false, "unexpected Transfer event")
-			assert(tx3.receipt.rawLogs.some(log => {
-				return log.topics[0] === web3.utils.sha3("ApprovalForAll(address,address,bool)") 
-			}) === false, "unexpected Approval event")
+			// Redeem third blank check back to sender (i.e. cancel)
+			let tx3 = zippieWallet.redeemBlankCheck(bc3.addresses, bc3.signers, bc3.m, bc3.signatures.v, bc3.signatures.r, bc3.signatures.s, bc3.tokenId, bc3.cardNonces, {from: sponsorAccounts[0].address})
+			await expect(tx3).to.not.emit(basicToken, 'Transfer')
+			await expect(tx3).to.not.emit(basicToken, 'ApprovalForAll')
+			// tx3 = await tx3.wait()
+			// console.log(`Gas used for redeemBlankCheck w/o transfer (i.e. cacnel) m[1,1,0,0]: ${tx3.gasUsed}`)
 
 			// Check owner after redeem
 			const ownerOfToken3After = await basicToken.ownerOf("3")
-			assert(ownerOfToken3After === accountAddress, "token 3 owner after redeem is incorrect")
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[1]) === recipientAccounts[0], "check has not been marked as cashed after transfer")
-		});
+			expect(ownerOfToken3After).to.equal(accountAddress)
+			expect(await zippieWallet.usedNonces(accountAddress, verificationKeys[2].address)).to.equal(accountAddress)
+			const approvalAfter3 = await basicToken.isApprovedForAll(accountAddress, zippieWallet.address)
+			expect(approvalAfter3).to.equal(true)
+		})
 
 		it("redeemBlankCheck m[1,1,1,1]", async () => {
-			// Blank Check 1 (tokenId 1)
+			// Blank Check 1
 			const bc1 = await createBlankCheck_1of1Signer_1of1Card(
 				basicToken.address,
-				recipientAccounts[0],
+				recipientAccounts[0].address,
 				verificationKeys[0],
 				signerAccounts[0],
 				1,
@@ -197,10 +195,10 @@ contract("ZippieWalletERC721 (using CREATE2 to approve ERC721 transfers for acco
 				0
 			)
 			
-			// Blank Check 2 (tokenId 2)
+			// Blank Check 2
 			const bc2 = await createBlankCheck_1of1Signer_1of1Card(
 				basicToken.address,
-				recipientAccounts[0],
+				recipientAccounts[0].address,
 				verificationKeys[1],
 				signerAccounts[0],
 				1,
@@ -212,67 +210,69 @@ contract("ZippieWalletERC721 (using CREATE2 to approve ERC721 transfers for acco
 			// Get account address	
 			const accountAddress = getAccountAddress(bc1.signers, bc1.m, zippieWallet.address)
 
-			// Send tokens to sender account
-			await basicToken.transferFrom(tokenAccounts[0], accountAddress, "1", {from: tokenAccounts[0]});
-
-			// Check token owner and operator approval before redeem
+			// Send tokens to account
+			await basicToken.transferFrom(sponsor, accountAddress, "1", { from: sponsor })
 			const ownerOfToken1Before = await basicToken.ownerOf("1")
-			assert(ownerOfToken1Before === accountAddress, "initial owner of token 1 is incorrect")
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[0]) === ZERO_ADDRESS, "check already marked as cashed before transfer")
+			expect(ownerOfToken1Before).to.equal(accountAddress)
+			expect(await zippieWallet.usedNonces(accountAddress, verificationKeys[0].address)).to.equal(ZERO_ADDRESS)
 			const approvalBefore = await basicToken.isApprovedForAll(accountAddress, zippieWallet.address)
-			assert(approvalBefore === false, "operator approval set before redeem")
+			expect(approvalBefore).to.equal(false)
 
 			// Redeem blank check and create account
-			const receipt = await zippieWallet.redeemBlankCheck(bc1.addresses, bc1.signers, bc1.m, bc1.signatures.v, bc1.signatures.r, bc1.signatures.s, bc1.tokenId, bc1.cardNonces, {from: sponsorAccounts[0]})
-			console.log(`Gas used for redeemBlankCheck w/ createAccount m[1,1,1,1]: ${receipt.receipt.gasUsed}`)
+			let tx = zippieWallet.redeemBlankCheck(bc1.addresses, bc1.signers, bc1.m, bc1.signatures.v, bc1.signatures.r, bc1.signatures.s, bc1.tokenId, bc1.cardNonces, {from: sponsorAccounts[0].address})
+			await expect(tx).to.emit(basicToken, 'Transfer').withArgs(accountAddress, recipientAccounts[0].address, "1")
+			await expect(tx).to.emit(basicToken, 'ApprovalForAll').withArgs(accountAddress, zippieWallet.address, true)
+			// tx = await tx.wait()
+			// console.log(`Gas used for redeemBlankCheck w/ createAccount m[1,1,1,1]: ${tx.gasUsed}`)
 
 			// Check owner and operator approval after redeem
 			const ownerOfToken1After = await basicToken.ownerOf("1")
-			assert(ownerOfToken1After === recipientAccounts[0], "token 1 owner after redeem is incorrect")
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[0]) === recipientAccounts[0], "check has not been marked as cashed after transfer")
+			expect(ownerOfToken1After).to.equal(recipientAccounts[0].address)
+			expect(await zippieWallet.usedNonces(accountAddress, verificationKeys[0].address)).to.equal(recipientAccounts[0].address)
 			const approvalAfter = await basicToken.isApprovedForAll(accountAddress, zippieWallet.address)
-			assert(approvalAfter === true, "operator approval not set after redeem")
+			expect(approvalAfter).to.equal(true)
 
-			try {
-				// try the same exact transfer
-				await zippieWallet.redeemBlankCheck(bc1.addresses, bc1.signers, bc1.m, bc1.signatures.v, bc1.signatures.r, bc1.signatures.s, bc1.tokenId, bc1.cardNonces, {from: sponsorAccounts[0]})
-				assert(false, "duplicate transfer went through, but should have failed!")
-			} catch(error) {
-				assert(error.reason == 'Nonce already used', error.reason)
-			}
+			await expect(zippieWallet.redeemBlankCheck(bc1.addresses, bc1.signers, bc1.m, bc1.signatures.v, bc1.signatures.r, bc1.signatures.s, bc1.tokenId, bc1.cardNonces, {from: sponsorAccounts[0].address}))
+				.to.be.revertedWith("Nonce already used")
 
-			// Send tokens to sender account
-			await basicToken.transferFrom(tokenAccounts[0], accountAddress, "2", {from: tokenAccounts[0]});
+			// BC2
 
-			// Check token owner before redeem
+			// Send tokens to account
+			await basicToken.transferFrom(sponsor, accountAddress, "2", { from: sponsor })
 			const ownerOfToken2Before = await basicToken.ownerOf("2")
-			assert(ownerOfToken2Before === accountAddress, "initial owner of token 2 is incorrect")
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[1]) === ZERO_ADDRESS, "check already marked as cashed before transfer")
+			expect(ownerOfToken2Before).to.equal(accountAddress)
+			expect(await zippieWallet.usedNonces(accountAddress, verificationKeys[1].address)).to.equal(ZERO_ADDRESS)
 
 			// Redeem second blank check (no create account, was done in previous call)
-			const receipt2 = await zippieWallet.redeemBlankCheck(bc2.addresses, bc2.signers, bc2.m, bc2.signatures.v, bc2.signatures.r, bc2.signatures.s, bc2.tokenId, bc2.cardNonces, {from: sponsorAccounts[0]})
-			console.log(`Gas used for redeemBlankCheck w/o createAccount m[1,1,1,1]: ${receipt2.receipt.gasUsed}`)
+			let tx2 = zippieWallet.redeemBlankCheck(bc2.addresses, bc2.signers, bc2.m, bc2.signatures.v, bc2.signatures.r, bc2.signatures.s, bc2.tokenId, bc2.cardNonces, {from: sponsorAccounts[0].address})
+			await expect(tx2).to.emit(basicToken, 'Transfer').withArgs(accountAddress, recipientAccounts[0].address, "2")
+			await expect(tx2).to.not.emit(basicToken, 'ApprovalForAll')
+			// tx2 = await tx2.wait()
+			// console.log(`Gas used for redeemBlankCheck w/ createAccount m[1,1,1,1]: ${tx2.gasUsed}`)
 
 			// Check owner after redeem
 			const ownerOfToken2After = await basicToken.ownerOf("2")
-			assert(ownerOfToken2After === recipientAccounts[0], "token 2 owner after redeem is incorrect")
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[1]) === recipientAccounts[0], "check has not been marked as cashed after transfer")
-		});
+			expect(ownerOfToken2After).to.equal(recipientAccounts[0].address)
+			expect(await zippieWallet.usedNonces(accountAddress, verificationKeys[1].address)).to.equal(recipientAccounts[0].address)
+			const approvalAfter2 = await basicToken.isApprovedForAll(accountAddress, zippieWallet.address)
+			expect(approvalAfter2).to.equal(true)
+		})
+
 		it("redeemBlankCheck m[1,1,0,0] with 2 tokens (2 approve)", async () => {
-			// Blank Check 1 (token 1, tokenId 1)
+			// Blank Check 1
 			const bc1 = await createBlankCheck_1of1Signer_NoCard(
 				basicToken.address,
-				recipientAccounts[0],
+				recipientAccounts[0].address,
 				verificationKeys[0],
 				signerAccounts[0],
 				[1, 1, 0, 0],
 				"1",
 			)
 			
-			// Blank Check 2 (token 2, tokenId 1)
+			// Blank Check 2
 			const bc2 = await createBlankCheck_1of1Signer_NoCard(
 				basicToken2.address,
-				recipientAccounts[0],
+				recipientAccounts[0].address,
 				verificationKeys[1],
 				signerAccounts[0],
 				[1, 1, 0, 0],
@@ -282,53 +282,56 @@ contract("ZippieWalletERC721 (using CREATE2 to approve ERC721 transfers for acco
 			// Get account address	
 			const accountAddress = getAccountAddress(bc1.signers, bc1.m, zippieWallet.address)		
 
-			// Send token 1 to sender account
-			await basicToken.transferFrom(tokenAccounts[0], accountAddress, "1", {from: tokenAccounts[0]});
-
-			// Check token owner and operator approval before redeem
+			// Send token 1 to account
+			await basicToken.transferFrom(sponsor, accountAddress, "1", { from: sponsor })
 			const ownerOfToken1Before = await basicToken.ownerOf("1")
-			assert(ownerOfToken1Before === accountAddress, "initial owner of token 1 is incorrect")
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[0]) === ZERO_ADDRESS, "check already marked as cashed before transfer")
+			expect(ownerOfToken1Before).to.equal(accountAddress)
+			expect(await zippieWallet.usedNonces(accountAddress, verificationKeys[0].address)).to.equal(ZERO_ADDRESS)
 			const approvalBefore = await basicToken.isApprovedForAll(accountAddress, zippieWallet.address)
-			assert(approvalBefore === false, "operator approval set before redeem")
+			expect(approvalBefore).to.equal(false)
 
-			// Redeem blank check and approve token 1
-			const receipt = await zippieWallet.redeemBlankCheck(bc1.addresses, bc1.signers, bc1.m, bc1.signatures.v, bc1.signatures.r, bc1.signatures.s, bc1.tokenId, bc1.cardNonces, {from: sponsorAccounts[0]})
-			console.log(`Gas used for redeemBlankCheck w/ createAccount m[1,1,0,0] - Token 1: ${receipt.receipt.gasUsed}`)
+			// Redeem blank check and create account
+			let tx = zippieWallet.redeemBlankCheck(bc1.addresses, bc1.signers, bc1.m, bc1.signatures.v, bc1.signatures.r, bc1.signatures.s, bc1.tokenId, bc1.cardNonces, {from: sponsorAccounts[0].address})
+			await expect(tx).to.emit(basicToken, 'Transfer').withArgs(accountAddress, recipientAccounts[0].address, "1")
+			await expect(tx).to.emit(basicToken, 'ApprovalForAll').withArgs(accountAddress, zippieWallet.address, true)
+			// tx = await tx.wait()
+			// console.log(`Gas used for redeemBlankCheck w/ createAccount m[1,1,0,0] - Token 1: ${tx.gasUsed}`)
 
 			// Check owner and operator approval after redeem
 			const ownerOfToken1After = await basicToken.ownerOf("1")
-			assert(ownerOfToken1After === recipientAccounts[0], "token 1 owner after redeem is incorrect")
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[0]) === recipientAccounts[0], "check has not been marked as cashed after transfer")
+			expect(ownerOfToken1After).to.equal(recipientAccounts[0].address)
+			expect(await zippieWallet.usedNonces(accountAddress, verificationKeys[0].address)).to.equal(recipientAccounts[0].address)
 			const approvalAfter = await basicToken.isApprovedForAll(accountAddress, zippieWallet.address)
-			assert(approvalAfter === true, "operator approval not set after redeem")
+			expect(approvalAfter).to.equal(true)
 
-			// Send token 2 to sender account
-			await basicToken2.transferFrom(tokenAccounts[0], accountAddress, "1", {from: tokenAccounts[0]});
-
-			// Check token owner and operator approval before redeem
+			// Send token 2 to account
+			await basicToken2.transferFrom(sponsor, accountAddress, "1", { from: sponsor })
 			const ownerOfToken2Before = await basicToken2.ownerOf("1")
-			assert(ownerOfToken2Before === accountAddress, "initial owner of token 1 is incorrect")
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[1]) === ZERO_ADDRESS, "check already marked as cashed before transfer")
+			expect(ownerOfToken2Before).to.equal(accountAddress)
+			expect(await zippieWallet.usedNonces(accountAddress, verificationKeys[1].address)).to.equal(ZERO_ADDRESS)
 			const approvalBefore2 = await basicToken2.isApprovedForAll(accountAddress, zippieWallet.address)
-			assert(approvalBefore2 === false, "operator approval set before redeem")
+			expect(approvalBefore2).to.equal(false)
 
-			// Redeem blank check and approve token 1
-			const receipt2 = await zippieWallet.redeemBlankCheck(bc2.addresses, bc2.signers, bc2.m, bc2.signatures.v, bc2.signatures.r, bc2.signatures.s, bc2.tokenId, bc2.cardNonces, {from: sponsorAccounts[0]})
-			console.log(`Gas used for redeemBlankCheck w/ createAccount m[1,1,0,0] - Token 2: ${receipt2.receipt.gasUsed}`)
+			// Redeem blank check and create account
+			let tx2 = zippieWallet.redeemBlankCheck(bc2.addresses, bc2.signers, bc2.m, bc2.signatures.v, bc2.signatures.r, bc2.signatures.s, bc2.tokenId, bc2.cardNonces, {from: sponsorAccounts[0].address})
+			await expect(tx2).to.emit(basicToken2, 'Transfer').withArgs(accountAddress, recipientAccounts[0].address, "1")
+			await expect(tx2).to.emit(basicToken2, 'ApprovalForAll').withArgs(accountAddress, zippieWallet.address, true)
+			// tx2 = await tx2.wait()
+			// console.log(`Gas used for redeemBlankCheck w/ createAccount m[1,1,0,0] - Token 2: ${tx.gasUsed}`)
 
 			// Check owner and operator approval after redeem
 			const ownerOfToken2After = await basicToken2.ownerOf("1")
-			assert(ownerOfToken2After === recipientAccounts[0], "token 1 owner after redeem is incorrect")
-			assert(await zippieWallet.usedNonces(accountAddress, verificationKeys[1]) === recipientAccounts[0], "check has not been marked as cashed after transfer")
+			expect(ownerOfToken2After).to.equal(recipientAccounts[0].address)
+			expect(await zippieWallet.usedNonces(accountAddress, verificationKeys[1].address)).to.equal(recipientAccounts[0].address)
 			const approvalAfter2 = await basicToken2.isApprovedForAll(accountAddress, zippieWallet.address)
-			assert(approvalAfter2 === true, "operator approval not set after redeem")
-		});
+			expect(approvalAfter2).to.equal(true)
+		})
+
 		it("send ether to account and kill contract with an approve to get the ether to the sponsor", async () => {
-			// Blank Check 1 (tokenId 1)
+			// Blank Check 1
 			const bc1 = await createBlankCheck_1of1Signer_NoCard(
 				basicToken.address,
-				recipientAccounts[0],
+				recipientAccounts[0].address,
 				verificationKeys[0],
 				signerAccounts[0],
 				[1, 1, 0, 0],
@@ -337,52 +340,67 @@ contract("ZippieWalletERC721 (using CREATE2 to approve ERC721 transfers for acco
 
 			// Get account address	
 			const accountAddress = getAccountAddress(bc1.signers, bc1.m, zippieWallet.address)
-			const salt = soliditySha3_addresses_m(bc1.signers, bc1.m);
-			const accountAddressSolidity = await zippieWallet.getAccountAddress(salt, {from: sponsorAccounts[0]})
-			assert(accountAddress === accountAddressSolidity, "account address calculation didn't match")
+			const salt = soliditySha3_addresses_m(bc1.signers, bc1.m)
+			const accountAddressSolidity = await zippieWallet.getAccountAddress(salt, {from: sponsorAccounts[0].address})
+			expect(accountAddress).to.equal(accountAddressSolidity)
 
-			// Send token 1 to sender account
-			await basicToken.transferFrom(tokenAccounts[0], accountAddress, "1", {from: tokenAccounts[0]});
+			// Send tokens to account
+			await basicToken.transferFrom(sponsor, accountAddress, "1", { from: sponsor })
 
 			// Send ETH to account
-			const balanceBefore = await web3.eth.getBalance(accountAddress)
-			assert(balanceBefore.toString() === "0", "incorrect account balance before")
-			const receiptTranfer = await web3.eth.sendTransaction({from: sponsorAccounts[0], to: accountAddress, value: web3.utils.toWei("1", "ether")})
+			const balanceBefore = await waffle.provider.getBalance(accountAddress)
+			expect(balanceBefore.toString()).to.equal("0")
+			let receiptTranfer = await sponsorAccounts[0].sendTransaction({to: accountAddress, value: ethers.utils.parseUnits("1", "ether")})
+			receiptTranfer = await receiptTranfer.wait()
 			console.log(`Gas used for ETH transfer: ${receiptTranfer.gasUsed}`)
-			const balanceAfter = await await web3.eth.getBalance(accountAddress)
-			assert(balanceAfter === web3.utils.toWei("1", "ether"), "incorrect account balance after")
+			const balanceAfter = await waffle.provider.getBalance(accountAddress)
+			expect(balanceAfter).to.equal(ethers.utils.parseUnits("1", "ether"))
 			
 			// Redeem blank check and create account (approve a token and check allowance)
-			const sponsorBalanceBefore = await web3.eth.getBalance(sponsorAccounts[1])
-			const approvalBefore = await basicToken.isApprovedForAll(accountAddress, zippieWallet.address)
-			assert(approvalBefore === false, "operator approval set before redeem")
-			const receiptRedeemBlankCheck = await zippieWallet.redeemBlankCheck(bc1.addresses, bc1.signers, bc1.m, bc1.signatures.v, bc1.signatures.r, bc1.signatures.s, bc1.tokenId, bc1.cardNonces, {from: sponsorAccounts[1], gasPrice: "1"})
-			const gasUsed = receiptRedeemBlankCheck.receipt.gasUsed
-			console.log(`Gas used for redeemBlankCheck: ${gasUsed}`)
-			const approvalAfter = await basicToken.isApprovedForAll(accountAddress, zippieWallet.address)
-			assert(approvalAfter === true, "operator approval not set after redeem")
+			const sponsorBalanceBefore = await waffle.provider.getBalance(sponsorAccounts[1].address)
+			const allowanceBefore = await basicToken.isApprovedForAll(accountAddress, zippieWallet.address)
+			expect(allowanceBefore).to.equal(false)
+			const zippieWallet2 = zippieWallet.connect(sponsorAccounts[1])
+			let receiptRedeemBlankCheck = await zippieWallet2.redeemBlankCheck(bc1.addresses, bc1.signers, bc1.m, bc1.signatures.v, bc1.signatures.r, bc1.signatures.s, bc1.tokenId, bc1.cardNonces, {from: sponsorAccounts[1].address })
+			receiptRedeemBlankCheck = await receiptRedeemBlankCheck.wait()
+			const gasUsed = receiptRedeemBlankCheck.gasUsed
+			const gasPrice = receiptRedeemBlankCheck.effectiveGasPrice
+			console.log(`Gas used for redeemBlankCheck: ${gasUsed}, (${gasUsed.mul(gasPrice)})`)
+			const allowanceAfter = await basicToken.isApprovedForAll(accountAddress, zippieWallet.address)
+			expect(allowanceAfter).to.equal(true)
 						
 			// Check if ETH was transfered correctly to sponsor after selfdestruct(tx.origin)
-			const accountBalanceAfterSelfdestruct = await await web3.eth.getBalance(accountAddress)
-			assert(accountBalanceAfterSelfdestruct === "0", "incorrect account balance after selfdestruct")
-			const sponsorBalanceAfter = await web3.eth.getBalance(sponsorAccounts[1])
-			assert(web3.utils.toWei("1", "ether") === web3.utils.toBN(sponsorBalanceAfter).sub(web3.utils.toBN(sponsorBalanceBefore)).add(web3.utils.toBN(gasUsed)).toString(), "incorrect sponsor balance after seldfedstruct")
-		});	
+			const accountBalanceAfterSelfdestruct = await waffle.provider.getBalance(accountAddress)
+			expect(accountBalanceAfterSelfdestruct).to.equal("0")
+			const sponsorBalanceAfter = await waffle.provider.getBalance(sponsorAccounts[1].address)
+			const balanceIncrease = sponsorBalanceAfter.sub(sponsorBalanceBefore).add(gasUsed.mul(gasPrice))
+			expect(balanceIncrease).to.equal(ethers.utils.parseUnits("1", "ether"))
+		})	
+
 		it("gas used for normal ERC721 transfer and setApprovalForAll + transferFrom", async () => {
-			const receiptTranferFromOwner = await basicToken.transferFrom(tokenAccounts[0], recipientAccounts[0], "1", {from: tokenAccounts[0], gasPrice: 1});
-			console.log(`Gas used for ERC721 transferFrom (owner) - Transfer 1: ${receiptTranferFromOwner.receipt.gasUsed}`)		
-			const receiptTranferFromOwner2 = await basicToken.transferFrom(tokenAccounts[0], recipientAccounts[0], "2", {from: tokenAccounts[0], gasPrice: 1});
-			console.log(`Gas used for ERC721 transferFrom (owner) - Transfer 2: ${receiptTranferFromOwner2.receipt.gasUsed}`)	
-			const receiptTranferFromOwner3 = await basicToken.transferFrom(tokenAccounts[0], recipientAccounts[0], "3", {from: tokenAccounts[0], gasPrice: 1});
-			console.log(`Gas used for ERC721 transferFrom (owner) - Transfer 3: ${receiptTranferFromOwner3.receipt.gasUsed}`)		
-			const receiptApproveForAll = await basicToken.setApprovalForAll(sponsorAccounts[0], true, {from: tokenAccounts[0], gasPrice: 1});
-			console.log(`Gas used for ERC721 setApprovalForAll: ${receiptApproveForAll.receipt.gasUsed}`)
-			const receiptTranferFromOperator = await basicToken.transferFrom(tokenAccounts[0], recipientAccounts[0], "4", {from: sponsorAccounts[0], gasPrice: 1});
-			console.log(`Gas used for ERC721 tranferFrom (operator) - Transfer 1: ${receiptTranferFromOperator.receipt.gasUsed}`)	
-			const receiptTranferFromOperator2 = await basicToken.transferFrom(tokenAccounts[0], recipientAccounts[0], "5", {from: sponsorAccounts[0], gasPrice: 1});
-			console.log(`Gas used for ERC721 tranferFrom (operator) - Transfer 2: ${receiptTranferFromOperator2.receipt.gasUsed}`)	
-			const receiptTranferFromOperator3 = await basicToken.transferFrom(tokenAccounts[0], recipientAccounts[0], "6", {from: sponsorAccounts[0], gasPrice: 1});
-			console.log(`Gas used for ERC721 tranferFrom (operator) - Transfer 3: ${receiptTranferFromOperator3.receipt.gasUsed}`)	
-		});
-	});
-});
+			let receiptTranfer = await basicToken.transferFrom(sponsorAccounts[0].address, recipientAccounts[0].address, "1", { from: sponsorAccounts[0].address })
+			receiptTranfer = await receiptTranfer.wait()
+			console.log(`Gas used for ERC721 tranferFrom (owner) - Transfer 1: ${receiptTranfer.gasUsed}`)		
+			let receiptTranfer2 = await basicToken.transferFrom(sponsorAccounts[0].address, recipientAccounts[0].address, "2", { from: sponsorAccounts[0].address })
+			receiptTranfer2 = await receiptTranfer2.wait()
+			console.log(`Gas used for ERC721 tranferFrom (owner) - Transfer 2: ${receiptTranfer2.gasUsed}`)	
+			let receiptTranfer3 = await basicToken.transferFrom(sponsorAccounts[0].address, recipientAccounts[0].address, "3", { from: sponsorAccounts[0].address })
+			receiptTranfer3 = await receiptTranfer3.wait()
+			console.log(`Gas used for ERC721 tranferFrom (owner) - Transfer 3: ${receiptTranfer3.gasUsed}`)		
+			let receiptApprove = await basicToken.setApprovalForAll(tokenAccounts[0].address, true , {from: sponsorAccounts[0].address})
+			receiptApprove = await receiptApprove.wait()
+			console.log(`Gas used for ERC721 setApprovalForAll: ${receiptApprove.gasUsed}`)
+
+			const basicTokenFrom = basicToken.connect(tokenAccounts[0])
+			let receiptTranferFrom = await basicTokenFrom.transferFrom(sponsorAccounts[0].address, recipientAccounts[0].address, "4", { from: tokenAccounts[0].address })
+			receiptTranferFrom = await receiptTranferFrom.wait()
+			console.log(`Gas used for ERC721 tranferFrom - Transfer 1: ${receiptTranferFrom.gasUsed}`)
+			let receiptTranferFrom2 = await basicTokenFrom.transferFrom(sponsorAccounts[0].address, recipientAccounts[0].address, "5", { from: tokenAccounts[0].address })
+			receiptTranferFrom2 = await receiptTranferFrom2.wait()
+			console.log(`Gas used for ERC721 tranferFrom - Transfer 2: ${receiptTranferFrom2.gasUsed}`)
+			let receiptTranferFrom3 = await basicTokenFrom.transferFrom(sponsorAccounts[0].address, recipientAccounts[0].address, "6", { from: tokenAccounts[0].address })
+			receiptTranferFrom3 = await receiptTranferFrom3.wait()
+			console.log(`Gas used for ERC721 tranferFrom - Transfer 3: ${receiptTranferFrom3.gasUsed}`)	
+		})
+	})
+})
