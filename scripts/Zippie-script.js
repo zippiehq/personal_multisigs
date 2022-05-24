@@ -15,11 +15,11 @@ async function main() {
   await this.tokenERC721.deployed() // 0xbbe12a27ebcf422fe083d302d069c0617d44c68d
 
   const BasicERC20Mock = await ethers.getContractFactory("BasicERC20Mock")
-  this.basicTokenERC20 = await BasicERC20Mock.deploy('0x1d27c3d920e780abefa6d516620015403bf84cc4')
+  this.basicTokenERC20 = await BasicERC20Mock.deploy('0x46299eb4f387d71b63e435da7d8dfa5edaa72d27') // Wallet masterseed "patrik" (ERC20 account)
   await this.basicTokenERC20.deployed() // 0x89c7a7c02520ade056608484f254b5df1a305a09
 
   const BasicERC721Mock = await ethers.getContractFactory("BasicERC721Mock")
-  this.basicTokenERC721 = await BasicERC721Mock.deploy('0x1d27c3d920e780abefa6d516620015403bf84cc4')
+  this.basicTokenERC721 = await BasicERC721Mock.deploy('0x1d27c3d920e780abefa6d516620015403bf84cc4') // Wallet masterseed "patrik" (ERC721 account)
   await this.basicTokenERC721.deployed() // 0xf5e0f85a764667b5a7c9b7a5acaa5bfb578e35ab
 
   const ZippieCardNonces = await ethers.getContractFactory("ZippieCardNonces")
